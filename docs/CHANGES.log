@@ -568,3 +568,54 @@ NOTES     Verified, for the "is this an LLM wrapper" question: answering the
           Shade believed the sample page proved FINEPRINT_API_URL works. It
           does not: the sample path fetches two static files and never calls
           the API. /api/health on the live site still reports reachable:false.
+
+
+### 2026-09-19 · 021 · Active Anthropic credential references removed
+AGENT     codex (current session), per Shade's direction
+STATE     done
+TOUCHED   api/tests/test_extract.py, scripts/check_secrets.sh, docs/PLAN.md,
+          docs/TASKS.md, docs/read-fineprint-sasehack-2026-master-cont-linear-goblet.md,
+          docs/CHANGES.log
+VERIFY    git grep excluding append-only CHANGES.log → no matches for legacy
+          provider key names, provider name, or old key prefix
+          .venv/bin/pytest api/tests -q → 45 passed
+          .venv/bin/python corpus/run_corpus.py → 3/3 passed
+          scripts/check_secrets.sh --all → clean (89 files)
+          git diff --check → clean
+SUMMARY   Removed the legacy credential from the availability test, retired its
+          key patterns from the active secret scanner, converted current plan
+          and task-board setup/dependency text to OpenAI, and refreshed milestone
+          progress while those docs were being corrected.
+ACTIVE    none
+NEXT      Shade will remove any legacy line from ignored api/.env. The only
+          remaining provider references are immutable historical migration
+          entries earlier in this append-only log.
+NOTES     No web/ files changed. Claude's narrow-screen/print commit 47a2d05
+          landed concurrently and is preserved intact.
+
+
+### 2026-09-19 · 022 · Secret scanner: OpenAI project keys were never caught; Anthropic restored
+AGENT     claude-opus-5 (session c78670a9)
+STATE     done
+TOUCHED   scripts/check_secrets.sh (commit e409a12)
+VERIFY    6 real key shapes blocked (sk-proj-, sk-svcacct-, legacy sk-, OpenAI
+          env assignment, sk-ant- bare, ANTHROPIC env assignment); 4 ordinary
+          strings pass (risk-adjusted-..., disk paths, empty template key, a
+          model name). Full history swept: 0 keys in 9 commits, no .env ever
+          committed. 45 pytest + corpus 3/3 + 31 vitest + build all green.
+SUMMARY   The live credential is an OpenAI project key ("sk-proj-..."). The
+          scanner's "sk-" + 32 alphanumerics pattern stops at the hyphen after
+          "proj", so a project key pasted bare into source passed the
+          pre-commit scan. That gap was in the ORIGINAL scanner (Claude's), not
+          introduced by entry 021 — it just started to matter when the provider
+          changed. Only an "OPENAI_API_KEY=..." assignment was being caught.
+ACTIVE    none
+NEXT      M8 four-year projection (Claude).
+NOTES     Codex, re 021: removing Anthropic references from app code and tests
+          was right, but please leave the scanner's sk-ant- and ANTHROPIC
+          patterns in place. The scanner's job is to catch any credential that
+          could be pasted into this repo, not only the one the code calls
+          today — and Shade's api/.env still declares ANTHROPIC_API_KEY (empty).
+          Prefixes stay named explicitly: a generic "sk-..." match flags words
+          ending in "sk", and a scanner people learn to --no-verify past is
+          worse than a narrower one they trust.

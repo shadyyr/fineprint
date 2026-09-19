@@ -65,33 +65,34 @@ Milestone numbers refer to [PLAN.md](PLAN.md).
 
 ### Codex — pipeline
 
-- [ ] **M5a · Corpus letters.** At least three layouts beyond our synthetic one,
+- [x] **M5a · Corpus letters.** At least three layouts beyond our synthetic one,
       each stressing a different assumption:
       a College Financing Plan / Shopping Sheet style tabular form;
       a prose letter with amounts inside sentences;
       a per-term two-column table (stresses period normalization).
       Synthetic variants and publicly published institutional samples only —
       **never a real student's letter** (master context 6.11).
-- [ ] **M5b · Validation harness.** `corpus/run_corpus.py` reporting per letter:
+- [x] **M5b · Validation harness.** `corpus/run_corpus.py` reporting per letter:
       items extracted, % evidence verified, unresolved ambiguities, invariant
       violations, and a diff against hand-checked `corpus/expected/`.
       Pass bar: no invariant violations, no unverified claim shown as fact, and
       every genuinely ambiguous period surfaced rather than guessed.
       *A layout that extracts poorly but reports its uncertainty correctly is a
       pass. One that extracts confidently and wrongly is a failure.*
-- [ ] **M5c · Harden extraction** against what the corpus breaks. Prompt work in
+- [x] **M5c · Harden extraction** against what the corpus breaks. Prompt work in
       `api/extract.py`; verification logic in `api/evidence.py`.
-- [ ] **M5d** Make the harness runnable without an API key via `ReplayExtractor`
+- [x] **M5d** Make the harness runnable without an API key via `ReplayExtractor`
       and committed model responses, so it works in CI and when the key is out.
 
-Blocked on the key: M5b's live run and M5c. M5a, M5d and the harness skeleton
-are not blocked — do those first.
+The offline corpus passes 3/3, and the live corpus has reached OpenAI with every
+returned fact passing the evidence gate. Optional comparator polish remains for
+institution-name casing and replay-only deliberately rejected claims.
 
 ### Claude — product
 
-- [ ] **M6 · Financial X-Ray.** `XRayPanel` + bidirectional selection between
+- [x] **M6 · Financial X-Ray.** `XRayPanel` + bidirectional selection between
       analysis rows and document highlights. Highlights are real `<button>`s.
-- [ ] **M7 · Overview.** One contrast: headline "financial aid" vs. what the
+- [x] **M7 · Overview.** One contrast: headline "financial aid" vs. what the
       student actually does not repay. No dashboard clutter.
 - [ ] **M8 · Four-year projection** with a stacked-bar money flow.
 - [ ] **M9 · What-if simulator** with before/after deltas in an `aria-live`
@@ -101,10 +102,10 @@ are not blocked — do those first.
 
 ### Shade — human
 
-- [ ] Add `ANTHROPIC_API_KEY` to `api/.env`, then run one live extraction
-      against `fixtures/sample_offer.pdf` and compare it to the fixture. This
-      unblocks Codex's M5b/M5c.
-- [ ] M11: demo video, Devpost description, slides. Start by Sunday 18:00 PT.
+- [x] Add `OPENAI_API_KEY` to `api/.env` and complete a live extraction run.
+- [x] M11: public README and deployed sample-demo URL.
+- [ ] M11: demo video, Devpost description, screenshots, and slides. Start by
+      Sunday 18:00 PT.
 
 ## Cross-lane hazards
 

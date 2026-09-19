@@ -7,7 +7,7 @@
 > Running coordination between agents lives in [CHANGES.log](CHANGES.log) —
 > read its tail before starting, append an entry before you stop.
 
-## Status (updated Fri Sep 18, evening)
+## Status (updated Fri Sep 18, late evening)
 
 | Milestone | State |
 |---|---|
@@ -15,20 +15,24 @@
 | M1 engine + tests | done — 31 vitest tests |
 | M2 sample PDF | done — generated from shared layout data |
 | M3 ingest + coordinate proof | done — chain verified numerically at every layer |
-| M4 live extraction + admission gate | code complete, 25 pytest tests; **live API call untested — needs `ANTHROPIC_API_KEY`** |
-| M5 multi-layout corpus | not started |
-| M6 X-Ray UI | `PdfCanvas` + `/debug/boxes` built; `XRayPanel` not started |
-| M7–M11 | not started |
+| M4 live extraction + admission gate | done — OpenAI typed extraction, deterministic evidence gate, live tested |
+| M5 multi-layout corpus | done — three synthetic layouts, replay + live harness |
+| M6 Financial X-Ray | done — bidirectional document/evidence selection |
+| M7 Overview | done — headline aid vs. confirmed gift-aid contrast |
+| M8 four-year projection | not started |
+| M9 what-if simulator | not started |
+| M10 uncertainty + accessibility | in progress — ambiguity, source badge, empty/error states shipped |
+| M11 submission | in progress — README and public sample demo shipped; video/slides/Devpost remain |
 
 Also added (not in the original plan): a three-layer secret/PII guard —
 hardened `.gitignore`, a pre-commit scanner (`scripts/check_secrets.sh`)
 blocking key-shaped strings, `.env` files, oversized files and PDFs outside
 `fixtures/`|`corpus/letters/`, and self-healing hook installation via
-`npm install`. Nothing is committed yet.
+`npm install`. The scanner currently reports a clean tracked tree.
 
 ## Context
 
-Greenfield build for SASEhack 2026 (hacking window: **Fri Sep 18 5:00 PM PT → Sun Sep 20 11:59 PM PT**, ~55 wall-clock hours, **solo**). The repo currently contains only a 12-byte `README.md`.
+SASEhack 2026 build (hacking window: **Fri Sep 18 5:00 PM PT → Sun Sep 20 11:59 PM PT**, ~55 wall-clock hours, **solo**). The core pipeline, validation corpus, Overview, and Financial X-Ray are implemented; projection, scenarios, final polish, and submission materials remain.
 
 `FinePrint_SASEhack_2026_Master_Context.md` is the source of truth. The product converts an unstandardized financial-aid offer letter into an **evidence-linked, executable financial model**: it separates gift aid / loans / work-study / costs, traces every number back to its exact location in the source PDF, computes a Year-1 picture, projects four years, and runs what-if scenarios.
 
@@ -54,7 +58,7 @@ The build must satisfy §6–8 scope constraints and §24's prohibitions. North 
 Asking a vision model for bounding boxes is the obvious approach and it does not work — LLM-produced boxes drift, and the signature interaction (§7.3) breaks on camera. Instead:
 
 1. PyMuPDF extracts every text line with exact geometry → each gets a stable `line_id` (`p1_l12`).
-2. Claude receives the **numbered line dump** plus page images, and must cite `line_id` + an exact `quote` for every financial fact.
+2. The OpenAI model receives the **numbered line dump** plus page images, and must cite `line_id` + an exact `quote` for every financial fact.
 3. Python resolves `line_id` → bbox deterministically, and narrows the box to just the quoted substring via span-width interpolation, so the highlight lands on `$3,500`, not the whole line.
 4. **Verification gate:** the quote must actually occur in the cited line, *and* the amount re-parsed from that text must equal the model's `amount`.
 
@@ -77,7 +81,7 @@ Consequences, deliberately accepted:
 The what-if simulator must feel instant (§7.6), so the engine runs **client-side as pure functions** — no round-trip per slider tick. Side effect: the interactive product still works if FastAPI is down, satisfying §20 resilience architecturally rather than with a hack.
 
 ```
-PDF ──▶ FastAPI (ingest → Claude → verify → normalize) ──▶ canonical JSON ──▶ browser
+PDF ──▶ FastAPI (ingest → OpenAI → verify → normalize) ──▶ canonical JSON ──▶ browser
                                                                                  │
                                        ┌─────────────────────────────────────────┤
                                        ▼                                         ▼
@@ -125,7 +129,7 @@ fineprint/
 ├─ api/                        # FastAPI
 │  ├─ main.py                         # POST /analyze, GET /health
 │  ├─ ingest.py                       # PyMuPDF → LayoutLine[] + page PNGs
-│  ├─ extract.py                      # Claude adapter (behind Protocol)
+│  ├─ extract.py                      # OpenAI adapter (behind Protocol)
 │  ├─ evidence.py                     # ★ resolve + verify + tighten bbox
 │  ├─ normalize.py                    # periods, rollups, invariants, ambiguities
 │  ├─ models.py                       # Pydantic canonical schema
@@ -142,7 +146,7 @@ fineprint/
 
 **Dependencies** (versions verified available today):
 `next@16.3.5`, `react@19`, `tailwindcss@4.3.3`, `pdfjs-dist@6.3.289`, `zod@4.6.5`, `zustand@5.0.15`, `recharts@3.10.1`, `vitest@5.0.1`, `concurrently`
-Python: `fastapi`, `uvicorn`, `pymupdf`, `pydantic>=2`, `anthropic`, `reportlab`, `python-multipart`
+Python: `fastapi`, `uvicorn`, `pymupdf`, `pydantic>=2`, `openai>=2`, `reportlab`, `python-multipart`
 
 Notes: PyMuPDF is AGPL-3.0 — fine since the repo must be public anyway; `pdfplumber` (MIT) is the swap if that changes. `pdfjs-dist@6` is ESM and needs its worker wired explicitly (copy to `public/`, set `workerSrc`) — a known Next.js time sink, do it in M0. Python 3.14 installed; use a venv (`uv` unavailable).
 
@@ -200,7 +204,7 @@ Live extraction now sits immediately after ingest, matching §21's actual priori
 
 ### Saturday (~12h)
 - **M3 · 2.5h · Ingest + coordinate proof.** PyMuPDF → `LayoutLine[]`, rotation handled. Text-layer sufficiency check up front, with the clear scanned-document failure path. **Ship `/debug/boxes` and confirm alignment before proceeding.**
-- **M4 · 3.5h · Live extraction + admission gate.** Claude adapter behind a `Protocol`; prompt supplies the numbered line dump as the authoritative source and page images as layout context only; strict structured output, Pydantic validation, ≤2 retries feeding the validation error back; then `evidence.py` resolution + verification, splitting output into `facts[]` and `unverified_claims[]`. Core scope.
+- **M4 · 3.5h · Live extraction + admission gate.** OpenAI adapter behind a `Protocol`; prompt supplies the numbered line dump as the authoritative source and page images as layout context only; strict structured output and Pydantic validation; then `evidence.py` resolution + verification, splitting output into `facts[]` and `unverified_claims[]`. Core scope.
 - **M5 · 2h · Multi-layout corpus + harness.** See below. Fix what it breaks.
 - **M6 · 4h · Financial X-Ray.** `PdfCanvas` + overlay + `XRayPanel`. Bidirectional selection (analysis row ↔ document highlight) — cheap, doubles the demo impact. Highlights are real `<button>`s.
 

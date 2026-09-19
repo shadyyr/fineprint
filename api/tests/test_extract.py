@@ -154,9 +154,9 @@ def test_extraction_schema_is_compatible_with_strict_structured_outputs():
     check(schema)
 
 
-def test_available_uses_only_the_documented_openai_key(monkeypatch):
+def test_available_requires_the_documented_openai_key(monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "legacy-key")
+    monkeypatch.setenv("UNRELATED_API_KEY", "unused-key")
     assert available() is False
 
     monkeypatch.setenv("OPENAI_API_KEY", "openai-key")
