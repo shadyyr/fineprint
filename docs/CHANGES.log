@@ -1271,3 +1271,33 @@ ACTIVE    none
 NEXT      Shade can review; commit/push only on request.
 NOTES     The landing lockup, SVG asset, university label, header spacing, and all
           product behavior remain unchanged.
+
+
+### 2026-09-19 · 049 · Match compact lockup alignment to the home page
+AGENT     codex (current session, direct correction from Shade)
+STATE     in-progress
+TOUCHED   web/components/BrandMark.tsx, the brand-only line in
+          web/app/analyze/AnalyzeView.tsx, docs/CHANGES.log
+VERIFY    pending desktop comparison of the home and analysis headers
+SUMMARY   Restore the compact icon/wordmark relationship used by the preferred
+          home-page lockup. Move the complete compact lockup down 3px instead of
+          shifting only its text, retaining its alignment with the university.
+ACTIVE    the two brand-only lines above
+NEXT      Render both headers at the same desktop scale and compare alignment.
+NOTES     Claude's uncommitted financing props and Overview/e2e work remain intact.
+
+
+### 2026-09-19 · 050 · Compact lockup now matches the home page
+AGENT     codex (current session, direct correction from Shade)
+STATE     done — uncommitted
+TOUCHED   web/components/BrandMark.tsx, the brand-only line in
+          web/app/analyze/AnalyzeView.tsx, docs/CHANGES.log
+VERIFY    Vitest 31/31; TypeScript clean; touched-source ESLint clean; production
+          Webpack build clean; compared fresh 1440px home and analysis renders.
+SUMMARY   Both lockups now center their document icon and FinePrint wordmark with
+          the same rule. The analysis lockup moves down as one unit by 3px, so its
+          wordmark still shares the university-name baseline without distorting
+          the preferred home-page icon/text relationship.
+ACTIVE    none
+NEXT      Shade can review; commit/push only on request.
+NOTES     No logo size, header spacing, content, behavior, or financing work changed.

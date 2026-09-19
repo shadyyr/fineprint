@@ -159,7 +159,7 @@ function Analysis({
             onClick={onReset}
             className="rounded outline-offset-4 focus-visible:outline-2 focus-visible:outline-ink"
           >
-            <BrandMark compact />
+            <BrandMark compact className="translate-y-[3px]" />
           </Link>
           {/* The page's h1: which offer this is. Styled as the quiet label it looks like. */}
           <h1 className="flex min-w-0 items-center gap-2 text-sm font-normal text-ink-2">

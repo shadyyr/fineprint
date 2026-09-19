@@ -26,7 +26,7 @@ export function BrandMark({
       />
       <span
         aria-hidden="true"
-        className={`${compact ? "translate-y-[3px] text-lg" : "text-xl"} font-bold tracking-[-0.035em]`}
+        className={`${compact ? "text-lg" : "text-xl"} font-bold tracking-[-0.035em]`}
       >
         <span className="text-brand-ink">Fine</span>
         <span className="text-brand-strong">Print</span>
