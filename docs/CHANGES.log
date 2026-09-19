@@ -784,3 +784,86 @@ NOTES     Codex and Claude: docs/read-fineprint-sasehack-2026-master-cont-
           linear-goblet.md is NOT the master context. It's a stale snapshot of
           the implementation plan; Claude Code named it after the first chat
           message. It was mistaken for the spec once already.
+
+
+### 2026-09-19 · 029 · New Claude session picks up web/ — M10 polish
+AGENT     claude-opus-5 (new session, continuing from 027)
+STATE     in-progress
+TOUCHED   docs/CHANGES.log
+VERIFY    Repo matches HANDOFF.md: main == origin/main at db02db1, tree clean.
+          npm test 31/31, typecheck + eslint clean, next build ok;
+          pytest 45/45, corpus 3/3, secret scan clean (96 files).
+SUMMARY   Starting M10 polish in this order: (1) respect prefers-reduced-motion
+          in the three JS scrollIntoView calls; (2) pinned "left to cover" bar
+          on phones while the what-if section is on screen; (3) keyboard and
+          screen-reader pass over the demo path. UI-S1 picker after Codex S1.
+ACTIVE    web/components/XRay.tsx, web/app/analyze/AnalyzeView.tsx,
+          web/components/WhatIf.tsx, web/components/FourYear.tsx, web/lib/
+NEXT      Codex: S1 still first in your queue; nothing from you since 021.
+NOTES     Codex: README "What the demo shows" predates M8/M9 (four-year +
+          what-if). It's yours under D1 — please cover them there.
+
+
+### 2026-09-19 · 030 · M10: reduced motion honoured in JS scrolls; pinned "left to cover" bar on phones
+AGENT     claude-opus-5 (session after 027)
+STATE     done — uncommitted
+TOUCHED   web/lib/motion.ts (new), web/components/XRay.tsx,
+          web/app/analyze/AnalyzeView.tsx, web/components/FourYear.tsx
+VERIFY    npm test 31/31, typecheck + eslint clean, next build ok.
+          Headless Chrome vs `next start -p 3100`:
+          reduced motion — 40ms after "show in letter" scrollY is already
+          final (1304) with reduce; mid-scroll (10–25) without.
+          phone bar at 390px — pinned 12px above the bottom while controls
+          are on screen; $57,600 → "$117,600 +$60,000 more" on scholarship
+          off (engine-tested figures); settles above the results after the
+          controls scroll away; unanswered state says "Leaves out the $20,000
+          Presidential Merit Scholarship until you answer"; no overflow at
+          360/390; display:none at 1280; absent from print (PyMuPDF text).
+          Regression: e2e/fouryear.mjs all 7 steps match, 0 requests, 0
+          errors; e2e/audit.mjs 0 requests, every width inViewport, print ok.
+SUMMARY   (1) JS scrollTo/scrollIntoView ignored the CSS reduced-motion rule;
+          all four call sites (handoff said three — XRay's pane.scrollTo was
+          the fourth) now use scrollBehavior() from lib/motion.ts.
+          (2) Below lg, a sticky-bottom bar between the what-if controls and
+          the results shows left-to-cover and its delta. Pure CSS sticky: it
+          is pinned only while the controls are in view, no scroll listeners.
+ACTIVE    web/components/, web/app/analyze/ (keyboard + screen-reader pass next)
+NEXT      Claude: keyboard walk-through of the demo path, then UI-S1 when S1 lands.
+NOTES     e2e scripts need puppeteer-core; I installed it in the session
+          scratchpad, not web/e2e/, to keep a stray package.json out of the repo.
+
+
+### 2026-09-19 · 031 · M10: keyboard + screen-reader pass over the demo path
+AGENT     claude-opus-5 (session after 027)
+STATE     done — uncommitted (with 030)
+TOUCHED   web/app/globals.css, web/components/{XRay,WhatIf,AmbiguityPrompt}.tsx,
+          web/app/analyze/AnalyzeView.tsx, web/e2e/{tabwalk,keyboard}.mjs (new),
+          web/e2e/README.md
+VERIFY    Fresh build on :3100. tabwalk.mjs at 390x844, 360x640 (both
+          question states), 768x1024, 900x900, 1280x800: 31 stops each, 0
+          without a focus ring / off screen / covered. keyboard.mjs: answer,
+          row select, range, checkbox, reset all by keyboard; 0 requests, 0
+          errors. A11y tree: no unnamed controls, h1 → h2 → h3 outline.
+          Regression: npm test 31/31, fouryear.mjs 7/7 to the dollar, audit.mjs
+          0 requests / all widths inViewport / figures $16,900→$36,900 etc.
+SUMMARY   Four bugs found by the pass and fixed:
+          1. Phones: my 030 bar covered a focused loan checkbox (tab scrolls
+             just into view at the bottom edge). scroll-padding-bottom: 6rem
+             below lg.
+          2. Phones, pre-existing: ~every 4th X-Ray row focused UNDER the
+             sticky letter pane. The li had scroll-mt-[48vh], but focus lands
+             on the inner <button>, and scroll margin applies to the element
+             scrolled — so the button now carries it too.
+          3. "Back to the letter" disabled itself after resetting, dropping
+             keyboard focus to <body>. Now aria-disabled; stays focusable.
+          4. Answering the period question announced nothing while the hero
+             moved $16,900→$36,900. A polite status now says "Counted as
+             $20,000 per year. Year 1 to cover is now $14,400."
+          Also: /analyze had no h1; the header's school name is now the h1
+          (visually unchanged, screenshot-checked).
+ACTIVE    none
+NEXT      Claude: UI-S1 once Codex lands S1; else error/empty-state review.
+NOTES     Document highlights are tabindex=-1 buttons on purpose — each
+          duplicates an X-Ray row that is in the tab order.
+          headed.mjs NOT rerun: nothing here touches PdfCanvas or the render
+          path (XRay change is one class on the row button).

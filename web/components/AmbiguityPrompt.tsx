@@ -39,6 +39,12 @@ export function AmbiguityPrompt({
   const headingId = useId();
   const impactOf = (value: string) => impacts.find((i) => i.value === value);
 
+  const chosenImpact = answer ? impactOf(answer) : undefined;
+  const status = answer
+    ? `Counted as ${ambiguity.options.find((o) => o.value === answer)?.label ?? answer}.` +
+      (chosenImpact ? ` Year 1 to cover is now ${formatUSD(chosenImpact.amountToCover)}.` : "")
+    : "";
+
   const spread =
     impacts.length >= 2
       ? Math.max(...impacts.map((i) => i.amountToCover)) -
@@ -143,6 +149,11 @@ export function AmbiguityPrompt({
         ) : null}
       </div>
       </div>
+
+      {/* The totals above and below move when this is answered; say so. */}
+      <p aria-live="polite" className="sr-only">
+        {status}
+      </p>
     </section>
   );
 }

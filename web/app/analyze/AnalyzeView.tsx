@@ -9,6 +9,7 @@ import { Overview, type AmbiguityView } from "@/components/Overview";
 import { SourceBadge } from "@/components/SourceBadge";
 import { XRay, type PanelGroup } from "@/components/XRay";
 import { defaultAssumptions, derive, formatUSD, type Assumptions } from "@/lib/engine";
+import { scrollBehavior } from "@/lib/motion";
 import type { CanonicalDocument } from "@/lib/schema";
 import { aidBreakdown, scenarioLevers, xrayGroups, type CategoryKey } from "@/lib/view";
 import { useSession } from "@/store/session";
@@ -133,7 +134,7 @@ function Analysis({
 
   const showItem = (itemId: string) => {
     onSelect(itemId);
-    document.getElementById("xray")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.getElementById("xray")?.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
   };
 
   const selectCategory = (key: CategoryKey) => {
@@ -152,13 +153,14 @@ function Analysis({
           >
             FinePrint
           </Link>
-          <p className="flex min-w-0 items-center gap-2 text-sm text-ink-2">
+          {/* The page's h1: which offer this is. Styled as the quiet label it looks like. */}
+          <h1 className="flex min-w-0 items-center gap-2 text-sm font-normal text-ink-2">
             <Icon name="document" size={16} className="shrink-0" />
             <span className="truncate">
               {doc.document.institution_name ?? doc.document.source_file_name}
               {doc.document.academic_year ? ` · ${doc.document.academic_year}` : ""}
             </span>
-          </p>
+          </h1>
           <div className="ml-auto flex items-center gap-3">
             <SourceBadge
               source={doc.extraction_meta.source}
@@ -203,7 +205,7 @@ function Analysis({
             pending &&
             document
               .getElementById(`question-${pending.id}`)
-              ?.scrollIntoView({ behavior: "smooth", block: "start" })
+              ?.scrollIntoView({ behavior: scrollBehavior(), block: "start" })
           }
         />
 

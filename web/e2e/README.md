@@ -17,6 +17,8 @@ BASE=https://fineprint-aid.vercel.app node headed.mjs
 |---|---|---|
 | `audit.mjs` | Answering questions and selecting X-Ray rows sends **zero** network requests; the selected highlight is on screen at 1280/1366/1100/900 px; print-to-PDF carries both letter pages. | `requestsDuringInteraction: 0`, every width `inViewport: true` |
 | `fouryear.mjs` | Every what-if lever. Figures must equal the engine tests to the dollar: $57,600 to cover (answered per-year), $117,600 not renewed (+$60,000), $217,844 / $70,244 at 4% growth, $22,000 borrowed with both loans, $0 (not negative) living at home. | printed `got:` matches `expect:` |
+| `tabwalk.mjs` | Tabs through `/analyze` at `W`×`H` (add `ANSWER=1` to answer the question first) and flags any stop with no visible focus ring, off screen, or covered by a sticky element — the phone letter pane or the pinned four-year bar. | no `NO-RING` / `OFFSCREEN` / `COVERED` lines |
+| `keyboard.mjs` | The demo path by keyboard alone: answer the question, select an X-Ray row, move what-if levers, reset. Prints every `aria-live` region's text after each step. | 0 requests, 0 errors, focus ends on "Back to the letter" |
 | `headed.mjs` | Opens a **visible** Chrome window. The only check that reproduces bugs needing real, space-taking scrollbars — headless Chrome never has them. This is what caught the upside-down letter (CHANGES.log 023/024). | `CORRECT ... painted 100% upright true` |
 
 Why `headed.mjs` exists: every headless run — Chromium, WebKit, Firefox,

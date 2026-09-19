@@ -24,6 +24,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { PdfCanvas, type PageSize } from "@/components/PdfCanvas";
 import { formatUSD } from "@/lib/engine";
+import { scrollBehavior } from "@/lib/motion";
 import { bboxToStyle } from "@/lib/pdf";
 import type { CanonicalDocument, Evidence } from "@/lib/schema";
 import { CATEGORY, type CategoryKey, type XRayGroup, type XRayRow } from "@/lib/view";
@@ -111,7 +112,7 @@ export function XRay({
     const paneBox = pane.getBoundingClientRect();
     const box = target.getBoundingClientRect();
     const top = pane.scrollTop + (box.top - paneBox.top) - pane.clientHeight / 2 + box.height / 2;
-    pane.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    pane.scrollTo({ top: Math.max(0, top), behavior: scrollBehavior() });
   }, []);
 
   // Follow the selection into the document.
@@ -143,7 +144,7 @@ export function XRay({
     onSelect(owner.id);
     document
       .getElementById(`row-${owner.id}`)
-      ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      ?.scrollIntoView({ block: "nearest", behavior: scrollBehavior() });
   };
 
   const renderOverlay = (page: number, size: PageSize) =>
@@ -351,7 +352,7 @@ function Panel({
                     aria-pressed={isSelected}
                     disabled={!citations.length}
                     onClick={() => onSelect(isSelected ? null : row.id)}
-                    className="flex w-full items-start gap-3 px-4 py-3 text-left outline-offset-[-2px] hover:bg-well focus-visible:outline-2 focus-visible:outline-ink disabled:cursor-default enabled:cursor-pointer"
+                    className="flex w-full scroll-mt-[48vh] items-start gap-3 px-4 py-3 text-left outline-offset-[-2px] hover:bg-well lg:scroll-mt-24 focus-visible:outline-2 focus-visible:outline-ink disabled:cursor-default enabled:cursor-pointer"
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block font-medium text-ink">{row.label}</span>

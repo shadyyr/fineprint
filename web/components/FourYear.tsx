@@ -161,6 +161,34 @@ export function FourYear({
           onReset={onReset}
         />
 
+        {/* Phones stack the controls above the results, so a change's effect
+            would be a scroll away. Sticky to the bottom of the screen, this
+            stays in view while the controls do, then settles in place above
+            the results. Wider screens show both side by side and skip it. */}
+        <div className="sticky bottom-3 z-20 lg:hidden print:hidden">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 rounded-lg border border-ink bg-card px-4 py-2.5 shadow-[0_4px_16px_-4px_rgb(27_31_42/0.35)]">
+            <span className="text-sm font-medium text-ink-2">Left to cover, 4 years</span>
+            <span className="figures text-right text-ink">
+              <span className="text-lg font-semibold">
+                {formatUSD(leftToCover.value)}
+                {!leftToCover.complete ? <span className="text-sm font-normal text-ink-3">*</span> : null}
+              </span>
+              {asWritten ? null : (
+                <span className="ml-2 text-sm text-ink-2">
+                  {Math.round(deltas.cover) === 0
+                    ? "no change"
+                    : `${signed(deltas.cover)} ${deltas.cover > 0 ? "more" : "less"}`}
+                </span>
+              )}
+            </span>
+            {pendingLabel ? (
+              <span className="w-full text-xs text-ink-2">
+                Leaves out the {pendingLabel} until you answer
+              </span>
+            ) : null}
+          </div>
+        </div>
+
         <div className="min-w-0 space-y-6">
           {/* The equation, stated in full. */}
           <dl className="grid gap-px overflow-hidden rounded-lg border border-rule bg-rule sm:grid-cols-3">

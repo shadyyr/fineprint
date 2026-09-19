@@ -51,9 +51,13 @@ export function WhatIf({
         <h3 className="font-semibold text-ink">What if&hellip;</h3>
         <button
           type="button"
-          onClick={onReset}
-          disabled={asWritten}
-          className={`rounded text-sm font-medium underline decoration-rule-2 underline-offset-4 ${focusRing} enabled:text-ink enabled:hover:decoration-ink disabled:text-ink-3 disabled:no-underline`}
+          // aria-disabled, not disabled: a disabled button drops keyboard focus
+          // to the top of the page the moment the reset it just did takes effect.
+          onClick={asWritten ? undefined : onReset}
+          aria-disabled={asWritten}
+          className={`rounded text-sm font-medium underline-offset-4 ${focusRing} ${
+            asWritten ? "cursor-default text-ink-3" : "text-ink underline decoration-rule-2 hover:decoration-ink"
+          }`}
         >
           Back to the letter
         </button>

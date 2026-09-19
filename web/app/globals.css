@@ -57,6 +57,17 @@ body {
   font-family: var(--font-sans);
 }
 
+/*
+ * Below lg, the four-year section pins a "left to cover" bar to the bottom of
+ * the screen (FourYear.tsx). Without this, tabbing to a control scrolls it
+ * just into view at the bottom edge -- underneath the bar.
+ */
+@media (width < 64rem) {
+  html {
+    scroll-padding-bottom: 6rem;
+  }
+}
+
 /* Figures in aligned columns. Large standalone figures keep proportional digits. */
 .figures {
   font-variant-numeric: tabular-nums;
