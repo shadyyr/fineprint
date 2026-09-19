@@ -1,0 +1,26 @@
+# FinePrint extraction service.
+#
+# PyMuPDF is AGPL-3.0. That is fine here because the project repository is
+# public as a submission requirement. If that ever changes, pdfplumber (MIT)
+# is the drop-in swap for ingest.py -- it also reports top-left-origin word
+# boxes, so the coordinate contract with pdf.js would not change.
+
+fastapi>=0.115
+uvicorn[standard]>=0.32
+pydantic>=2.9
+python-multipart>=0.0.12
+# Imported directly by main.py to read api/.env (also a uvicorn[standard] dep).
+python-dotenv>=1.0
+
+# Document ingestion: text with geometry, plus page rasterization for the
+# layout-context images sent alongside the authoritative text lines.
+pymupdf>=1.24
+
+# Structured extraction.
+anthropic>=0.40
+
+# Synthetic sample-letter generation (scripts/make_sample_pdf.py).
+reportlab>=4.2
+
+# Tests.
+pytest>=8.3

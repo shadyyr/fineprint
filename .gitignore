@@ -1,0 +1,63 @@
+# ── Secrets ──────────────────────────────────────────────────────────────
+# No leading slash, so these match at any depth: api/.env and web/.env.local
+# are both covered. `.env.*` catches .env.production and friends, which a
+# bare `.env.local` pattern would miss.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+credentials.json
+secrets.json
+.secrets/
+
+# ── Student data ─────────────────────────────────────────────────────────
+# Aid letters contain personal information (master context 6.11). These paths
+# are the designated landing zone for anything real: it stays on disk, never
+# in the repo. Only synthetic letters and publicly published institutional
+# samples belong in fixtures/ and corpus/letters/.
+uploads/
+private/
+scratch/
+*.private.pdf
+
+# ── Dependencies ─────────────────────────────────────────────────────────
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# ── Build output ─────────────────────────────────────────────────────────
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+web/next-env.d.ts
+
+# ── Generated artifacts ──────────────────────────────────────────────────
+# Sources of truth are committed at fixtures/. These are copies emitted by
+# scripts/make_fixture.py and the sync:pdfworker npm script.
+web/public/sample_offer.pdf
+web/public/sample_offer.json
+web/public/pdf.worker.min.mjs
+
+# ── Logs and caches ──────────────────────────────────────────────────────
+# Server logs can contain extracted document text, so they never get committed.
+*.log
+# ...except the agent handoff log, which is the whole point of docs/.
+!docs/CHANGES.log
+npm-debug.log*
+yarn-error.log*
+.pytest_cache/
+.ruff_cache/
+coverage/
+
+# ── Local machine state ──────────────────────────────────────────────────
+.claude/settings.local.json
+
+# ── OS / editor ──────────────────────────────────────────────────────────
+.DS_Store
+*.swp
+.idea/
