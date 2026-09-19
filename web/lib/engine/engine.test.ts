@@ -22,6 +22,7 @@ import {
 } from "./index";
 import { annualize } from "./periods";
 import type { Assumptions, Overrides } from "./types";
+import { scenarioLevers } from "../view";
 
 const doc = parseCanonicalDocument(
   JSON.parse(
@@ -394,5 +395,151 @@ describe("amount the letter leaves open (in-state or out-of-state)", () => {
 
   it("ignores an answer that isn't an amount rather than guessing", () => {
     expect(withAnswer("out_of_state").costOfAttendance.value).toBe(base - tuition.amount);
+  });
+});
+
+// Missing information the student supplies (Shade's feature-freeze exception,
+// CHANGES.log 064). MISSING != $0, user values stay separate from source facts,
+// and COST != FINANCING still holds after a cost is added.
+describe("costs the student supplies", () => {
+  const perYear: Overrides = {
+    ...emptyOverrides(),
+    ambiguityAnswers: { amb_merit_period: "annual" },
+  };
+  const bothLoans = (a: Assumptions = defaultAssumptions()): Assumptions => ({
+    ...a,
+    loansAccepted: Object.fromEntries(
+      doc.aid.filter((x) => x.aid_type === "loan").map((x) => [x.id, true]),
+    ),
+  });
+  const withEstimates = (estimates: Record<string, number>): Overrides => ({
+    ...perYear,
+    missingCostEstimates: estimates,
+  });
+  const snapshot = JSON.stringify(doc);
+
+  it("keeps an unpriced cost missing -- never $0", () => {
+    const y = derive(doc, perYear, defaultAssumptions()).yearOne;
+    expect(y.costBasis).toBe("letter_items");
+    expect(y.costOfAttendance.value).toBe(51300);
+    expect(y.costOfAttendance.complete).toBe(false);
+    expect(y.costOfAttendance.excluded.filter((e) => e.reason === "cost_missing")).toHaveLength(3);
+    expect(y.userEstimates.value).toBe(0);
+    expect(y.amountToCover.value).toBe(14400);
+  });
+
+  it("adds an estimate to the cost and the amount to cover, and says it is the student's", () => {
+    const m = derive(doc, withEstimates({ missing_transportation: 1500 }), defaultAssumptions());
+    expect(m.yearOne.costOfAttendance.value).toBe(52800);
+    expect(m.yearOne.amountToCover.value).toBe(15900);
+    expect(m.yearOne.userEstimates.value).toBe(1500);
+    expect(m.missingCosts.map((c) => c.id)).not.toContain("missing_transportation");
+    expect(JSON.stringify(doc)).toBe(snapshot); // source facts untouched
+  });
+
+  it("moves by exactly the difference when an estimate is edited", () => {
+    const a = derive(doc, withEstimates({ missing_transportation: 1500 }), defaultAssumptions());
+    const b = derive(doc, withEstimates({ missing_transportation: 2000 }), defaultAssumptions());
+    expect(b.yearOne.amountToCover.value - a.yearOne.amountToCover.value).toBe(500);
+  });
+
+  it("returns a cleared or invalid estimate to missing, not to $0", () => {
+    const cases: Record<string, number>[] = [
+      {},
+      { missing_transportation: Number.NaN },
+      { missing_transportation: -5 },
+    ];
+    for (const bad of cases) {
+      const m = derive(doc, withEstimates(bad), defaultAssumptions());
+      expect(m.yearOne.costOfAttendance.value).toBe(51300);
+      expect(m.missingCosts.map((c) => c.id)).toContain("missing_transportation");
+      expect(m.yearOne.costOfAttendance.complete).toBe(false);
+    }
+  });
+
+  it("still never lowers the amount to cover when loans or work-study are counted", () => {
+    const o = withEstimates({ missing_transportation: 1500 });
+    const loans = derive(doc, o, bothLoans()).yearOne;
+    expect(loans.amountToCover.value).toBe(15900);
+    expect(loans.outOfPocket.value).toBe(10400);
+    const work = derive(doc, o, { ...bothLoans(), countWorkStudyTowardCosts: true }).yearOne;
+    expect(work.amountToCover.value).toBe(15900);
+    expect(work.outOfPocket.value).toBe(7400);
+  });
+
+  it("ignores a user total whenever the letter has its own cost figures", () => {
+    const y = derive(doc, { ...perYear, costOfAttendanceTotal: 99999 }, defaultAssumptions()).yearOne;
+    expect(y.costBasis).toBe("letter_items");
+    expect(y.costOfAttendance.value).toBe(51300);
+  });
+
+  it("uses the letter's one stated total when it lists no cost lines", () => {
+    const totalOnly = { ...doc, costs: doc.costs.filter((c) => c.id === "cost_coa_total") };
+    expect(totalOnly.costs).toHaveLength(1);
+    const y = derive(totalOnly, withEstimates({ missing_transportation: 1500 }), defaultAssumptions()).yearOne;
+    expect(y.costBasis).toBe("letter_total");
+    expect(y.costOfAttendance.value).toBe(51300 + 1500);
+  });
+
+  it("never promotes a payment or after-aid rollup to cost of attendance", () => {
+    const paymentOnly = {
+      ...doc,
+      costs: [
+        {
+          ...doc.costs.find((c) => c.id === "cost_coa_total")!,
+          id: "payment_view",
+          label: "Estimated balance after aid",
+          category: "other" as const,
+          role: "rollup" as const,
+          provenance: "source" as const,
+        },
+      ],
+    };
+    const y = derive(paymentOnly, perYear, defaultAssumptions()).yearOne;
+    expect(y.costBasis).toBe("unknown");
+    expect(y.costOfAttendance.value).toBe(0);
+    expect(y.costOfAttendance.complete).toBe(false);
+  });
+
+  it("uses a user total only when the letter gives no cost figure, and never adds to it", () => {
+    const noCosts = { ...doc, costs: [] };
+    const unknown = derive(noCosts, perYear, defaultAssumptions()).yearOne;
+    expect(unknown.costBasis).toBe("unknown");
+    expect(unknown.costOfAttendance.complete).toBe(false);
+
+    const y = derive(
+      noCosts,
+      { ...perYear, costOfAttendanceTotal: 34800, missingCostEstimates: { missing_transportation: 1500 } },
+      defaultAssumptions(),
+    );
+    expect(y.yearOne.costBasis).toBe("user_total");
+    expect(y.yearOne.costOfAttendance.value).toBe(34800); // not 34,800 + 1,500
+    expect(y.yearOne.costOfAttendance.complete).toBe(true);
+    expect(y.missingCosts).toHaveLength(0);
+    expect(y.fourYear.grossCost.value).toBe(34800 * 4);
+  });
+});
+
+// The financing controls show the engine's yearly amount, and none at all for
+// an item whose period the letter leaves open (Codex's finding, log 065).
+describe("scenario levers never imply a period the engine won't infer", () => {
+  const loan = doc.aid.find((a) => a.aid_type === "loan")!;
+
+  it("withholds the control for a loan whose period is unknown", () => {
+    const unresolved = {
+      ...doc,
+      aid: doc.aid.map((a) => (a.id === loan.id ? { ...a, period: "unknown" as const } : a)),
+    };
+    const levers = scenarioLevers(unresolved, emptyOverrides(), defaultAssumptions());
+    expect(levers.loans.map((l) => l.id)).not.toContain(loan.id);
+  });
+
+  it("shows a per-semester loan as its yearly amount", () => {
+    const perSemester = {
+      ...doc,
+      aid: doc.aid.map((a) => (a.id === loan.id ? { ...a, period: "semester" as const } : a)),
+    };
+    const levers = scenarioLevers(perSemester, emptyOverrides(), defaultAssumptions());
+    expect(levers.loans.find((l) => l.id === loan.id)?.amount).toBe(loan.amount * 2);
   });
 });

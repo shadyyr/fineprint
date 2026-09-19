@@ -49,9 +49,15 @@ export function derive(
     yearOne,
     fourYear,
     openAmbiguities,
-    missingCosts: doc.missing_costs.filter(
-      (mc) => typeof overrides.missingCostEstimates[mc.id] !== "number",
-    ),
+    // In "user_total" mode the user's figure is the whole cost, so nothing
+    // is still missing from it.
+    missingCosts:
+      yearOne.costBasis === "user_total"
+        ? []
+        : doc.missing_costs.filter((mc) => {
+            const e = overrides.missingCostEstimates[mc.id];
+            return !(typeof e === "number" && Number.isFinite(e) && e >= 0);
+          }),
     yearOneComplete:
       yearOne.costOfAttendance.complete && yearOne.giftAid.complete,
   };

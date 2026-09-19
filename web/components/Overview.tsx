@@ -13,6 +13,7 @@
 import { AidBreakdown } from "@/components/AidBreakdown";
 import { AmbiguityPrompt, type OptionImpact } from "@/components/AmbiguityPrompt";
 import { Icon } from "@/components/Icon";
+import { DollarEntry, MissingCosts } from "@/components/MissingInfo";
 import {
   formatUSD,
   type Assumptions,
@@ -21,7 +22,7 @@ import {
   type Money,
   type YearOne,
 } from "@/lib/engine";
-import type { Ambiguity } from "@/lib/schema";
+import type { Ambiguity, MissingCost } from "@/lib/schema";
 import type { Breakdown, CategoryKey, LoanLever } from "@/lib/view";
 
 export interface AmbiguityView {
@@ -130,6 +131,11 @@ export function Overview({
   workStudy,
   assumptions,
   onAssumptions,
+  missingCosts,
+  estimates,
+  onEstimate,
+  costTotal,
+  onCostTotal,
 }: {
   model: DerivedModel;
   breakdown: Breakdown;
@@ -147,8 +153,17 @@ export function Overview({
   workStudy: number;
   assumptions: Assumptions;
   onAssumptions: (patch: Partial<Assumptions>) => void;
+  /** Every cost the letter names without an amount (estimated or not). */
+  missingCosts: MissingCost[];
+  /** The student's estimates for those, by missing-cost id. */
+  estimates: Record<string, number>;
+  onEstimate: (missingCostId: string, amount: number | null) => void;
+  /** A total yearly cost the student entered when the letter gives none. */
+  costTotal: number | undefined;
+  onCostTotal: (amount: number | null) => void;
 }) {
   const { yearOne } = model;
+  const estimated = yearOne.userEstimates.value;
   const headline = yearOne.headlineAidTotal?.value ?? null;
   const gift = yearOne.giftAid;
   const pendingGift = gift.excluded
@@ -231,7 +246,40 @@ export function Overview({
           <dl className="divide-y divide-rule">
             <FigureRow
               label="Cost of attendance"
-              description="Tuition, housing, meals and other costs the letter lists for the year."
+              description={
+                // Say where the figure came from, and how much of it is the student's.
+                yearOne.costBasis === "user_total" ? (
+                  <>
+                    <span className="block">
+                      Your school&rsquo;s yearly cost of attendance, as you entered it &mdash;
+                      the letter doesn&rsquo;t give one.
+                    </span>
+                    <span className="mt-1 block">
+                      <DollarEntry
+                        label="Your school's yearly cost of attendance"
+                        value={costTotal}
+                        onSave={onCostTotal}
+                        addText="Enter your school's yearly cost"
+                        tag="Provided by you"
+                        showValue={false}
+                      />
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {yearOne.costBasis === "letter_total"
+                      ? "The total cost of attendance the letter states for the year."
+                      : "Tuition, housing, meals and other costs the letter lists for the year."}
+                    {estimated > 0 ? (
+                      <span className="mt-1 flex items-center gap-1.5 text-ink">
+                        <Icon name="user" size={14} className="shrink-0 text-ink-2" />
+                        Includes {formatUSD(estimated)} you estimated for costs the letter
+                        doesn&rsquo;t price.
+                      </span>
+                    ) : null}
+                  </>
+                )
+              }
               amount={formatUSD(yearOne.costOfAttendance.value)}
               money={yearOne.costOfAttendance}
             />
@@ -262,19 +310,40 @@ export function Overview({
           </dl>
         ) : (
           // Missing costs are never treated as $0 -- that would show a debt-free
-          // year for a letter that simply didn't print the bill.
+          // year for a letter that simply didn't print the bill. The student can
+          // supply the figure; FinePrint never looks it up or guesses it.
           <div className="flex gap-3 px-5 py-4 text-sm text-ink-2">
             <Icon name="missing" size={20} className="mt-0.5 shrink-0 text-ink-3" />
-            <p>
-              <span className="block font-semibold text-ink">
-                This letter doesn&rsquo;t list what college costs.
-              </span>
-              So FinePrint can&rsquo;t work out what&rsquo;s left to cover, and won&rsquo;t
-              guess. Schools publish their cost of attendance on their financial-aid website;
-              the aid above is still exactly what this letter offers.
-            </p>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-ink">We need one more piece of information.</p>
+              <p className="mt-1">
+                This letter lists your aid, but not what college costs &mdash; so FinePrint
+                can&rsquo;t work out what&rsquo;s left to cover, and won&rsquo;t guess. Your
+                school&rsquo;s yearly cost of attendance is on its financial-aid website or
+                portal; it normally already includes books, transportation and personal costs.
+              </p>
+              <div className="mt-3">
+                <DollarEntry
+                  label="Your school's yearly cost of attendance"
+                  value={costTotal}
+                  onSave={onCostTotal}
+                  addText="Enter your school's yearly cost"
+                  tag="Provided by you"
+                />
+              </div>
+            </div>
           </div>
         )}
+
+        {listsCosts && yearOne.costBasis !== "user_total" ? (
+          <MissingCosts missing={missingCosts} estimates={estimates} onEstimate={onEstimate} />
+        ) : null}
+        {listsCosts ? (
+          <p aria-live="polite" className="sr-only">
+            Cost of attendance for the year: {formatUSD(yearOne.costOfAttendance.value)}
+            {estimated > 0 ? `, including ${formatUSD(estimated)} you estimated` : ""}.
+          </p>
+        ) : null}
 
         {/* How it might be paid for. With no costs there is nothing to split, so
             just say what is offered. */}

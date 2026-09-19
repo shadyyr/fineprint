@@ -186,7 +186,7 @@ function missingCostEntries(
 
   for (const mc of doc.missing_costs) {
     const estimate = overrides.missingCostEstimates[mc.id];
-    if (typeof estimate === "number") {
+    if (isAmount(estimate)) {
       added.push({
         id: mc.id,
         label: `${mc.label} (your estimate)`,
@@ -208,23 +208,88 @@ function missingCostEntries(
   return { added, exclusions };
 }
 
+/** A usable user-entered dollar amount: finite and not negative. */
+function isAmount(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+/**
+ * The year-one cost of attendance and where it came from. One precedence
+ * rule, so a total can never be added on top of the lines it sums:
+ *
+ * 1. The letter's cost lines, plus the user's estimates for costs the letter
+ *    names without an amount.
+ * 2. No cost lines, but the letter states exactly one total cost of
+ *    attendance: that total (a source fact), plus those estimates.
+ * 3. Neither, but the user entered a total yearly cost: that figure alone.
+ *    It is the whole cost, so missing-cost estimates are not added to it.
+ * 4. Otherwise unknown. The value is 0 only so arithmetic stays defined; it
+ *    is marked incomplete and the UI never presents it as a cost.
+ */
+function costOfAttendanceFor(
+  doc: CanonicalDocument,
+  overrides: Overrides,
+  assumptions: Assumptions,
+): { money: Money; basis: YearOne["costBasis"]; scenarioCosts: ResolvedItem[]; userEstimates: Money } {
+  const missing = missingCostEntries(doc, overrides);
+  const withMissing = (lines: ResolvedItem[]): Money => {
+    const costsMoney = toMoney([...lines, ...missing.added]);
+    return {
+      value: costsMoney.value,
+      complete: costsMoney.complete && missing.exclusions.length === 0,
+      excluded: [...costsMoney.excluded, ...missing.exclusions],
+    };
+  };
+  const estimates = toMoney(missing.added);
+  const none = money(0);
+
+  const items = summableCosts(doc);
+  if (items.length) {
+    const resolved = items.map((c) => resolveItem(c, doc, overrides, assumptions));
+    const scenarioCosts = applyHousing(resolved, doc, assumptions);
+    return { money: withMissing(scenarioCosts), basis: "letter_items", scenarioCosts, userEstimates: estimates };
+  }
+
+  // Normalization deliberately keeps payment schedules, balances after aid,
+  // family obligations, and similar alternate views as non-summable rollups.
+  // Only the canonical total/subtotal category may stand in for a letter that
+  // provides one actual cost-of-attendance total and no component lines.
+  const statedTotals = doc.costs.filter(
+    (c) =>
+      c.role === "rollup" &&
+      c.provenance === "source" &&
+      c.category === "subtotal",
+  );
+  if (statedTotals.length === 1) {
+    const total = resolveItem(statedTotals[0], doc, overrides, assumptions);
+    return { money: withMissing([total]), basis: "letter_total", scenarioCosts: [], userEstimates: estimates };
+  }
+
+  if (isAmount(overrides.costOfAttendanceTotal)) {
+    return {
+      money: money(overrides.costOfAttendanceTotal),
+      basis: "user_total",
+      scenarioCosts: [],
+      userEstimates: none,
+    };
+  }
+
+  return {
+    money: { value: 0, complete: false, excluded: missing.exclusions },
+    basis: "unknown",
+    scenarioCosts: [],
+    userEstimates: none,
+  };
+}
+
 export function computeYearOne(
   doc: CanonicalDocument,
   overrides: Overrides,
   assumptions: Assumptions,
 ): YearOne {
-  const resolvedCosts = summableCosts(doc).map((c) =>
-    resolveItem(c, doc, overrides, assumptions),
-  );
-  const scenarioCosts = applyHousing(resolvedCosts, doc, assumptions);
-  const missing = missingCostEntries(doc, overrides);
-
-  const costsMoney = toMoney([...scenarioCosts, ...missing.added]);
-  const costOfAttendance: Money = {
-    value: costsMoney.value,
-    complete: costsMoney.complete && missing.exclusions.length === 0,
-    excluded: [...costsMoney.excluded, ...missing.exclusions],
-  };
+  const cost = costOfAttendanceFor(doc, overrides, assumptions);
+  const costOfAttendance = cost.money;
+  const scenarioCosts = cost.scenarioCosts;
 
   const directIds = new Set(
     doc.costs.filter((c) => c.direct_cost && c.role === "item").map((c) => c.id),
@@ -272,6 +337,8 @@ export function computeYearOne(
   const headlineAidTotal = rollup ? money(rollup.amount) : null;
 
   return {
+    costBasis: cost.basis,
+    userEstimates: cost.userEstimates,
     headlineAidTotal,
     costOfAttendance,
     directCosts,

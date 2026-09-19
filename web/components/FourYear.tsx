@@ -144,7 +144,8 @@ export function FourYear({
           <span>
             <span className="font-semibold text-ink">Nothing to project yet.</span> A four-year
             picture starts from what college costs, and this letter doesn&rsquo;t say. FinePrint
-            won&rsquo;t fill that in with a guess.
+            won&rsquo;t guess &mdash; enter your school&rsquo;s yearly cost in &ldquo;Your first
+            year&rdquo; above to see it.
           </span>
         </p>
       ) : (
@@ -209,7 +210,17 @@ export function FourYear({
             <div className="min-w-0 space-y-6">
               {/* The equation, stated in full. */}
               <dl className="grid gap-px overflow-hidden rounded-lg border border-rule bg-rule sm:grid-cols-3">
-                <Figure label="Four-year cost" money={fy.grossCost} note="What the letter's costs add up to" />
+                <Figure
+                  label="Four-year cost"
+                  money={fy.grossCost}
+                  note={
+                    model.yearOne.costBasis === "user_total"
+                      ? "From the yearly cost you entered"
+                      : model.yearOne.userEstimates.value > 0
+                        ? "The letter's costs plus your estimates"
+                        : "What the letter's costs add up to"
+                  }
+                />
                 <Figure
                   label="Minus gift aid"
                   money={fy.giftAid}

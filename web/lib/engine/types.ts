@@ -26,7 +26,21 @@ export interface Overrides {
   >;
   /** missing-cost id -> an amount the user supplied for a cost the letter omitted. */
   missingCostEstimates: Record<string, number>;
+  /**
+   * A total yearly cost of attendance the user supplied because the letter
+   * gives no cost figure at all. Used only then (see CostBasis) -- it replaces
+   * the cost sum and is never added to anything.
+   */
+  costOfAttendanceTotal?: number;
 }
+
+/**
+ * Where the year-one cost of attendance comes from, in precedence order:
+ * the letter's cost lines (plus the user's estimates for costs it names but
+ * doesn't price); else the letter's one stated total; else a total the user
+ * entered; else unknown -- which is never shown as $0.
+ */
+export type CostBasis = "letter_items" | "letter_total" | "user_total" | "unknown";
 
 export type HousingChoice = "as_offered" | "commute" | "custom";
 
@@ -99,6 +113,10 @@ export function money(value: number, excluded: Exclusion[] = []): Money {
 }
 
 export interface YearOne {
+  /** Which source the cost of attendance came from. */
+  costBasis: CostBasis;
+  /** The part of the cost of attendance the user estimated (missing costs). */
+  userEstimates: Money;
   /** What the school presented as the total aid package, if it stated one. */
   headlineAidTotal: Money | null;
   costOfAttendance: Money;

@@ -21,7 +21,8 @@ export type IconName =
   | "document"
   | "arrow-right"
   | "check"
-  | "spark";
+  | "spark"
+  | "user";
 
 const PATHS: Record<IconName, React.ReactNode> = {
   // A wrapped box: money given, not lent.
@@ -101,6 +102,13 @@ const PATHS: Record<IconName, React.ReactNode> = {
   check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
   spark: (
     <path d="M12 3.5 13.8 10.2 20.5 12l-6.7 1.8L12 20.5l-1.8-6.7L3.5 12l6.7-1.8Z" />
+  ),
+  // A person: a value the student supplied, not one read from the letter.
+  user: (
+    <>
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5" />
+    </>
   ),
 };
 

@@ -27,7 +27,8 @@ const read = () => p.evaluate(() => {
   const hero = [...document.querySelectorAll("p")].find((x) => x.textContent.includes("Money you won"))?.nextElementSibling?.textContent.trim();
   return {
     hero, cover: dd("Estimated amount to cover"), still, borrowed,
-    live: [...card.querySelectorAll('[aria-live]')].map((e) => e.textContent.trim()).join(" "),
+    // The card has more than one live region; this one is the financing remainder.
+    live: [...card.querySelectorAll('[aria-live]')].map((e) => e.textContent.trim()).find((t) => t.startsWith("Still to cover")) ?? null,
     ov: { sub: box(fs, "Subsidized"), unsub: box(fs, "Unsubsidized"), ws: box(fs, "work-study") },
     wi: { sub: box(wi, "Direct Subsidized"), unsub: box(wi, "Unsubsidized"), ws: box(wi, "earnings") },
   };

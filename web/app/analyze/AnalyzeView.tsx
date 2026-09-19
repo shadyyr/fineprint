@@ -55,6 +55,8 @@ export function AnalyzeView({ sample }: { sample: string | null }) {
       onSelect={select}
       onReset={reset}
       onAssumptions={setAssumptions}
+      onEstimate={useSession.getState().setMissingCostEstimate}
+      onCostTotal={useSession.getState().setCostOfAttendanceTotal}
       sampleSlug={sampleSlug}
     />
   );
@@ -71,6 +73,8 @@ function Analysis({
   onSelect,
   onReset,
   onAssumptions,
+  onEstimate,
+  onCostTotal,
   sampleSlug,
 }: {
   doc: CanonicalDocument;
@@ -83,6 +87,8 @@ function Analysis({
   onSelect: (id: string | null) => void;
   onReset: () => void;
   onAssumptions: (patch: Partial<Assumptions>) => void;
+  onEstimate: (missingCostId: string, amount: number | null) => void;
+  onCostTotal: (amount: number | null) => void;
   /** The loaded demo sample, or null for an upload. */
   sampleSlug: string | null;
 }) {
@@ -96,11 +102,12 @@ function Analysis({
     [doc, overrides, assumptions],
   );
 
+  // Cost "unknown" is never shown as $0 -- until the letter's own total or a
+  // total the student enters fills it in (the engine's CostBasis).
+  const listsCosts = model.yearOne.costBasis !== "unknown";
+
   // For each open question, what each answer would do -- computed by running
   // the engine once per hypothetical answer.
-  // An award-only letter prices no costs. That is "unknown", never "$0".
-  const listsCosts = doc.costs.length > 0;
-
   const ambiguities: AmbiguityView[] = useMemo(
     () =>
       doc.ambiguities.map((ambiguity) => ({
@@ -127,7 +134,10 @@ function Analysis({
   // "The letter as written": the same document and the same answers, with
   // every scenario lever at its default. What-if deltas are measured from here.
   const baseline = useMemo(() => derive(doc, overrides, defaultAssumptions()), [doc, overrides]);
-  const levers = useMemo(() => scenarioLevers(doc, overrides), [doc, overrides]);
+  const levers = useMemo(
+    () => scenarioLevers(doc, overrides, assumptions),
+    [doc, overrides, assumptions],
+  );
   const pending = doc.ambiguities.find(
     (a) => a.blocks_headline && !overrides.ambiguityAnswers[a.id],
   );
@@ -156,15 +166,20 @@ function Analysis({
         meaning: "Costs it names but never prices",
         icon: "missing",
         color: "var(--color-rule-2)",
-        note: "FinePrint leaves these out rather than guessing, so the real cost is higher than the letter's total.",
+        note: "FinePrint leaves these out rather than guessing unless you add your own estimate in Your first year.",
         rows: doc.missing_costs.map((mc) => ({
           id: mc.id,
           label: mc.label,
-          amount: null,
+          // The student's estimate, labelled as theirs -- the letter still
+          // gives no amount, and the evidence shown is where it names the cost.
+          amount: overrides.missingCostEstimates[mc.id] ?? null,
           category: null,
           isTotal: false,
           derived: false,
-          periodText: "not stated",
+          periodText:
+            overrides.missingCostEstimates[mc.id] === undefined
+              ? "not stated"
+              : "your estimate · not in the letter",
           conditions: [],
           evidenceIds: mc.evidence_ids,
         })),
@@ -253,6 +268,11 @@ function Analysis({
             workStudy={levers.workStudy}
             assumptions={assumptions}
             onAssumptions={onAssumptions}
+            missingCosts={doc.missing_costs}
+            estimates={overrides.missingCostEstimates}
+            onEstimate={onEstimate}
+            costTotal={overrides.costOfAttendanceTotal}
+            onCostTotal={onCostTotal}
           />
         </div>
 

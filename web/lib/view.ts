@@ -322,9 +322,17 @@ export interface LoanLever {
  * letter marks renewable or conditional get a renewal switch: those are the
  * ones whose continuation is actually in question.
  */
-export function scenarioLevers(doc: CanonicalDocument, overrides: Overrides) {
+export function scenarioLevers(
+  doc: CanonicalDocument,
+  overrides: Overrides,
+  assumptions: Assumptions,
+) {
   const aid = summableAid(doc);
   const type = (a: AidItem) => overrides.itemOverrides[a.id]?.aidType ?? a.aid_type;
+  // Controls say "a year", so they show the engine's yearly figure -- and an
+  // item whose period the letter leaves open gets no control at all rather
+  // than a raw amount the engine itself refuses to count (Codex, log 065).
+  const annual = (item: AnyItem) => resolveItem(item, doc, overrides, assumptions).annual;
 
   const renewals: RenewalLever[] = aid
     .filter((a) => type(a) === "gift" && (a.renewable || (a.conditions?.length ?? 0) > 0))
@@ -337,20 +345,20 @@ export function scenarioLevers(doc: CanonicalDocument, overrides: Overrides) {
 
   const loans: LoanLever[] = aid
     .filter((a) => type(a) === "loan")
-    .map((a) => ({
-      id: a.id,
-      label: a.label,
-      amount: overrides.itemOverrides[a.id]?.amount ?? a.amount,
-      subsidized: a.category === "subsidized_loan",
-    }));
+    .flatMap((a) => {
+      const amount = annual(a);
+      return amount === null
+        ? []
+        : [{ id: a.id, label: a.label, amount, subsidized: a.category === "subsidized_loan" }];
+    });
 
   const workStudy = aid
     .filter((a) => type(a) === "work_study")
-    .reduce((acc, a) => acc + (overrides.itemOverrides[a.id]?.amount ?? a.amount), 0);
+    .reduce((acc, a) => acc + (annual(a) ?? 0), 0);
 
   const residential = doc.costs
     .filter((c) => c.role === "item" && (c.category === "housing" || c.category === "meals"))
-    .reduce((acc, c) => acc + (overrides.itemOverrides[c.id]?.amount ?? c.amount), 0);
+    .reduce((acc, c) => acc + (annual(c) ?? 0), 0);
 
   return { renewals, loans, workStudy, residential };
 }

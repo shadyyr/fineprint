@@ -43,6 +43,10 @@ interface SessionState {
   answer: (ambiguityId: string, value: string) => void;
   clearAnswer: (ambiguityId: string) => void;
   setAssumptions: (patch: Partial<Assumptions>) => void;
+  /** The student's yearly estimate for a cost the letter names but doesn't price; null clears it. */
+  setMissingCostEstimate: (missingCostId: string, amount: number | null) => void;
+  /** A total yearly cost the student entered because the letter gives none; null clears it. */
+  setCostOfAttendanceTotal: (amount: number | null) => void;
   select: (itemId: string | null) => void;
   reset: () => void;
 }
@@ -167,6 +171,27 @@ export const useSession = create<SessionState>((set) => ({
 
   setAssumptions(patch) {
     set((s) => ({ assumptions: { ...s.assumptions, ...patch } }));
+  },
+
+  // Both write to overrides only -- the student's values -- never to the
+  // document's source facts. Clearing deletes the key, so the cost returns to
+  // missing rather than becoming $0.
+  setMissingCostEstimate(missingCostId, amount) {
+    set((s) => {
+      const next = { ...s.overrides.missingCostEstimates };
+      if (amount === null) delete next[missingCostId];
+      else next[missingCostId] = amount;
+      return { overrides: { ...s.overrides, missingCostEstimates: next } };
+    });
+  },
+
+  setCostOfAttendanceTotal(amount) {
+    set((s) => {
+      const next = { ...s.overrides };
+      if (amount === null) delete next.costOfAttendanceTotal;
+      else next.costOfAttendanceTotal = amount;
+      return { overrides: next };
+    });
   },
 
   select(itemId) {
