@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef } from "react";
 
+import { BrandMark } from "@/components/BrandMark";
 import { Icon } from "@/components/Icon";
 import { FourYear } from "@/components/FourYear";
 import { Overview, type AmbiguityView } from "@/components/Overview";
@@ -156,9 +157,9 @@ function Analysis({
           <Link
             href="/"
             onClick={onReset}
-            className="rounded text-lg font-semibold tracking-tight text-ink outline-offset-4 focus-visible:outline-2 focus-visible:outline-ink"
+            className="rounded outline-offset-4 focus-visible:outline-2 focus-visible:outline-ink"
           >
-            FinePrint
+            <BrandMark compact />
           </Link>
           {/* The page's h1: which offer this is. Styled as the quiet label it looks like. */}
           <h1 className="flex min-w-0 items-center gap-2 text-sm font-normal text-ink-2">

@@ -1161,3 +1161,113 @@ NOTES     No Render account/service was created; no key or cloud environment was
           changed; Vercel was untouched; no deployment, commit, or push occurred.
           Optional M5c-polish remains, and V1 found a higher-value semantic guard
           for payment/after-aid balances before any real-letter demo is approved.
+
+
+### 2026-09-19 · 043 · Brand alignment claimed from Shade's cover art
+AGENT     codex (current session, direct request from Shade)
+STATE     in-progress
+TOUCHED   web/components/BrandMark.tsx, web/public/fineprint-mark.svg,
+          web/app/{page.tsx,globals.css,layout.tsx}, and the header-only brand
+          line in web/app/analyze/AnalyzeView.tsx; docs/CHANGES.log
+VERIFY    pending responsive render, accessibility checks, tests, lint, typecheck,
+          and production build
+SUMMARY   Keep the current product layout and category palette. Reuse one crisp
+          document/magnifier/dollar mark across the landing and analysis headers;
+          match the cover's navy Fine + blue Print wordmark and use that blue as
+          one restrained headline accent. Add the same mark as the browser icon.
+ACTIVE    the files listed above only
+NEXT      Implement and visually compare phone/desktop renders. Claude: your
+          uncommitted financing work in AnalyzeView/Overview/e2e is preserved;
+          I will touch only the existing FinePrint link in AnalyzeView.
+NOTES     No ImageGen: this is an interface/logo-system edit, so the supplied
+          cover is being translated into a resolution-independent SVG rather
+          than generating a second, visually inconsistent raster mark.
+
+
+### 2026-09-19 · 044 · Brand alignment done: one mark, restrained cover palette
+AGENT     codex (current session, direct request from Shade)
+STATE     done — uncommitted
+TOUCHED   web/components/BrandMark.tsx, web/public/fineprint-mark.svg,
+          web/app/page.tsx, web/app/globals.css, web/app/layout.tsx,
+          web/app/analyze/AnalyzeView.tsx, docs/CHANGES.log
+VERIFY    Vitest 31/31; TypeScript clean; touched-source ESLint clean; production
+          Webpack build clean (9 routes); desktop 1440x900 and compact 433px
+          renders inspected, plus the compact analysis header. Full eslint is
+          still noisy/failing only in committed public/pdf.worker.min.mjs (6
+          errors and 1,571 warnings); no touched source finding was hidden.
+SUMMARY   The cover-art document + magnifier + dollar mark is now a reusable SVG
+          in both page headers and the browser icon. The wordmark uses navy Fine
+          and blue Print; the landing headline repeats the cover blue once. The
+          bright #4e7cf6 is reserved for large text/non-text strokes (3.48:1 on
+          paper), while small wordmark text uses #315ed8 (5.18:1). Layout,
+          surfaces, financial category colors, and every interaction are intact.
+ACTIVE    none
+NEXT      Shade can review locally or ask to commit/push. Claude: retain the
+          BrandMark import/header replacement when landing your financing work.
+NOTES     Claude's existing Overview, financing E2E, and four new AnalyzeView
+          props remain unchanged. Turbopack build cannot bind its internal CSS
+          worker port in this environment; the supported Webpack build passed.
+
+
+### 2026-09-19 · 045 · Brand optical-alignment follow-up claimed
+AGENT     codex (current session, direct request from Shade)
+STATE     in-progress
+TOUCHED   web/public/fineprint-mark.svg, web/components/BrandMark.tsx,
+          docs/CHANGES.log
+VERIFY    pending desktop/compact landing and analysis-header renders
+SUMMARY   The component boxes align with their page containers, but the SVG's
+          64x64 canvas leaves about five rendered pixels before the visible mark
+          at desktop size. Tighten its square viewBox around the actual artwork
+          and make the image block-level so inline baseline space cannot shift
+          the icon relative to the wordmark.
+ACTIVE    the two brand assets above only
+NEXT      Rebuild, compare both headers, and confirm no crop at the handle or fold.
+NOTES     No layout, financial-category color, interaction, or Claude-owned
+          financing logic will change in this pass.
+
+
+### 2026-09-19 · 046 · Brand optical alignment done
+AGENT     codex (current session, direct request from Shade)
+STATE     done — uncommitted
+TOUCHED   web/public/fineprint-mark.svg, web/components/BrandMark.tsx,
+          docs/CHANGES.log
+VERIFY    Vitest 31/31; TypeScript clean; touched-source ESLint clean; production
+          Webpack build clean. Inspected landing and analysis headers at 1440px
+          and the in-app browser's 433px compact width. No fold/handle crop.
+SUMMARY   Tightened the SVG from a loose 64x64 canvas to square optical bounds
+          around the actual artwork. The visible landing mark now begins on the
+          same content axis (about one rendered pixel difference); the analysis
+          mark sits within three pixels of its wider content axis. Icon and
+          wordmark centers match vertically. Image rendering is block-level and
+          the lockup uses leading-none, removing inline baseline drift.
+ACTIVE    none
+NEXT      Shade can review; commit/push only on request.
+NOTES     Desktop and compact layout, financial colors, and all product behavior
+          remain unchanged. Claude's in-progress financing files are preserved.
+
+
+### 2026-09-19 · 047 · Analysis-header wordmark baseline follow-up
+AGENT     codex (current session, direct correction from Shade)
+STATE     in-progress
+TOUCHED   web/components/BrandMark.tsx, docs/CHANGES.log
+VERIFY    pending analysis-header render
+SUMMARY   Optical canvas alignment is correct, but centering the compact wordmark
+          inside its taller icon box places the text about 3 CSS pixels above the
+          university-name baseline. Shift only compact wordmark text down 3px.
+ACTIVE    web/components/BrandMark.tsx only
+NEXT      Render the analysis header and compare the two text baselines directly.
+NOTES     The mark, landing lockup, university label, and header layout stay put.
+
+
+### 2026-09-19 · 048 · Analysis-header wordmark baseline aligned
+AGENT     codex (current session, direct correction from Shade)
+STATE     done — uncommitted
+TOUCHED   web/components/BrandMark.tsx, docs/CHANGES.log
+VERIFY    Vitest 31/31; TypeScript clean; touched-source ESLint clean; production
+          Webpack build clean; inspected the 1440px analysis-header render.
+SUMMARY   Moved only the compact FinePrint wordmark down 3 CSS pixels. Its text
+          now shares the university-name baseline while the icon remains centered.
+ACTIVE    none
+NEXT      Shade can review; commit/push only on request.
+NOTES     The landing lockup, SVG asset, university label, header spacing, and all
+          product behavior remain unchanged.

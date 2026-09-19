@@ -1,3 +1,4 @@
+import { BrandMark } from "@/components/BrandMark";
 import { Icon, type IconName } from "@/components/Icon";
 
 import { StartActions } from "./StartActions";
@@ -33,7 +34,7 @@ export default function Home() {
   return (
     <div className="flex min-h-full flex-col">
       <header className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6">
-        <p className="text-lg font-semibold tracking-tight text-ink">FinePrint</p>
+        <BrandMark />
       </header>
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-16 pt-12 sm:px-6 sm:pt-20">
@@ -43,7 +44,7 @@ export default function Home() {
               id="hero-heading"
               className="max-w-xl text-4xl font-semibold tracking-tight text-ink sm:text-5xl"
             >
-              Know what your financial-aid offer actually means.
+              Know what your financial-aid offer <span className="text-brand">actually means.</span>
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-2">
               A letter can say &ldquo;$45,400 in financial aid&rdquo; when most of it is loans

@@ -24,6 +24,13 @@
   --color-ink-2: #4a5163; /* 7.3:1 */
   --color-ink-3: #62687a; /* 5.1:1 -- the lightest text allowed */
 
+  /* Cover-art identity. These brand the product but never replace the
+     category colors below, which carry financial meaning. */
+  --color-brand-ink: #091027;
+  --color-brand: #4e7cf6;
+  --color-brand-strong: #315ed8;
+  --color-brand-wash: rgb(78 124 246 / 0.1);
+
   --color-rule: #e4dfd6;
   --color-rule-2: #d3ccbf;
 
