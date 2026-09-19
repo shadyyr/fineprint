@@ -77,8 +77,10 @@ export const Evidence = z.object({
   quote: z.string(),
   bbox: BBox,
   /** Narrowed to just the monetary amount within the quote, when present. */
-  amount_bbox: BBox.optional(),
-  amount_text: z.string().optional(),
+  // FastAPI serializes Pydantic's optional ``None`` values as JSON null.
+  // Accept both null and omission at this boundary; neither carries a value.
+  amount_bbox: BBox.nullish(),
+  amount_text: z.string().nullish(),
   status: z.literal("verified"),
   verification: z.object({
     quote_found: z.boolean(),
@@ -96,8 +98,8 @@ const itemBase = {
   confidence: z.number().min(0).max(1),
   evidence_ids: z.array(z.string()).min(1),
   /** Present only on rollups: the ids this total is composed of. */
-  components: z.array(z.string()).optional(),
-  ambiguity_ids: z.array(z.string()).optional(),
+  components: z.array(z.string()).nullish(),
+  ambiguity_ids: z.array(z.string()).nullish(),
 };
 
 export const CostItem = z.object({
@@ -111,8 +113,8 @@ export const AidItem = z.object({
   ...itemBase,
   category: AidCategory,
   aid_type: AidType,
-  renewable: z.boolean().optional(),
-  conditions: z.array(z.string()).optional(),
+  renewable: z.boolean().nullish(),
+  conditions: z.array(z.string()).nullish(),
 });
 
 /**
@@ -132,7 +134,7 @@ export const Ambiguity = z.object({
       z.object({
         value: z.string(),
         label: z.string(),
-        detail: z.string().optional(),
+        detail: z.string().nullish(),
       }),
     )
     .min(2),

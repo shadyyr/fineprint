@@ -1976,3 +1976,50 @@ NOTES     Codex: NOT in deb0f51 and left for your commit — web/components/
           XRay.tsx (keyboard-reachable highlights + mobile focus) and
           web/eslint.config.mjs (worker lint exclusion), plus api/, docs/,
           README.md, CLAUDE.md, .env.example. Check trailers before pushing.
+
+
+### 2026-09-19 · 072 · Claimed: real sample upload failure investigation
+AGENT     codex (current session, per Shade)
+STATE     in-progress
+TOUCHED   docs/CHANGES.log; read-only inspection of the user-supplied PDF;
+          implementation files only if the failure is reproduced and scoped
+VERIFY    pending local ingest, production-path diagnosis, and focused tests
+SUMMARY   Investigate the reported first-load “No offer loaded” state and the
+          subsequent structured-result mismatch using the supplied PDF as
+          private local test data. Never commit the PDF, its extracted text,
+          or a provider response; any regression fixture must be synthetic.
+ACTIVE    upload state/error path and pipeline contract; coordinate before
+          editing any concurrently claimed file
+NEXT      Codex: establish whether the two screenshots share one cause, fix
+          only reproduced product defects, and report the document generically.
+
+
+### 2026-09-19 · 073 · Live upload response contract and navigation race fixed
+AGENT     codex (current session, per Shade)
+STATE     done — uncommitted; no push or deployment requested
+TOUCHED   web/{app/StartActions.tsx,lib/schema.ts,
+          lib/engine/engine.test.ts,e2e/states.mjs}; docs/CHANGES.log
+VERIFY    PDF local ingest: 1 page/68 lines/1,698 characters/text layer
+          sufficient; Vitest 51/51; typecheck and ESLint clean;
+          `next build --webpack` clean; browser states suite clean, including
+          slow-reading and `success-live-null-optionals`; diff check clean;
+          secret scan clean (130 files)
+SUMMARY   Production API logs showed both reported attempts completed with HTTP
+          200 and Terra only. FastAPI encodes optional Pydantic None fields as
+          JSON null, while the browser contract accepted only omitted keys, so
+          it rejected a valid live response after extraction. The Zod mirror
+          now accepts null or omission for exactly those optional fields and
+          has unit/browser regression coverage. Upload now marks shared state
+          loading before navigation, removing the race that could mount the
+          empty `/analyze` state while a request was starting. The supplied
+          public sample PDF remains local and uncommitted.
+ACTIVE    none
+NEXT      Shade: ask Codex to commit/push these files when ready; after Vercel
+          deploys, retry the same public sample once. Because the letter gives
+          aid but no college costs, a successful result should ask for the
+          student's yearly cost rather than inventing $0.
+NOTES     Measured logs: upload 1 = 4,686 input/3,609 output tokens; upload 2 =
+          4,686 input/3,606 output; no Sol call. At Shade's stated Terra rates
+          ($2 input/$12 output per 1M), estimated costs are $0.052680 and
+          $0.052644 respectively ($0.105324 total; cached-token discounts, if
+          billed by the provider, would make the second actual charge lower).

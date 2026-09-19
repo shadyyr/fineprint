@@ -49,8 +49,12 @@ export function StartActions() {
       return;
     }
     setBusy(true);
+    // analyzeFile marks the shared store as loading synchronously. Do that
+    // before navigation so /analyze can never mount against the old idle state
+    // and mistake an in-flight upload for an empty session.
+    const analysis = useSession.getState().analyzeFile(file);
     router.push("/analyze");
-    const ok = await useSession.getState().analyzeFile(file);
+    const ok = await analysis;
     if (!ok) {
       setBusy(false);
       // The analyze page shows the error with next steps.

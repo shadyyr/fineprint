@@ -52,6 +52,22 @@ describe("fixture integrity", () => {
     expect(doc.document.synthetic).toBe(true);
   });
 
+  it("accepts FastAPI's null encoding for optional canonical fields", () => {
+    // Pydantic emits JSON null for optional None values in live responses,
+    // while committed fixtures usually omit those keys. Both are the same
+    // canonical absence and must survive the browser trust boundary.
+    const apiShaped = structuredClone(doc);
+    apiShaped.aid[0].components = null;
+    apiShaped.aid[0].ambiguity_ids = null;
+    apiShaped.aid[0].renewable = null;
+    apiShaped.aid[0].conditions = null;
+    apiShaped.evidence[0].amount_bbox = null;
+    apiShaped.evidence[0].amount_text = null;
+    apiShaped.ambiguities[0].options[0].detail = null;
+
+    expect(parseCanonicalDocument(apiShaped).aid[0].components).toBeNull();
+  });
+
   it("gives every priced item verified evidence", () => {
     const evidenceIds = new Set(doc.evidence.map((e) => e.id));
     for (const item of [...doc.costs, ...doc.aid]) {

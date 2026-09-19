@@ -12,6 +12,28 @@ const BASE = process.env.BASE ?? "http://127.0.0.1:3100";
 const OUT = new URL(process.env.OUT ?? "./out/", import.meta.url).pathname;
 const ROOT = new URL("../../", import.meta.url).pathname;
 const SAMPLE = JSON.parse(fs.readFileSync(ROOT + "/web/public/sample_offer.json", "utf8"));
+// FastAPI/Pydantic includes JSON null for optional None fields in a live
+// response, whereas the hand-authored fixture omits those keys. Exercise the
+// exact wire shape so an otherwise successful extraction cannot be rejected
+// by the browser schema again.
+const API_SAMPLE = structuredClone(SAMPLE);
+for (const item of [...API_SAMPLE.costs, ...API_SAMPLE.aid]) {
+  if (!("components" in item)) item.components = null;
+  if (!("ambiguity_ids" in item)) item.ambiguity_ids = null;
+}
+for (const item of API_SAMPLE.aid) {
+  if (!("renewable" in item)) item.renewable = null;
+  if (!("conditions" in item)) item.conditions = null;
+}
+for (const evidence of API_SAMPLE.evidence) {
+  if (!("amount_bbox" in evidence)) evidence.amount_bbox = null;
+  if (!("amount_text" in evidence)) evidence.amount_text = null;
+}
+for (const ambiguity of API_SAMPLE.ambiguities) {
+  for (const option of ambiguity.options) {
+    if (!("detail" in option)) option.detail = null;
+  }
+}
 const PDF = ROOT + "/fixtures/sample_offer.pdf";
 const b = await puppeteer.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true });
 const w = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -53,6 +75,7 @@ results.push(await upload("network-drop", "abort"));
 results.push(await upload("schema-mismatch", json(200, { ...SAMPLE, aid: [{ id: "x", label: 5 }] })));
 results.push(await upload("slow-reading", { ...json(200, SAMPLE), delay: 4000 }));
 results.push(await upload("success-live", json(200, { ...SAMPLE, extraction_meta: { ...SAMPLE.extraction_meta, source: "live" } })));
+results.push(await upload("success-live-null-optionals", json(200, { ...API_SAMPLE, extraction_meta: { ...API_SAMPLE.extraction_meta, source: "live" } })));
 results.push(await upload("not-a-pdf", json(200, SAMPLE), ROOT + "/README.md"));
 // sample path failures
 for (const [name, routes] of [["sample-json-404", { "/sample_offer.json": { status: 404, body: "nope" } }], ["sample-pdf-404", { "/sample_offer.pdf": { status: 404, contentType: "text/html", body: "<html>404</html>" } }], ["empty", null]]) {
