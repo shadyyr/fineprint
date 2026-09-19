@@ -7,7 +7,7 @@
 > Running coordination between agents lives in [CHANGES.log](CHANGES.log) —
 > read its tail before starting, append an entry before you stop.
 
-## Status (updated Fri Sep 18, late evening)
+## Status (updated 2026-09-19 — see docs/HANDOFF.md for the full picture)
 
 | Milestone | State |
 |---|---|
@@ -19,8 +19,8 @@
 | M5 multi-layout corpus | done — three synthetic layouts, replay + live harness |
 | M6 Financial X-Ray | done — bidirectional document/evidence selection |
 | M7 Overview | done — headline aid vs. confirmed gift-aid contrast |
-| M8 four-year projection | not started |
-| M9 what-if simulator | not started |
+| M8 four-year projection | done — `106a75b`; per-year bars, figures vs. the letter as written |
+| M9 what-if simulator | done — `106a75b`; growth, renewal, housing, loans, work-study; 0 network requests |
 | M10 uncertainty + accessibility | in progress — ambiguity, source badge, empty/error states shipped |
 | M11 submission | in progress — README and public sample demo shipped; video/slides/Devpost remain |
 

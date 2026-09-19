@@ -8,15 +8,23 @@ earned, what the letter omits, and what four years cost — with every figure
 traceable to the exact words on the page.
 
 **Deadline.** SASEhack 2026 submission closes **Sun 2026-09-20, 11:59 PM PT**.
-No code changes after. Solo build.
+No code changes after. Built by Shade with two AI agents working one shared tree:
+**Claude owns `web/`**, **Codex owns `api/`, `corpus/`, `scripts/`**.
+
+**Live:** https://fineprint-aid.vercel.app — never `fineprint.vercel.app`, an
+unrelated product.
 
 ## Before you start
 
-1. Read [docs/PLAN.md](docs/PLAN.md) — architecture, milestones, cut lines.
-2. Read the tail of [docs/CHANGES.log](docs/CHANGES.log) — what just happened,
-   what is in flight, what is claimed.
-3. Check the `ACTIVE` block at the end of the log before editing a file another
-   agent has claimed.
+1. **Read [docs/HANDOFF.md](docs/HANDOFF.md) in full.** Current state, how
+   Shade works (no attribution on commits; commit/push only when asked), what's
+   next, and the traps that already cost time.
+2. Read [docs/FinePrint_SASEhack_2026_Master_Context.md](docs/FinePrint_SASEhack_2026_Master_Context.md)
+   — the product spec (local only; ask Shade if it's missing).
+3. Read [docs/TASKS.md](docs/TASKS.md) — lanes, two-agent rules, the board.
+4. Read the tail of [docs/CHANGES.log](docs/CHANGES.log) — the last entry is
+   the current state; check its `ACTIVE` line before editing a claimed file.
+5. [docs/PLAN.md](docs/PLAN.md) is the architecture of record.
 
 ## Before you stop
 
@@ -56,6 +64,11 @@ documented cut-line list in the plan instead.
 | Path | What |
 |---|---|
 | `web/lib/engine/` | Pure TS financial engine. No I/O, no React. |
+| `web/lib/view.ts` | View model: categories, aid breakdown, X-Ray groups, what-if levers |
+| `web/components/` | `Overview`, `AidBreakdown`, `AmbiguityPrompt`, `XRay`, `PdfCanvas`, `FourYear`, `WhatIf`, `SourceBadge` |
+| `web/store/session.ts` | zustand: source facts, user answers, scenario assumptions — kept separate |
+| `web/e2e/` | Real-browser checks (not in `npm test`) — see its README |
+| `api/extract.py` | **The only place a model is called** (OpenAI) |
 | `web/lib/schema.ts` | zod canonical schema — mirror of `api/models.py` |
 | `api/ingest.py` | PyMuPDF → lines + per-character geometry |
 | `api/evidence.py` | The admission gate |
@@ -69,8 +82,9 @@ Both schemas describe the same JSON. **Change one, change the other.**
 
 ```bash
 cd web && npm test          # 31 engine tests
-cd web && npm run typecheck
-.venv/bin/pytest api/tests -q   # 25 pipeline tests
+cd web && npm run typecheck && npx next build   # build catches prod-only Next 16 traps
+.venv/bin/pytest api/tests -q   # 45 pipeline tests
+.venv/bin/python corpus/run_corpus.py   # 3/3 layouts
 scripts/check_secrets.sh --all
 cd web && npm run dev       # web :3000, api :8000
 ```

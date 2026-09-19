@@ -65,3 +65,12 @@ coverage/
 .DS_Store
 *.swp
 .idea/
+
+# E2E screenshots and reports (web/e2e/*.mjs write here).
+web/e2e/out/
+web/e2e/node_modules/
+
+# Product spec with judging strategy and competitor notes. Agents read it
+# from docs/ on this machine; it is not published with the public repo.
+# Delete this line only if Shade decides to make it public.
+docs/FinePrint_SASEhack_2026_Master_Context.md

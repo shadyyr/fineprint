@@ -743,3 +743,25 @@ NOTES     "You cover" is a deliberate neutral (#4a5163): it's the remainder,
           a renewal term into a student requirement.
           Known gap: on phones the controls sit above the results, so the
           effect of a change is a scroll away. A pinned summary would fix it.
+
+
+### 2026-09-19 · 027 · Handoff for a fresh Claude session
+AGENT     claude-opus-5 (session c78670a9), per Shade's request
+STATE     done — this session is ending; a new Claude session continues the web/ lane
+TOUCHED   docs/HANDOFF.md (new), CLAUDE.md, docs/PLAN.md, .gitignore,
+          web/e2e/{audit,fouryear,headed}.mjs + README.md (new)
+VERIFY    e2e scripts parse (node --check); master-context path verified ignored
+SUMMARY   docs/HANDOFF.md is the single "pick up here" document: state at
+          106a75b, Shade's working preferences, the two-agent setup, Claude's
+          next queue (M10 polish, UI-S1 picker), decisions only Shade can make,
+          and every trap that already cost time. CLAUDE.md (auto-loaded) now
+          points there first. The browser checks that lived only in the
+          session scratchpad are preserved in web/e2e/ — including headed.mjs,
+          the only check that reproduced the upside-down letter.
+ACTIVE    none — web/ is free until the next Claude session claims it
+NEXT      New Claude session: read docs/HANDOFF.md §1 list, then M10 polish.
+          Codex: queue in TASKS.md is unchanged (S1 first).
+NOTES     The product spec (FinePrint_SASEhack_2026_Master_Context.md) belongs
+          in docs/ but was only ever a chat attachment. It is gitignored on
+          purpose (judging strategy, competitor notes, public repo); agents on
+          this machine can still read it once Shade drops it in.
