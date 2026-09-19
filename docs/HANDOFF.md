@@ -46,24 +46,75 @@ of [CHANGES.log](CHANGES.log).
 
 ---
 
-## 3. Two agents, one tree
+## 3. Working alongside Codex
+
+**Codex is a second AI agent (OpenAI's Codex) working this project in
+parallel with you, in the same VS Code window, on the same working tree.** It
+has its own lane and its own task queue. It can be away for stretches; its queue
+waits for it in `docs/TASKS.md` and it picks up from there when it's back.
 
 | Lane | Owner | Directories |
 |---|---|---|
-| Product | **Claude** | `web/` |
+| Product | **Claude** (you) | `web/` |
 | Pipeline | **Codex** | `api/`, `corpus/`, `scripts/` |
 | Shared | agreement first | `fixtures/`, `web/lib/schema.ts` ↔ `api/models.py`, `docs/`, root files |
 | Human | Shade | keys, Vercel settings, video, Devpost, slides |
 
-- Saving a file is visible to the other agent instantly. **`docs/CHANGES.log`
-  is the conversation between agents**: append-only, newest at the bottom, the
-  last entry is the current state. Append when you finish a unit of work.
-- There is no merge step, so two agents editing one file silently clobber each
-  other. Stay in your lane; announce in the log *before* touching a shared file.
-- **The schema is frozen**: `web/lib/schema.ts` and `api/models.py` describe the
-  same JSON. Changing one without the other breaks the other lane.
-- Only one agent runs `npm run dev` (ports 3000/8000) at a time. For local
-  checks use `next start -p 3100`.
+### You see each other's work live — no git involved
+- Every save lands on disk instantly for both agents. Nobody pulls, pushes or
+  fetches to coordinate; commits are checkpoints and the submission, not
+  messages.
+- **You will see Codex's edits appear while you work**: modified or new files
+  in `api/`, `corpus/`, `scripts/` in `git status`, and "file changed on disk"
+  notices for files you've read. That is Codex, working. **Never revert or
+  "fix" Codex's files.** If something in its lane looks wrong, say so in the
+  log and to Shade.
+- The flip side: with no merge step, two agents saving the same file means the
+  second write silently wins. Stay in `web/`, and announce in the log *before*
+  touching a shared file.
+
+### Where you talk to each other
+- **`docs/CHANGES.log` — the channel.** Append-only; newest at the bottom;
+  format at the top of the file. The **last entry is the current state** and
+  its `ACTIVE` line lists files an agent is holding.
+  - Read the tail before you start and after any pause.
+  - Append when you finish a unit of work or change plans — not batched at the
+    end, because Codex reads it while you work.
+  - **To ask Codex for something**, write an entry with a `NOTES` line that
+    starts `Codex: …`. Codex addresses you the same way (`Claude: …`).
+  - Entry numbers are **not unique** — both agents appending at once has
+    produced two 011s and two 019s. Use (last number + 1) and refer to entries
+    by number *and* title.
+- **`docs/TASKS.md` — the board.** Lanes, the eight two-agent rules, each
+  agent's queue, and cross-lane contracts (e.g. S1 ↔ UI-S1). Tick your own
+  boxes; don't edit Codex's section except to add work Shade asked for.
+- **When Shade asks you to give Codex work**: add it to Codex's queued
+  section in TASKS.md with any contract it needs, log it, then hand Shade a
+  short prompt for Codex that points at those two files rather than restating
+  everything. (Codex's current queue was assigned this way — log entry 025.)
+
+### Codex's status right now
+- Away at the time of writing. Latest Codex entry: **021** (Anthropic
+  references removed).
+- Its queue, in order: **S1** second demo sample in a different layout
+  (contract with your UI-S1 in TASKS.md) → **D1** Devpost draft → **V1** a real,
+  published sample letter → **P1** public API, prepared but not switched on
+  without Shade → M5c polish.
+- Uncommitted Codex work may be in the tree when you arrive. Leave it.
+
+### Commits across lanes
+Each agent commits its own lane by path. Shade has sometimes had one agent push
+both agents' commits ("Codex will push both"). Before any push, run
+`git log --oneline origin/main..HEAD` so you know whose commits are going out,
+and check every one for attribution trailers.
+
+### Housekeeping
+- Schema frozen: `web/lib/schema.ts` and `api/models.py` describe the same
+  JSON. Propose changes in the log and wait for Codex's reply.
+- Don't run Codex's test suite while it's mid-edit — you'd be testing
+  half-saved files.
+- Only one agent runs `npm run dev` (ports 3000/8000). Use `next start -p 3100`
+  for local checks.
 
 ---
 
@@ -79,8 +130,10 @@ of [CHANGES.log](CHANGES.log).
 | fix | Upside-down letter on real Macs (render into a fresh canvas each time) | `351c599` |
 | M8–M9 | Four-year projection + what-if simulator | `106a75b` |
 
-- `origin/main` is at `dcff426`. **`106a75b` is committed locally and not
-  pushed** as of this writing — check `git status -sb`.
+- **Not everything is pushed.** At the time of writing `origin/main` was at
+  `dcff426` with the four-year work (`106a75b`) and the handoff commits only
+  local, so the live site lacks the four-year section until they're pushed.
+  Always check `git status -sb` and `git log --oneline origin/main..HEAD`.
 - Tests: `cd web && npm test` → **31 pass**. `.venv/bin/pytest api/tests -q` →
   **45 pass**. `.venv/bin/python corpus/run_corpus.py` → **3/3**.
 
