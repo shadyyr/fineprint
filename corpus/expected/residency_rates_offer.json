@@ -1,0 +1,28 @@
+{
+  "institution_name": "Northbridge Public University",
+  "academic_year": "2026-2027",
+  "facts": [
+    {"kind": "cost", "label": "Tuition and required fees", "amount": 19800, "period": "annual", "category": "tuition", "role": "item"},
+    {"kind": "cost", "label": "Housing and meal plan", "amount": 12000, "period": "annual", "category": "housing", "role": "item"},
+    {"kind": "aid", "label": "Northbridge Student Success Grant", "amount": 8000, "period": "annual", "category": "grant", "aid_type": "gift", "role": "item"}
+  ],
+  "ambiguities": [
+    {
+      "kind": "amount_unclear",
+      "target_label": "Tuition and required fees",
+      "blocks_headline": true,
+      "severity": "material",
+      "options": [
+        {"value": "19800", "label": "In-state: $19,800 a year"},
+        {"value": "32800", "label": "Out-of-state: $32,800 a year"}
+      ]
+    }
+  ],
+  "missing_costs": [
+    {"category": "books", "label": "Books"},
+    {"category": "transportation", "label": "Transportation"},
+    {"category": "personal", "label": "Personal expenses"},
+    {"category": "health_insurance", "label": "Health insurance"}
+  ],
+  "unverified_claims": []
+}

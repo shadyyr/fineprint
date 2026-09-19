@@ -1,0 +1,142 @@
+{
+  "institution_name": "Northstar Polytechnic",
+  "academic_year": "2026-2027",
+  "items": [
+    {
+      "kind": "cost",
+      "label": "Tuition and required fees",
+      "amount": 30000,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l5", "quote": "Tuition and required fees"},
+        {"line_id": "p1_l6", "quote": "$30,000"}
+      ],
+      "confidence": 0.99,
+      "cost_category": "tuition",
+      "direct_cost": true
+    },
+    {
+      "kind": "cost",
+      "label": "Housing and meal plan",
+      "amount": 12000,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l7", "quote": "Housing and meal plan"},
+        {"line_id": "p1_l8", "quote": "$12,000"}
+      ],
+      "confidence": 0.99,
+      "cost_category": "housing",
+      "direct_cost": true
+    },
+    {
+      "kind": "cost",
+      "label": "Total estimated costs",
+      "amount": 42000,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l9", "quote": "Total estimated costs"},
+        {"line_id": "p1_l10", "quote": "$42,000"}
+      ],
+      "confidence": 0.99,
+      "cost_category": "subtotal",
+      "direct_cost": false,
+      "is_stated_total": true
+    },
+    {
+      "kind": "aid",
+      "label": "Northstar Access Grant",
+      "amount": 10000,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l12", "quote": "Northstar Access Grant"},
+        {"line_id": "p1_l13", "quote": "$10,000"}
+      ],
+      "confidence": 0.99,
+      "aid_category": "grant",
+      "aid_type": "gift"
+    },
+    {
+      "kind": "aid",
+      "label": "Total grants and scholarships",
+      "amount": 10000,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l14", "quote": "Total grants and scholarships"},
+        {"line_id": "p1_l15", "quote": "$10,000"}
+      ],
+      "confidence": 0.99,
+      "aid_category": "subtotal",
+      "aid_type": "unknown",
+      "is_stated_total": true
+    },
+    {
+      "kind": "cost",
+      "label": "Cost after grant aid",
+      "amount": 32000,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l17", "quote": "Cost after grant aid"},
+        {"line_id": "p1_l18", "quote": "$32,000"},
+        {"line_id": "p1_l23", "quote": "The $32,000 balance is the $42,000 annual cost after the $10,000 grant."}
+      ],
+      "confidence": 0.98,
+      "cost_category": "other",
+      "direct_cost": false
+    },
+    {
+      "kind": "cost",
+      "label": "Fall 2026 amount due after aid",
+      "amount": 16000,
+      "period": "semester",
+      "citations": [
+        {"line_id": "p1_l19", "quote": "Fall 2026 amount due after aid"},
+        {"line_id": "p1_l20", "quote": "$16,000"},
+        {"line_id": "p1_l24", "quote": "The Fall amount due and monthly installment are payment schedules for that same balance."}
+      ],
+      "confidence": 0.98,
+      "cost_category": "other",
+      "direct_cost": true
+    },
+    {
+      "kind": "cost",
+      "label": "Five monthly installments",
+      "amount": 3200,
+      "period": "term",
+      "citations": [
+        {"line_id": "p1_l21", "quote": "Five monthly installments"},
+        {"line_id": "p1_l22", "quote": "$3,200"},
+        {"line_id": "p1_l24", "quote": "The Fall amount due and monthly installment are payment schedules for that same balance."}
+      ],
+      "confidence": 0.98,
+      "cost_category": "other",
+      "direct_cost": true
+    }
+  ],
+  "ambiguities": [],
+  "missing_costs": [
+    {
+      "category": "books",
+      "label": "Books",
+      "reason": "Named as excluded with no amount.",
+      "citations": [{"line_id": "p1_l26", "quote": "Books, transportation, personal expenses, and health insurance are not included."}]
+    },
+    {
+      "category": "transportation",
+      "label": "Transportation",
+      "reason": "Named as excluded with no amount.",
+      "citations": [{"line_id": "p1_l26", "quote": "Books, transportation, personal expenses, and health insurance are not included."}]
+    },
+    {
+      "category": "personal",
+      "label": "Personal expenses",
+      "reason": "Named as excluded with no amount.",
+      "citations": [{"line_id": "p1_l26", "quote": "Books, transportation, personal expenses, and health insurance are not included."}]
+    },
+    {
+      "category": "health_insurance",
+      "label": "Health insurance",
+      "reason": "Named as excluded with no amount.",
+      "citations": [{"line_id": "p1_l26", "quote": "Books, transportation, personal expenses, and health insurance are not included."}]
+    }
+  ]
+}

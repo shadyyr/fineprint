@@ -150,6 +150,114 @@ institution-name casing and replay-only deliberately rejected claims.
 - [ ] **M5c-polish** (optional): semantic comparator for institution casing and
       replay-only rejected claims.
 
+#### Codex — second batch, queued 2026-09-19 evening (in priority order)
+
+Shade's direction: go live with P1 for the demo video, try real offer letters
+and debug from them, and handle in-state vs out-of-state costs. Codex has more
+usage than Claude right now, so Codex carries every task that isn't `web/`.
+
+- [x] **S1-FIX · Per-term rows are double-counted (do this first — it also
+      breaks live uploads of any Fall/Spring letter).** Summit stores each term
+      as its own item with `period: "semester"` ("Federal Pell Grant — Fall
+      2026", $3,200). The engine annualizes a semester amount x2, so Fall and
+      Spring each count as a full year: gift aid $33,000 instead of $16,500,
+      and costs and loans doubled the same way. There is no schema field that
+      says "this row is one specific term". **Contract (no schema change):**
+      - In `normalize.py`, when the letter lists the same award/cost as
+        explicitly term-labelled rows that together make up the academic year
+        (e.g. Fall + Spring), emit ONE item: `amount` = the sum, `period:
+        "annual"`, `provenance: "derived"`, `evidence_ids` = every term row's
+        evidence, label without the term suffix. Same for costs, loans,
+        work-study, and per-term rollups (rollup → `provenance: "derived"`;
+        the UI quotes only `provenance: "source"` rollups as "the letter says").
+      - If a term of the year is missing or the labels don't clearly
+        partition the year, don't sum and don't double: surface it (period
+        `unknown` + ambiguity), never guess.
+      - Regenerate Summit (ids will change — Claude doesn't depend on them) and
+        the per-term corpus expectation. Claude's engine test
+        `per-term letter (Summit sample)` expects gift aid **16,500** with the
+        $10,000 scholarship pending; unskip it when done
+        (`web/lib/engine/engine.test.ts`, one `it.skip`).
+      - Claude holds the UI-S1 push until this lands, so nobody can open
+        Summit with doubled numbers.
+- [ ] **P2 · Activate the public API with Shade — on Vercel, not Render.**
+      Shade approved going live (log 051) and chose Vercel (log 054): the API
+      becomes a **second Vercel project** from the same repo with Root
+      Directory `api/`, next to the existing `web/` project. Few paid runs;
+      Shade already has an OpenAI project key with a hard limit (in
+      `api/.env` locally — never read, print or commit it; Shade pastes it
+      into Vercel). `render.yaml` / Render are dropped.
+      **Codex prepares `api/` for Vercel:**
+      - FastAPI zero-config entrypoint (`app` in a supported entrypoint file),
+        `api/vercel.json` with `maxDuration: 120` for it and `excludeFiles`
+        for tests/fixtures; confirm the bundle (PyMuPDF etc.) fits Vercel's
+        Python size limit — build it and report the size.
+      - **Quota store → Upstash Redis** (Vercel Marketplace, free tier). The
+        disk SQLite can't work: Vercel functions have no persistent disk.
+        Same limits (per-client hourly + global daily), atomic counters with
+        expiry, HMAC'd client ids only. Read the env var names the Upstash
+        integration injects. If Redis isn't configured in public mode, fail
+        closed (503), never unlimited.
+      - Nothing writes to disk except `/tmp` if unavoidable.
+      - Update `docs/DEPLOY_API.md` to the Vercel steps; delete or mark
+        `render.yaml` unused.
+      **Contract with Claude's lane (web side already built, log 053):**
+      - The web route sends `X-FinePrint-Client-IP` and
+        `X-FinePrint-Proxy-Secret` (env `FINEPRINT_PROXY_SECRET`, same value in
+        both projects). **In public mode, `/analyze` rejects any request
+        without the correct secret** (constant-time compare) — so the API's
+        public URL only works through the website. Rate-limit by the
+        forwarded client IP.
+      - Every non-2xx body is `{"detail": "<one student-facing sentence>"}`;
+        429 carries `Retry-After` (seconds).
+      - The web waits up to 90 s; report measured live-read times on Vercel.
+      - Verify the disclosure's OpenAI claim in `web/app/StartActions.tsx`
+        ("doesn't train on it but may keep it for up to 30 days for abuse
+        checks") against OpenAI's current API data policy; tell Claude if off.
+      **Order with Shade:** deploy with `FINEPRINT_PUBLIC_API_ENABLED=false` →
+      connect Upstash → check `/health` and that `/analyze` is 503 → enable →
+      smoke-test with the synthetic Meridian PDF only (secret header, 429 +
+      Retry-After, counters survive a redeploy) → only after Claude has pushed
+      the web side (disclosure + headers), Shade sets `FINEPRINT_API_URL` and
+      `FINEPRINT_PROXY_SECRET` on the web project and redeploys.
+- [x] **H1 · Real-letter hardening (V1's finding).** Payment-schedule lines
+      (amount due per term, installments), "after aid" balances and similar
+      views of the same money must never become summable cost items. Add a
+      relationship guard (normalize/evidence) so they become non-summable or go
+      to `unverified_claims` with a reason. Regression: a **synthetic** corpus
+      letter reproducing the STAC pattern (committed, with replay response) +
+      the STAC PDF from its public URL (temporary, not committed). Corpus stays
+      green; Meridian and Summit fixtures unchanged (announce if not).
+- [ ] **H2 · Shade's real-letter debugging loop.** When Shade puts a real
+      letter in `uploads/` (gitignored), run it through the local live
+      pipeline and report verified / flagged / broken in the log **without any
+      personal data** (no names, IDs, addresses; describe rows generically).
+      Fix pipeline bugs in `api/`, and add a synthetic reproduction to the
+      corpus for each. Never commit the letter, its text or its extraction.
+- [x] **R1 · Residency / alternative rates (pipeline half).** Most award letters
+      already show the student's own rate. But a letter that lists both an
+      in-state and an out-of-state rate (or any mutually exclusive rate
+      schedules) must neither sum both nor pick one. **Contract (no schema
+      change — uses the existing `amount_unclear` kind):**
+      - Emit ONE cost item for that row; `amount` = the first option (it stays
+        excluded until answered).
+      - Emit an ambiguity: `kind: "amount_unclear"`, `target: "<cost_id>.amount"`,
+        `severity: "material"`, `blocks_headline: true`, options
+        `value` = the amount as a plain decimal string (`"19800"`), `label` like
+        `"In-state: $19,800 a year"`, `evidence_ids` covering every option row.
+        Each option amount must pass the evidence gate.
+      - If the letter states which rate applies, extract only that rate and
+        emit no ambiguity. Never infer residency from address or school.
+      - Add a synthetic corpus letter with both rates + expected output +
+        replay response.
+      Claude builds the engine/UI half (task UI-R1) against this contract.
+- [ ] **L1 · Live verification sweep** after each push that touches `web/`:
+      run `web/e2e/*.mjs` against https://fineprint-aid.vercel.app
+      (puppeteer-core installed outside the repo; see `web/e2e/README.md`),
+      including `headed.mjs` once, and log the results. Read-only for `web/`.
+- [ ] **HO · Refresh `docs/HANDOFF.md`** to the final state before submission
+      (announce first; shared doc).
+
 ### Claude — product
 
 - [x] **M6 · Financial X-Ray.** `XRayPanel` + bidirectional selection between
@@ -161,9 +269,16 @@ institution-name casing and replay-only deliberately rejected claims.
       region.
 - [x] **M10 · Uncertainty UI, accessibility, `SourceBadge`,** error and empty
       states. (CHANGES.log 029–032.)
-- [ ] **UI-S1 · Sample picker** reading `web/public/samples/index.json`.
-      Blocked on Codex's S1; falls back to the single Meridian sample until the
-      manifest exists.
+- [x] **UI-S1 · Sample picker** reading `web/public/samples/index.json`.
+      Built and tested (log 053); push held until Codex's S1-FIX.
+- [x] **UI-P2 · Web half of P2.** (log 053) Privacy disclosure shown before a real letter
+      can be uploaded; client-side size check under Vercel's ~4.5 MB request
+      limit; the analyze route's time limit on Vercel; forward the client-IP +
+      secret headers (contract in P2); 429 message with the wait time.
+- [x] **UI-R1 · Residency / alternative rates (engine + UI half).** (log 053) Engine
+      applies `<id>.amount` answers from `amount_unclear` ambiguities and
+      excludes the item until answered; the question renders like the period
+      question; tests.
 
 ### Shade — human
 
@@ -171,6 +286,11 @@ institution-name casing and replay-only deliberately rejected claims.
 - [x] M11: public README and deployed sample-demo URL.
 - [ ] M11: demo video, Devpost description, screenshots, and slides. Start by
       Sunday 18:00 PT.
+- [ ] P2 on Vercel (log 054): new Vercel project for `api/`, its env vars
+      (OpenAI key pasted by Shade), Upstash Redis from the Marketplace, then
+      `FINEPRINT_API_URL` + `FINEPRINT_PROXY_SECRET` on the web project.
+      Codex walks through it; only Shade touches keys and billing.
+- [ ] Real letters for H2: put them in `uploads/` (gitignored), never elsewhere.
 
 ## Cross-lane hazards
 

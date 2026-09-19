@@ -29,8 +29,15 @@ def test_cached_demo_sample_is_valid_and_byte_identical_to_public_copy():
     assert document.document.synthetic is True
     assert document.extraction_meta.source == "cached"
     assert document.extraction_meta.model == "gpt-5.6-sol"
-    assert len(document.costs) == 10
-    assert len(document.aid) == 13
+    assert len(document.costs) == 5
+    assert len(document.aid) == 7
+    assert all(item.period == "annual" for item in document.costs)
+    assert all(item.provenance == "derived" for item in document.costs)
+    assert sum(
+        item.amount
+        for item in document.aid
+        if item.role == "item" and item.aid_type == "gift" and item.period == "annual"
+    ) == 16_500
     assert len(document.ambiguities) == 1
     assert document.ambiguities[0].kind == "period_unknown"
     assert document.ambiguities[0].blocks_headline is True

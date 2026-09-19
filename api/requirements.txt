@@ -19,6 +19,9 @@ pymupdf>=1.24
 # Structured extraction.
 openai>=2.0
 
+# Serverless-safe, durable public quotas over Upstash's HTTPS API.
+upstash-redis>=1.4
+
 # Synthetic sample-letter generation (scripts/make_sample_pdf.py).
 reportlab>=4.2
 

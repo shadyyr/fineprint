@@ -1,0 +1,814 @@
+{
+  "schema_version": "1.0",
+  "document": {
+    "institution_name": "Meridian State University",
+    "academic_year": "2026-2027",
+    "currency": "USD",
+    "source_file_name": "sample_offer.pdf",
+    "synthetic": true,
+    "pages": [
+      {
+        "page": 1,
+        "width_pt": 612.0,
+        "height_pt": 792.0,
+        "rotation": 0
+      },
+      {
+        "page": 2,
+        "width_pt": 612.0,
+        "height_pt": 792.0,
+        "rotation": 0
+      }
+    ]
+  },
+  "extraction_meta": {
+    "source": "fixture",
+    "model": null,
+    "extracted_at": null,
+    "text_layer": {
+      "sufficient": true,
+      "char_count": 2853
+    },
+    "counts": {
+      "verified": 23,
+      "unverified": 0,
+      "costs": 6,
+      "aid": 7
+    }
+  },
+  "costs": [
+    {
+      "id": "cost_tuition",
+      "label": "Tuition and Fees",
+      "category": "tuition",
+      "amount": 34800,
+      "period": "annual",
+      "direct_cost": true,
+      "role": "item",
+      "provenance": "source",
+      "confidence": 0.98,
+      "evidence_ids": [
+        "ev_cost_tuition"
+      ]
+    },
+    {
+      "id": "cost_housing",
+      "label": "Housing (Standard Double Room)",
+      "category": "housing",
+      "amount": 9200,
+      "period": "annual",
+      "direct_cost": true,
+      "role": "item",
+      "provenance": "source",
+      "confidence": 0.98,
+      "evidence_ids": [
+        "ev_cost_housing"
+      ]
+    },
+    {
+      "id": "cost_meals",
+      "label": "Meal Plan (Silver, 14 meals per week)",
+      "category": "meals",
+      "amount": 6100,
+      "period": "annual",
+      "direct_cost": true,
+      "role": "item",
+      "provenance": "source",
+      "confidence": 0.98,
+      "evidence_ids": [
+        "ev_cost_meals"
+      ]
+    },
+    {
+      "id": "cost_direct_subtotal",
+      "label": "Direct Billed Costs",
+      "category": "subtotal",
+      "amount": 50100,
+      "period": "annual",
+      "direct_cost": true,
+      "role": "rollup",
+      "provenance": "source",
+      "confidence": 0.98,
+      "evidence_ids": [
+        "ev_cost_direct_subtotal"
+      ],
+      "components": [
+        "cost_tuition",
+        "cost_housing",
+        "cost_meals"
+      ]
+    },
+    {
+      "id": "cost_books",
+      "label": "Books and Supplies (estimated)",
+      "category": "books",
+      "amount": 1200,
+      "period": "annual",
+      "direct_cost": false,
+      "role": "item",
+      "provenance": "source",
+      "confidence": 0.98,
+      "evidence_ids": [
+        "ev_cost_books"
+      ]
+    },
+    {
+      "id": "cost_coa_total",
+      "label": "Total Cost of Attendance",
+      "category": "subtotal",
+      "amount": 51300,
+      "period": "annual",
+      "direct_cost": false,
+      "role": "rollup",
+      "provenance": "source",
+      "confidence": 0.98,
+      "evidence_ids": [
+        "ev_cost_coa_total"
+      ],
+      "components": [
+        "cost_direct_subtotal",
+        "cost_books"
+      ]
+    }
+  ],
+  "aid": [
+    {
+      "id": "aid_meridian_grant",
+      "label": "Meridian Opportunity Grant",
+      "category": "grant",
+      "aid_type": "gift",
+      "amount": 12400,
+      "period": "annual",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 0.97,
+      "evidence_ids": [
+        "ev_aid_meridian_grant"
+      ]
+    },
+    {
+      "id": "aid_pell",
+      "label": "Federal Pell Grant",
+      "category": "grant",
+      "aid_type": "gift",
+      "amount": 4500,
+      "period": "annual",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 0.97,
+      "evidence_ids": [
+        "ev_aid_pell"
+      ]
+    },
+    {
+      "id": "aid_merit",
+      "label": "Presidential Merit Scholarship",
+      "category": "scholarship",
+      "aid_type": "gift",
+      "amount": 20000,
+      "period": "unknown",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 0.88,
+      "evidence_ids": [
+        "ev_aid_merit",
+        "ev_cond_merit_1",
+        "ev_cond_merit_2",
+        "ev_cond_merit_3"
+      ],
+      "renewable": true,
+      "conditions": [
+        "Renewable for up to four years of undergraduate study",
+        "Maintain a cumulative grade point average of 3.25 or higher",
+        "Enroll in at least 12 credit hours per semester"
+      ],
+      "ambiguity_ids": [
+        "amb_merit_period"
+      ]
+    },
+    {
+      "id": "aid_sub_loan",
+      "label": "Federal Direct Subsidized Loan",
+      "category": "subsidized_loan",
+      "aid_type": "loan",
+      "amount": 3500,
+      "period": "annual",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 0.97,
+      "evidence_ids": [
+        "ev_aid_sub_loan",
+        "ev_cond_loans_1"
+      ]
+    },
+    {
+      "id": "aid_unsub_loan",
+      "label": "Federal Direct Unsubsidized Loan",
+      "category": "unsubsidized_loan",
+      "aid_type": "loan",
+      "amount": 2000,
+      "period": "annual",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 0.97,
+      "evidence_ids": [
+        "ev_aid_unsub_loan",
+        "ev_cond_loans_1"
+      ]
+    },
+    {
+      "id": "aid_work_study",
+      "label": "Federal Work-Study",
+      "category": "work_study",
+      "aid_type": "work_study",
+      "amount": 3000,
+      "period": "annual",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 0.97,
+      "evidence_ids": [
+        "ev_aid_work_study",
+        "ev_cond_ws_1",
+        "ev_cond_ws_2",
+        "ev_cond_ws_3"
+      ],
+      "conditions": [
+        "Earned as wages for hours actually worked",
+        "Not credited directly to the student account"
+      ]
+    },
+    {
+      "id": "aid_package_total",
+      "label": "Total Financial Aid Package",
+      "category": "subtotal",
+      "aid_type": "unknown",
+      "amount": 45400,
+      "period": "annual",
+      "role": "rollup",
+      "provenance": "source",
+      "confidence": 0.97,
+      "evidence_ids": [
+        "ev_aid_package_total",
+        "ev_headline_total"
+      ],
+      "components": [
+        "aid_meridian_grant",
+        "aid_pell",
+        "aid_merit",
+        "aid_sub_loan",
+        "aid_unsub_loan",
+        "aid_work_study"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev_cost_tuition",
+      "line_id": "p1_l13",
+      "page": 1,
+      "quote": "Tuition and Fees .............................................................. $34,800",
+      "bbox": [
+        0.14706,
+        0.4435,
+        0.61853,
+        0.46085
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      },
+      "amount_bbox": [
+        0.55948,
+        0.4435,
+        0.61853,
+        0.46085
+      ],
+      "amount_text": "$34,800"
+    },
+    {
+      "id": "ev_cost_housing",
+      "line_id": "p1_l14",
+      "page": 1,
+      "quote": "Housing (Standard Double Room) ..................................... $9,200",
+      "bbox": [
+        0.14706,
+        0.4637,
+        0.62028,
+        0.48105
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      },
+      "amount_bbox": [
+        0.57031,
+        0.4637,
+        0.62028,
+        0.48105
+      ],
+      "amount_text": "$9,200"
+    },
+    {
+      "id": "ev_cost_meals",
+      "line_id": "p1_l15",
+      "page": 1,
+      "quote": "Meal Plan (Silver, 14 meals per week) .............................. $6,100",
+      "bbox": [
+        0.14706,
+        0.4839,
+        0.61752,
+        0.50125
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      },
+      "amount_bbox": [
+        0.56755,
+        0.4839,
+        0.61752,
+        0.50125
+      ],
+      "amount_text": "$6,100"
+    },
+    {
+      "id": "ev_cost_direct_subtotal",
+      "line_id": "p1_l16",
+      "page": 1,
+      "quote": "Direct Billed Costs ......................................................... $50,100",
+      "bbox": [
+        0.14706,
+        0.50417,
+        0.6194,
+        0.52155
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      },
+      "amount_bbox": [
+        0.56034,
+        0.50417,
+        0.6194,
+        0.52155
+      ],
+      "amount_text": "$50,100"
+    },
+    {
+      "id": "ev_cost_books",
+      "line_id": "p1_l17",
+      "page": 1,
+      "quote": "Books and Supplies (estimated) ........................................ $1,200",
+      "bbox": [
+        0.14706,
+        0.52431,
+        0.61848,
+        0.54165
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      },
+      "amount_bbox": [
+        0.56851,
+        0.52431,
+        0.61848,
+        0.54165
+      ],
+      "amount_text": "$1,200"
+    },
+    {
+      "id": "ev_cost_coa_total",
+      "line_id": "p1_l18",
+      "page": 1,
+      "quote": "Total Cost of Attendance .............................................. $51,300",
+      "bbox": [
+        0.14706,
+        0.54457,
+        0.61752,
+        0.56196
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      },
+      "amount_bbox": [
+        0.55846,
+        0.54457,
+        0.61752,
+        0.56196
+      ],
+      "amount_text": "$51,300"
+    },
+    {
+      "id": "ev_aid_meridian_grant",
+      "line_id": "p1_l20",
+      "page": 1,
+      "quote": "Meridian Opportunity Grant ............................................. $12,400",
+      "bbox": [
+        0.14706,
+        0.62279,
+        0.61667,
+        0.64014
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      },
+      "amount_bbox": [
+        0.55761,
+        0.62279,
+        0.61667,
+        0.64014
+      ],
+      "amount_text": "$12,400"
+    },
+    {
+      "id": "ev_aid_pell",
+      "line_id": "p1_l21",
+      "page": 1,
+      "quote": "Federal Pell Grant .............................................................. $4,500",
+      "bbox": [
+        0.14706,
+        0.64299,
+        0.62033,
+        0.66034
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      },
+      "amount_bbox": [
+        0.57036,
+        0.64299,
+        0.62033,
+        0.66034
+      ],
+      "amount_text": "$4,500"
+    },
+    {
+      "id": "ev_aid_merit",
+      "line_id": "p1_l22",
+      "page": 1,
+      "quote": "Presidential Merit Scholarship ......................................... $20,000",
+      "bbox": [
+        0.14706,
+        0.66319,
+        0.61755,
+        0.68054
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      },
+      "amount_bbox": [
+        0.5585,
+        0.66319,
+        0.61755,
+        0.68054
+      ],
+      "amount_text": "$20,000"
+    },
+    {
+      "id": "ev_aid_sub_loan",
+      "line_id": "p1_l23",
+      "page": 1,
+      "quote": "Federal Direct Subsidized Loan ......................................... $3,500",
+      "bbox": [
+        0.14706,
+        0.6834,
+        0.62029,
+        0.70074
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      },
+      "amount_bbox": [
+        0.57033,
+        0.6834,
+        0.62029,
+        0.70074
+      ],
+      "amount_text": "$3,500"
+    },
+    {
+      "id": "ev_aid_unsub_loan",
+      "line_id": "p1_l24",
+      "page": 1,
+      "quote": "Federal Direct Unsubsidized Loan ..................................... $2,000",
+      "bbox": [
+        0.14706,
+        0.7036,
+        0.62028,
+        0.72095
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      },
+      "amount_bbox": [
+        0.57031,
+        0.7036,
+        0.62028,
+        0.72095
+      ],
+      "amount_text": "$2,000"
+    },
+    {
+      "id": "ev_aid_work_study",
+      "line_id": "p1_l25",
+      "page": 1,
+      "quote": "Federal Work-Study ........................................................... $3,000",
+      "bbox": [
+        0.14706,
+        0.7238,
+        0.6194,
+        0.74115
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      },
+      "amount_bbox": [
+        0.56943,
+        0.7238,
+        0.6194,
+        0.74115
+      ],
+      "amount_text": "$3,000"
+    },
+    {
+      "id": "ev_aid_package_total",
+      "line_id": "p1_l26",
+      "page": 1,
+      "quote": "Total Financial Aid Package ......................................... $45,400",
+      "bbox": [
+        0.14706,
+        0.74407,
+        0.61757,
+        0.76145
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      },
+      "amount_bbox": [
+        0.55851,
+        0.74407,
+        0.61757,
+        0.76145
+      ],
+      "amount_text": "$45,400"
+    },
+    {
+      "id": "ev_headline_total",
+      "line_id": "p1_l11",
+      "page": 1,
+      "quote": "TOTAL FINANCIAL AID PACKAGE:  $45,400",
+      "bbox": [
+        0.11765,
+        0.35987,
+        0.59301,
+        0.38421
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      },
+      "amount_bbox": [
+        0.51033,
+        0.35987,
+        0.59301,
+        0.38421
+      ],
+      "amount_text": "$45,400"
+    },
+    {
+      "id": "ev_cond_merit_1",
+      "line_id": "p2_l3",
+      "page": 2,
+      "quote": "The Presidential Merit Scholarship is renewable for up to four years of undergraduate",
+      "bbox": [
+        0.11765,
+        0.14804,
+        0.73338,
+        0.16539
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cond_merit_2",
+      "line_id": "p2_l4",
+      "page": 2,
+      "quote": "study, contingent upon maintaining a cumulative grade point average of 3.25 or higher",
+      "bbox": [
+        0.11765,
+        0.16572,
+        0.7398,
+        0.18307
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cond_merit_3",
+      "line_id": "p2_l5",
+      "page": 2,
+      "quote": "and enrollment in at least 12 credit hours per semester.",
+      "bbox": [
+        0.11765,
+        0.1834,
+        0.51724,
+        0.20074
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cond_loans_1",
+      "line_id": "p2_l7",
+      "page": 2,
+      "quote": "Federal Direct Loans must be repaid with interest. You are not required to accept the",
+      "bbox": [
+        0.11765,
+        0.244,
+        0.72977,
+        0.26135
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cond_ws_1",
+      "line_id": "p2_l11",
+      "page": 2,
+      "quote": "Federal Work-Study is an opportunity to earn wages through approved part-time",
+      "bbox": [
+        0.11765,
+        0.33996,
+        0.69614,
+        0.35731
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cond_ws_2",
+      "line_id": "p2_l12",
+      "page": 2,
+      "quote": "employment. Earnings are paid biweekly for hours actually worked and are not",
+      "bbox": [
+        0.11765,
+        0.35764,
+        0.68433,
+        0.37499
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cond_ws_3",
+      "line_id": "p2_l13",
+      "page": 2,
+      "quote": "credited directly to your student account.",
+      "bbox": [
+        0.11765,
+        0.37532,
+        0.411,
+        0.39266
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cond_missing_1",
+      "line_id": "p2_l15",
+      "page": 2,
+      "quote": "This offer reflects direct billed costs and estimated books and supplies. It does not",
+      "bbox": [
+        0.11765,
+        0.43592,
+        0.70979,
+        0.45327
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cond_missing_2",
+      "line_id": "p2_l16",
+      "page": 2,
+      "quote": "include transportation, personal expenses, or health insurance, which vary by student.",
+      "bbox": [
+        0.11765,
+        0.4536,
+        0.73886,
+        0.47095
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    }
+  ],
+  "ambiguities": [
+    {
+      "id": "amb_merit_period",
+      "kind": "period_unknown",
+      "target": "aid_merit.period",
+      "severity": "material",
+      "question": "Is the $20,000 Presidential Merit Scholarship awarded each year, or is it the total across four years?",
+      "why": "The award table gives no period, and the renewal language on page 2 says the scholarship is renewable for up to four years without stating whether $20,000 is the annual or the total amount.",
+      "options": [
+        {
+          "value": "annual",
+          "label": "$20,000 per year",
+          "detail": "Up to $80,000 across four years if renewed each year."
+        },
+        {
+          "value": "four_year_total",
+          "label": "$20,000 total over four years",
+          "detail": "About $5,000 per year."
+        }
+      ],
+      "blocks_headline": true,
+      "evidence_ids": [
+        "ev_aid_merit",
+        "ev_cond_merit_1",
+        "ev_cond_merit_2",
+        "ev_cond_merit_3"
+      ]
+    }
+  ],
+  "missing_costs": [
+    {
+      "id": "missing_transportation",
+      "category": "transportation",
+      "label": "Transportation",
+      "reason": "Named on page 2 as not included in this offer. No amount provided.",
+      "evidence_ids": [
+        "ev_cond_missing_2"
+      ]
+    },
+    {
+      "id": "missing_personal",
+      "category": "personal",
+      "label": "Personal expenses",
+      "reason": "Named on page 2 as not included in this offer. No amount provided.",
+      "evidence_ids": [
+        "ev_cond_missing_2"
+      ]
+    },
+    {
+      "id": "missing_health_insurance",
+      "category": "health_insurance",
+      "label": "Health insurance",
+      "reason": "Named on page 2 as not included in this offer. No amount provided.",
+      "evidence_ids": [
+        "ev_cond_missing_2"
+      ]
+    }
+  ],
+  "unverified_claims": []
+}

@@ -1,0 +1,91 @@
+{
+  "institution_name": "Northbridge Public University",
+  "academic_year": "2026-2027",
+  "items": [
+    {
+      "kind": "cost",
+      "label": "Tuition and required fees",
+      "amount": 19800,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l7", "quote": "In-state tuition and required fees - annual"},
+        {"line_id": "p1_l8", "quote": "$19,800"}
+      ],
+      "confidence": 0.98,
+      "cost_category": "tuition",
+      "direct_cost": true
+    },
+    {
+      "kind": "cost",
+      "label": "Housing and meal plan",
+      "amount": 12000,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l12", "quote": "Housing and meal plan"},
+        {"line_id": "p1_l13", "quote": "$12,000"}
+      ],
+      "confidence": 0.99,
+      "cost_category": "housing",
+      "direct_cost": true
+    },
+    {
+      "kind": "aid",
+      "label": "Northbridge Student Success Grant",
+      "amount": 8000,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l15", "quote": "Northbridge Student Success Grant - annual"},
+        {"line_id": "p1_l16", "quote": "$8,000"}
+      ],
+      "confidence": 0.99,
+      "aid_category": "grant",
+      "aid_type": "gift"
+    }
+  ],
+  "ambiguities": [
+    {
+      "kind": "amount_unclear",
+      "target_label": "Tuition and required fees",
+      "question": "Which annual tuition rate applies to this offer?",
+      "why": "The notice lists mutually exclusive in-state and out-of-state rates but does not identify the applicable residency classification.",
+      "options": [
+        {"value": "19800", "label": "In-state: $19,800 a year"},
+        {"value": "32800", "label": "Out-of-state: $32,800 a year"}
+      ],
+      "citations": [
+        {"line_id": "p1_l4", "quote": "This notice lists two mutually exclusive annual tuition rates; only one rate applies."},
+        {"line_id": "p1_l5", "quote": "The notice does not state which rate applies, and residency must not be inferred."},
+        {"line_id": "p1_l7", "quote": "In-state tuition and required fees - annual"},
+        {"line_id": "p1_l8", "quote": "$19,800"},
+        {"line_id": "p1_l9", "quote": "Out-of-state tuition and required fees - annual"},
+        {"line_id": "p1_l10", "quote": "$32,800"}
+      ]
+    }
+  ],
+  "missing_costs": [
+    {
+      "category": "books",
+      "label": "Books",
+      "reason": "Named as excluded with no amount.",
+      "citations": [{"line_id": "p1_l17", "quote": "Books, transportation, personal expenses, and health insurance are not included."}]
+    },
+    {
+      "category": "transportation",
+      "label": "Transportation",
+      "reason": "Named as excluded with no amount.",
+      "citations": [{"line_id": "p1_l17", "quote": "Books, transportation, personal expenses, and health insurance are not included."}]
+    },
+    {
+      "category": "personal",
+      "label": "Personal expenses",
+      "reason": "Named as excluded with no amount.",
+      "citations": [{"line_id": "p1_l17", "quote": "Books, transportation, personal expenses, and health insurance are not included."}]
+    },
+    {
+      "category": "health_insurance",
+      "label": "Health insurance",
+      "reason": "Named as excluded with no amount.",
+      "citations": [{"line_id": "p1_l17", "quote": "Books, transportation, personal expenses, and health insurance are not included."}]
+    }
+  ]
+}

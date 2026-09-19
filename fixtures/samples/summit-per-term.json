@@ -26,36 +26,23 @@
     "counts": {
       "verified": 76,
       "unverified": 0,
-      "costs": 10,
-      "aid": 13
+      "costs": 5,
+      "aid": 7
     }
   },
   "costs": [
     {
-      "id": "cost_tuition_fall_2026",
-      "label": "Tuition — Fall 2026",
-      "amount": 14000.0,
-      "period": "semester",
+      "id": "cost_tuition",
+      "label": "Tuition",
+      "amount": 28400.0,
+      "period": "annual",
       "role": "item",
-      "provenance": "source",
+      "provenance": "derived",
       "confidence": 1.0,
       "evidence_ids": [
         "ev_cost_1",
         "ev_cost_2",
-        "ev_cost_3"
-      ],
-      "category": "tuition",
-      "direct_cost": true
-    },
-    {
-      "id": "cost_tuition_spring_2027",
-      "label": "Tuition — Spring 2027",
-      "amount": 14400.0,
-      "period": "semester",
-      "role": "item",
-      "provenance": "source",
-      "confidence": 1.0,
-      "evidence_ids": [
+        "ev_cost_3",
         "ev_cost_4",
         "ev_cost_5",
         "ev_cost_6"
@@ -64,30 +51,17 @@
       "direct_cost": true
     },
     {
-      "id": "cost_required_fees_fall_2026",
-      "label": "Required fees — Fall 2026",
-      "amount": 650.0,
-      "period": "semester",
+      "id": "cost_required_fees",
+      "label": "Required fees",
+      "amount": 1325.0,
+      "period": "annual",
       "role": "item",
-      "provenance": "source",
+      "provenance": "derived",
       "confidence": 1.0,
       "evidence_ids": [
         "ev_cost_7",
         "ev_cost_8",
-        "ev_cost_9"
-      ],
-      "category": "fees",
-      "direct_cost": true
-    },
-    {
-      "id": "cost_required_fees_spring_2027",
-      "label": "Required fees — Spring 2027",
-      "amount": 675.0,
-      "period": "semester",
-      "role": "item",
-      "provenance": "source",
-      "confidence": 1.0,
-      "evidence_ids": [
+        "ev_cost_9",
         "ev_cost_10",
         "ev_cost_11",
         "ev_cost_12"
@@ -96,30 +70,17 @@
       "direct_cost": true
     },
     {
-      "id": "cost_campus_housing_fall_2026",
-      "label": "Campus housing — Fall 2026",
-      "amount": 4800.0,
-      "period": "semester",
+      "id": "cost_campus_housing",
+      "label": "Campus housing",
+      "amount": 9700.0,
+      "period": "annual",
       "role": "item",
-      "provenance": "source",
+      "provenance": "derived",
       "confidence": 1.0,
       "evidence_ids": [
         "ev_cost_13",
         "ev_cost_14",
-        "ev_cost_15"
-      ],
-      "category": "housing",
-      "direct_cost": true
-    },
-    {
-      "id": "cost_campus_housing_spring_2027",
-      "label": "Campus housing — Spring 2027",
-      "amount": 4900.0,
-      "period": "semester",
-      "role": "item",
-      "provenance": "source",
-      "confidence": 1.0,
-      "evidence_ids": [
+        "ev_cost_15",
         "ev_cost_16",
         "ev_cost_17",
         "ev_cost_18"
@@ -128,30 +89,17 @@
       "direct_cost": true
     },
     {
-      "id": "cost_meal_plan_fall_2026",
-      "label": "Meal plan — Fall 2026",
-      "amount": 2900.0,
-      "period": "semester",
+      "id": "cost_meal_plan",
+      "label": "Meal plan",
+      "amount": 5850.0,
+      "period": "annual",
       "role": "item",
-      "provenance": "source",
+      "provenance": "derived",
       "confidence": 1.0,
       "evidence_ids": [
         "ev_cost_19",
         "ev_cost_20",
-        "ev_cost_21"
-      ],
-      "category": "meals",
-      "direct_cost": true
-    },
-    {
-      "id": "cost_meal_plan_spring_2027",
-      "label": "Meal plan — Spring 2027",
-      "amount": 2950.0,
-      "period": "semester",
-      "role": "item",
-      "provenance": "source",
-      "confidence": 1.0,
-      "evidence_ids": [
+        "ev_cost_21",
         "ev_cost_22",
         "ev_cost_23",
         "ev_cost_24"
@@ -160,45 +108,26 @@
       "direct_cost": true
     },
     {
-      "id": "cost_term_charges_fall_2026",
-      "label": "Term Charges — Fall 2026",
-      "amount": 22350.0,
-      "period": "semester",
+      "id": "cost_term_charges",
+      "label": "Term Charges",
+      "amount": 45275.0,
+      "period": "annual",
       "role": "rollup",
-      "provenance": "source",
+      "provenance": "derived",
       "confidence": 1.0,
       "evidence_ids": [
         "ev_cost_25",
         "ev_cost_26",
-        "ev_cost_27"
-      ],
-      "components": [
-        "cost_tuition_fall_2026",
-        "cost_required_fees_fall_2026",
-        "cost_campus_housing_fall_2026",
-        "cost_meal_plan_fall_2026"
-      ],
-      "category": "subtotal",
-      "direct_cost": true
-    },
-    {
-      "id": "cost_term_charges_spring_2027",
-      "label": "Term Charges — Spring 2027",
-      "amount": 22925.0,
-      "period": "semester",
-      "role": "rollup",
-      "provenance": "source",
-      "confidence": 1.0,
-      "evidence_ids": [
+        "ev_cost_27",
         "ev_cost_28",
         "ev_cost_29",
         "ev_cost_30"
       ],
       "components": [
-        "cost_tuition_spring_2027",
-        "cost_required_fees_spring_2027",
-        "cost_campus_housing_spring_2027",
-        "cost_meal_plan_spring_2027"
+        "cost_tuition",
+        "cost_required_fees",
+        "cost_campus_housing",
+        "cost_meal_plan"
       ],
       "category": "subtotal",
       "direct_cost": true
@@ -206,30 +135,17 @@
   ],
   "aid": [
     {
-      "id": "aid_federal_pell_grant_fall_2026",
-      "label": "Federal Pell Grant — Fall 2026",
-      "amount": 3200.0,
-      "period": "semester",
+      "id": "aid_federal_pell_grant",
+      "label": "Federal Pell Grant",
+      "amount": 6500.0,
+      "period": "annual",
       "role": "item",
-      "provenance": "source",
+      "provenance": "derived",
       "confidence": 1.0,
       "evidence_ids": [
         "ev_aid_31",
         "ev_aid_32",
-        "ev_aid_33"
-      ],
-      "category": "grant",
-      "aid_type": "gift"
-    },
-    {
-      "id": "aid_federal_pell_grant_spring_2027",
-      "label": "Federal Pell Grant — Spring 2027",
-      "amount": 3300.0,
-      "period": "semester",
-      "role": "item",
-      "provenance": "source",
-      "confidence": 1.0,
-      "evidence_ids": [
+        "ev_aid_33",
         "ev_aid_34",
         "ev_aid_35",
         "ev_aid_36"
@@ -238,30 +154,17 @@
       "aid_type": "gift"
     },
     {
-      "id": "aid_summit_stem_grant_fall_2026",
-      "label": "Summit STEM Grant — Fall 2026",
-      "amount": 4900.0,
-      "period": "semester",
+      "id": "aid_summit_stem_grant",
+      "label": "Summit STEM Grant",
+      "amount": 10000.0,
+      "period": "annual",
       "role": "item",
-      "provenance": "source",
+      "provenance": "derived",
       "confidence": 1.0,
       "evidence_ids": [
         "ev_aid_37",
         "ev_aid_38",
-        "ev_aid_39"
-      ],
-      "category": "grant",
-      "aid_type": "gift"
-    },
-    {
-      "id": "aid_summit_stem_grant_spring_2027",
-      "label": "Summit STEM Grant — Spring 2027",
-      "amount": 5100.0,
-      "period": "semester",
-      "role": "item",
-      "provenance": "source",
-      "confidence": 1.0,
-      "evidence_ids": [
+        "ev_aid_39",
         "ev_aid_40",
         "ev_aid_41",
         "ev_aid_42"
@@ -270,30 +173,17 @@
       "aid_type": "gift"
     },
     {
-      "id": "aid_direct_subsidized_loan_fall_2026",
-      "label": "Direct Subsidized Loan — Fall 2026",
-      "amount": 1700.0,
-      "period": "semester",
+      "id": "aid_direct_subsidized_loan",
+      "label": "Direct Subsidized Loan",
+      "amount": 3500.0,
+      "period": "annual",
       "role": "item",
-      "provenance": "source",
+      "provenance": "derived",
       "confidence": 1.0,
       "evidence_ids": [
         "ev_aid_43",
         "ev_aid_44",
-        "ev_aid_45"
-      ],
-      "category": "subsidized_loan",
-      "aid_type": "loan"
-    },
-    {
-      "id": "aid_direct_subsidized_loan_spring_2027",
-      "label": "Direct Subsidized Loan — Spring 2027",
-      "amount": 1800.0,
-      "period": "semester",
-      "role": "item",
-      "provenance": "source",
-      "confidence": 1.0,
-      "evidence_ids": [
+        "ev_aid_45",
         "ev_aid_46",
         "ev_aid_47",
         "ev_aid_48"
@@ -302,30 +192,17 @@
       "aid_type": "loan"
     },
     {
-      "id": "aid_direct_unsubsidized_loan_fall_2026",
-      "label": "Direct Unsubsidized Loan — Fall 2026",
-      "amount": 950.0,
-      "period": "semester",
+      "id": "aid_direct_unsubsidized_loan",
+      "label": "Direct Unsubsidized Loan",
+      "amount": 2000.0,
+      "period": "annual",
       "role": "item",
-      "provenance": "source",
+      "provenance": "derived",
       "confidence": 1.0,
       "evidence_ids": [
         "ev_aid_49",
         "ev_aid_50",
-        "ev_aid_51"
-      ],
-      "category": "unsubsidized_loan",
-      "aid_type": "loan"
-    },
-    {
-      "id": "aid_direct_unsubsidized_loan_spring_2027",
-      "label": "Direct Unsubsidized Loan — Spring 2027",
-      "amount": 1050.0,
-      "period": "semester",
-      "role": "item",
-      "provenance": "source",
-      "confidence": 1.0,
-      "evidence_ids": [
+        "ev_aid_51",
         "ev_aid_52",
         "ev_aid_53",
         "ev_aid_54"
@@ -334,35 +211,18 @@
       "aid_type": "loan"
     },
     {
-      "id": "aid_federal_work_study_fall_2026",
-      "label": "Federal Work-Study — Fall 2026",
-      "amount": 1100.0,
-      "period": "semester",
+      "id": "aid_federal_work_study",
+      "label": "Federal Work-Study",
+      "amount": 2400.0,
+      "period": "annual",
       "role": "item",
-      "provenance": "source",
+      "provenance": "derived",
       "confidence": 1.0,
       "evidence_ids": [
         "ev_aid_55",
         "ev_aid_56",
         "ev_aid_57",
-        "ev_aid_58"
-      ],
-      "category": "work_study",
-      "aid_type": "work_study",
-      "conditions": [
-        "Earned as wages for hours worked.",
-        "Does not reduce the bill automatically."
-      ]
-    },
-    {
-      "id": "aid_federal_work_study_spring_2027",
-      "label": "Federal Work-Study — Spring 2027",
-      "amount": 1300.0,
-      "period": "semester",
-      "role": "item",
-      "provenance": "source",
-      "confidence": 1.0,
-      "evidence_ids": [
+        "ev_aid_58",
         "ev_aid_59",
         "ev_aid_60",
         "ev_aid_61",
@@ -376,46 +236,26 @@
       ]
     },
     {
-      "id": "aid_term_aid_package_fall_2026",
-      "label": "Term Aid Package — Fall 2026",
-      "amount": 11850.0,
-      "period": "semester",
+      "id": "aid_term_aid_package",
+      "label": "Term Aid Package",
+      "amount": 24400.0,
+      "period": "annual",
       "role": "rollup",
-      "provenance": "source",
+      "provenance": "derived",
       "confidence": 1.0,
       "evidence_ids": [
         "ev_aid_63",
         "ev_aid_64",
-        "ev_aid_65"
-      ],
-      "components": [
-        "aid_federal_pell_grant_fall_2026",
-        "aid_summit_stem_grant_fall_2026",
-        "aid_direct_subsidized_loan_fall_2026",
-        "aid_direct_unsubsidized_loan_fall_2026",
-        "aid_federal_work_study_fall_2026"
-      ],
-      "category": "subtotal",
-      "aid_type": "unknown"
-    },
-    {
-      "id": "aid_term_aid_package_spring_2027",
-      "label": "Term Aid Package — Spring 2027",
-      "amount": 12550.0,
-      "period": "semester",
-      "role": "rollup",
-      "provenance": "source",
-      "confidence": 1.0,
-      "evidence_ids": [
+        "ev_aid_65",
         "ev_aid_66",
         "ev_aid_67",
         "ev_aid_68"
       ],
       "components": [
-        "aid_federal_pell_grant_fall_2026",
-        "aid_federal_pell_grant_spring_2027",
-        "aid_summit_stem_grant_spring_2027",
-        "aid_direct_unsubsidized_loan_fall_2026"
+        "aid_summit_stem_grant",
+        "aid_direct_unsubsidized_loan",
+        "aid_federal_work_study",
+        "aid_technology_achievement_scholarship"
       ],
       "category": "subtotal",
       "aid_type": "unknown"

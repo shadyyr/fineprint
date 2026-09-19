@@ -1,0 +1,22 @@
+{
+  "institution_name": "Northstar Polytechnic",
+  "academic_year": "2026-2027",
+  "facts": [
+    {"kind": "cost", "label": "Tuition and required fees", "amount": 30000, "period": "annual", "category": "tuition", "role": "item"},
+    {"kind": "cost", "label": "Housing and meal plan", "amount": 12000, "period": "annual", "category": "housing", "role": "item"},
+    {"kind": "cost", "label": "Total estimated costs", "amount": 42000, "period": "annual", "category": "subtotal", "role": "rollup"},
+    {"kind": "cost", "label": "Cost after grant aid", "amount": 32000, "period": "annual", "category": "other", "role": "rollup"},
+    {"kind": "cost", "label": "Fall 2026 amount due after aid", "amount": 16000, "period": "semester", "category": "other", "role": "rollup"},
+    {"kind": "cost", "label": "Five monthly installments", "amount": 3200, "period": "term", "category": "other", "role": "rollup"},
+    {"kind": "aid", "label": "Northstar Access Grant", "amount": 10000, "period": "annual", "category": "grant", "aid_type": "gift", "role": "item"},
+    {"kind": "aid", "label": "Total grants and scholarships", "amount": 10000, "period": "annual", "category": "subtotal", "aid_type": "unknown", "role": "rollup"}
+  ],
+  "ambiguities": [],
+  "missing_costs": [
+    {"category": "books", "label": "Books"},
+    {"category": "transportation", "label": "Transportation"},
+    {"category": "personal", "label": "Personal expenses"},
+    {"category": "health_insurance", "label": "Health insurance"}
+  ],
+  "unverified_claims": []
+}

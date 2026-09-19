@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -40,7 +41,7 @@ from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv(API / ".env")
 
-from evidence import all_amounts  # noqa: E402
+from evidence import all_amounts, parse_amount  # noqa: E402
 from extract import (  # noqa: E402
     ReplayExtractor,
     available,
@@ -74,6 +75,7 @@ def _fact_record(kind: str, item: Any) -> dict[str, Any]:
         "period": item.period,
         "category": item.category,
         "role": item.role,
+        "provenance": item.provenance,
     }
     if kind == "cost":
         record["direct_cost"] = item.direct_cost
@@ -92,7 +94,7 @@ def _actual_facts(doc: CanonicalDocument) -> list[dict[str, Any]]:
 
 
 def _target_label(doc: CanonicalDocument, target: str) -> str:
-    item_id = target.removesuffix(".period")
+    item_id = target.removesuffix(".period").removesuffix(".amount")
     for item in (*doc.costs, *doc.aid):
         if item.id == item_id:
             return item.label
@@ -105,6 +107,11 @@ def _actual_ambiguities(doc: CanonicalDocument) -> list[dict[str, Any]]:
             "kind": ambiguity.kind,
             "target_label": _target_label(doc, ambiguity.target),
             "blocks_headline": ambiguity.blocks_headline,
+            "severity": ambiguity.severity,
+            "options": [
+                {"value": option.value, "label": option.label}
+                for option in ambiguity.options
+            ],
         }
         for ambiguity in doc.ambiguities
     ]
@@ -216,11 +223,36 @@ def invariant_violations(
     if duplicates:
         problems.append(f"duplicate canonical ids: {', '.join(duplicates)}")
 
-    if len(facts) + len(doc.unverified_claims) != len(extraction.items):
+    referenced_evidence = {
+        evidence_id
+        for item in facts
+        for evidence_id in item.evidence_ids
+    }
+    verified_claim_keys = {
+        (row.line_id, amount)
+        for row in doc.evidence
+        if row.id in referenced_evidence
+        and row.verification.amount_matched
+        and row.amount_text is not None
+        and (amount := parse_amount(row.amount_text)) is not None
+    }
+    rejected_claims = {
+        (row.claimed_label, row.claimed_amount)
+        for row in doc.unverified_claims
+    }
+    unaccounted = [
+        item.label
+        for item in extraction.items
+        if (item.label, item.amount) not in rejected_claims
+        and not any(
+            (citation.line_id, item.amount) in verified_claim_keys
+            for citation in item.citations
+        )
+    ]
+    if unaccounted:
         problems.append(
-            "model item accounting mismatch: "
-            f"{len(extraction.items)} claims became {len(facts)} facts and "
-            f"{len(doc.unverified_claims)} unverified claims"
+            "model item accounting mismatch; neither admitted nor rejected: "
+            + ", ".join(unaccounted)
         )
 
     for item in facts:
@@ -239,6 +271,18 @@ def invariant_violations(
         amount_records = [row for row in records if row.verification.amount_matched]
         if not amount_records:
             problems.append(f"{item.label}: no cited evidence verifies its amount")
+        elif item.provenance == "derived":
+            source_amounts = [
+                amount
+                for row in amount_records
+                if row.amount_text is not None
+                and (amount := parse_amount(row.amount_text)) is not None
+            ]
+            if not math.isclose(sum(source_amounts), item.amount, abs_tol=0.005):
+                problems.append(
+                    f"{item.label}: derived amount {item.amount:g} does not equal "
+                    f"verified source sum {sum(source_amounts):g}"
+                )
         elif not any(
             any(math.isclose(value, item.amount, abs_tol=0.005) for value in all_amounts(row.quote))
             for row in amount_records
@@ -262,6 +306,56 @@ def invariant_violations(
         if item.period == "unknown" and target not in ambiguity_targets:
             problems.append(f"{item.label}: unknown period lacks a blocking ambiguity")
 
+    fact_by_id = {item.id: item for item in facts}
+    for ambiguity in doc.ambiguities:
+        if ambiguity.kind != "amount_unclear":
+            continue
+        if not ambiguity.target.endswith(".amount"):
+            problems.append(f"{ambiguity.id}: amount choice does not target .amount")
+            continue
+        target_id = ambiguity.target.removesuffix(".amount")
+        target_item = fact_by_id.get(target_id)
+        if target_item is None:
+            problems.append(f"{ambiguity.id}: amount choice target does not exist")
+            continue
+        if ambiguity.severity != "material" or not ambiguity.blocks_headline:
+            problems.append(f"{ambiguity.id}: amount choice is not material and blocking")
+        if not ambiguity.options or any(
+            not re.fullmatch(r"-?\d+(?:\.\d+)?", option.value)
+            for option in ambiguity.options
+        ):
+            problems.append(f"{ambiguity.id}: amount options are not plain decimals")
+            continue
+        option_amounts = [float(option.value) for option in ambiguity.options]
+        if not math.isclose(target_item.amount, option_amounts[0], abs_tol=0.005):
+            problems.append(
+                f"{ambiguity.id}: item amount is not the first displayed option"
+            )
+        ambiguity_records = [
+            evidence_by_id[evidence_id]
+            for evidence_id in ambiguity.evidence_ids
+            if evidence_id in evidence_by_id
+        ]
+        verified_option_amounts = {
+            amount
+            for row in ambiguity_records
+            if row.verification.amount_matched
+            and row.amount_text is not None
+            and (amount := parse_amount(row.amount_text)) is not None
+        }
+        missing_options = [
+            amount
+            for amount in option_amounts
+            if not any(
+                math.isclose(amount, verified, abs_tol=0.005)
+                for verified in verified_option_amounts
+            )
+        ]
+        if missing_options:
+            problems.append(
+                f"{ambiguity.id}: unverified amount options {missing_options}"
+            )
+
     loan_categories = {
         "subsidized_loan",
         "unsubsidized_loan",
@@ -276,7 +370,6 @@ def invariant_violations(
         if item.category == "work_study" and item.aid_type != "work_study":
             problems.append(f"{item.label}: work-study category classified as {item.aid_type}")
 
-    fact_by_id = {item.id: item for item in facts}
     for item in facts:
         if not item.components:
             continue
@@ -348,7 +441,24 @@ def run_letter(name: str, *, live: bool) -> LetterReport:
 
     extracted_items = len(doc.costs) + len(doc.aid)
     model_claims = len(extraction.items)
-    verified_percent = 100.0 if model_claims == 0 else extracted_items / model_claims * 100
+    referenced_evidence = {
+        evidence_id
+        for item in (*doc.costs, *doc.aid)
+        for evidence_id in item.evidence_ids
+    }
+    verified_keys = {
+        (row.line_id, amount)
+        for row in doc.evidence
+        if row.id in referenced_evidence
+        and row.verification.amount_matched
+        and row.amount_text is not None
+        and (amount := parse_amount(row.amount_text)) is not None
+    }
+    verified_claims = sum(
+        any((citation.line_id, item.amount) in verified_keys for citation in item.citations)
+        for item in extraction.items
+    )
+    verified_percent = 100.0 if model_claims == 0 else verified_claims / model_claims * 100
     return LetterReport(
         name=name,
         mode="live" if live else "replay",

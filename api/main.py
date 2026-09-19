@@ -13,14 +13,18 @@ Run:  ../.venv/bin/uvicorn main:app --reload --port 8000
 
 from __future__ import annotations
 
+import hmac
+import ipaddress
 import logging
-import sqlite3
 from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 API_DIR = Path(__file__).resolve().parent
 load_dotenv(API_DIR / ".env")
@@ -31,15 +35,15 @@ from guardrails import (  # noqa: E402
     QuotaExceeded,
     public_api_enabled,
     public_mode,
+    proxy_secret,
+    quota_configured,
     quota_store,
-    trust_proxy_headers,
 )
 from ingest import IngestResult, ingest  # noqa: E402
 from models import CanonicalDocument  # noqa: E402
 from pipeline import analyze_document  # noqa: E402
 
-ROOT = API_DIR.parent
-FIXTURE = ROOT / "fixtures" / "sample_offer.json"
+FIXTURE = API_DIR / "sample_offer.json"
 
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
 logger = logging.getLogger("fineprint.api")
@@ -54,6 +58,48 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def student_http_error(
+    _request: Request, exc: StarletteHTTPException
+) -> JSONResponse:
+    """Keep every HTTP error on the small, student-facing JSON contract."""
+    defaults = {
+        404: "That page is not available; please return to FinePrint and try again.",
+        405: "That request is not supported; please return to FinePrint and try again.",
+    }
+    detail = exc.detail if isinstance(exc.detail, str) else None
+    message = detail or defaults.get(
+        exc.status_code,
+        "FinePrint could not complete this request; please try again later.",
+    )
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": " ".join(message.split())},
+        headers=exc.headers,
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def student_validation_error(
+    _request: Request, _exc: RequestValidationError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=422,
+        content={"detail": "Please attach one PDF using the file field."},
+    )
+
+
+@app.exception_handler(Exception)
+async def student_unexpected_error(_request: Request, _exc: Exception) -> JSONResponse:
+    logger.error("request_failed category=unexpected")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "FinePrint could not complete this request; please try again later."
+        },
+    )
 
 
 def load_fixture() -> CanonicalDocument:
@@ -75,6 +121,8 @@ def health() -> dict[str, object]:
         "fixture_available": FIXTURE.exists(),
         "live_extraction": extraction_enabled,
         "public_mode": public_mode(),
+        "proxy_identity_configured": bool(proxy_secret()) if public_mode() else False,
+        "quota_store_configured": quota_configured() if public_mode() else False,
         "model": extraction.DEFAULT_MODEL if extraction_enabled else None,
         "fallback_model": (
             extraction.FALLBACK_MODEL if extraction_enabled else None
@@ -124,7 +172,7 @@ async def _read_pdf(file: UploadFile) -> bytes:
     if not payload.startswith(b"%PDF"):
         raise HTTPException(
             status_code=415,
-            detail="That file is not a PDF. FinePrint reads text-based PDF offers.",
+            detail="Please upload a text-based PDF offer.",
         )
     return payload
 
@@ -141,9 +189,8 @@ def _require_text_layer(result: IngestResult) -> None:
     raise HTTPException(
         status_code=422,
         detail=(
-            "This looks like a scanned document. FinePrint needs a text-based PDF "
-            "so it can trace every figure back to the words on the page. Try the "
-            "sample offer, or export the letter as a text PDF."
+            "Please upload a text-based PDF so FinePrint can trace each figure, "
+            "or try a sample offer."
         ),
     )
 
@@ -159,7 +206,10 @@ async def debug_ingest(file: UploadFile = File(...)) -> DebugIngest:
     if public_mode():
         # This route returns a document's raw text and exists only for local
         # coordinate debugging. It must never be part of the public surface.
-        raise HTTPException(status_code=404, detail="Not found")
+        raise HTTPException(
+            status_code=404,
+            detail="That route is not available; please return to FinePrint.",
+        )
 
     payload = await _read_pdf(file)
     result = ingest(payload, render_images=False)
@@ -182,12 +232,35 @@ async def debug_ingest(file: UploadFile = File(...)) -> DebugIngest:
     )
 
 
-def _client_address(request: Request) -> str:
-    """Get the address to hash for rate limiting, without logging it."""
-    if trust_proxy_headers():
-        forwarded = request.headers.get("x-forwarded-for")
-        if forwarded:
-            return forwarded.split(",", maxsplit=1)[0].strip()
+def _client_address(request: Request, *, require_authenticated: bool = False) -> str:
+    """Get the address to hash, trusting web identity only when authenticated.
+
+    The API URL is public, so a bare forwarding header is attacker-controlled.
+    Public analysis requires the custom client address and the matching shared
+    secret. Local/private callers may fall back to the ASGI socket address.
+    """
+    expected = proxy_secret()
+    if require_authenticated and not expected:
+        raise GuardrailConfigurationError(
+            "FINEPRINT_PROXY_SECRET is required in public mode"
+        )
+    supplied = request.headers.get("x-fineprint-proxy-secret", "")
+    claimed = request.headers.get("x-fineprint-client-ip", "").strip()
+    if (
+        expected
+        and supplied
+        and claimed
+        and hmac.compare_digest(supplied.encode(), expected.encode())
+    ):
+        try:
+            return str(ipaddress.ip_address(claimed))
+        except ValueError:
+            pass
+    if require_authenticated:
+        raise HTTPException(
+            status_code=403,
+            detail="Please start live reading from the FinePrint website.",
+        )
     if request.client:
         return request.client.host
     return "unknown"
@@ -196,13 +269,13 @@ def _client_address(request: Request) -> str:
 def _quota_error(exc: QuotaExceeded) -> HTTPException:
     if exc.scope == "daily":
         detail = (
-            "FinePrint has reached today's live-reading limit. "
-            "Please try the sample offer or come back tomorrow."
+            "FinePrint has reached today's live-reading limit; please try a "
+            "sample offer or come back tomorrow."
         )
     else:
         detail = (
-            "Too many live-reading attempts from this connection. "
-            "Please wait before trying again."
+            "Too many live-reading attempts from this connection; please wait "
+            "before trying again."
         )
     return HTTPException(
         status_code=429,
@@ -231,33 +304,34 @@ async def analyze(
             raise HTTPException(
                 status_code=503,
                 detail=(
-                    "Live reading is not available yet. Please try a sample offer."
+                    "Live reading is not available yet; please try a sample offer."
                 ),
             )
         try:
+            client_address = _client_address(request, require_authenticated=True)
             limiter = quota_store()
-            limiter.check_ip(_client_address(request))
+            limiter.check_ip(client_address)
         except GuardrailConfigurationError:
             logger.error("analysis_unavailable category=guardrail_configuration")
             raise HTTPException(
                 status_code=503,
                 detail=(
-                    "Live reading is temporarily unavailable. "
-                    "Please try a sample offer."
+                    "Live reading is temporarily unavailable; please try a sample offer."
                 ),
             ) from None
-        except (OSError, sqlite3.Error):
+        except HTTPException:
+            raise
+        except QuotaExceeded as exc:
+            logger.info("analysis_rejected category=per_ip_quota")
+            raise _quota_error(exc) from None
+        except Exception:  # noqa: BLE001 - Redis/network failures fail closed
             logger.error("analysis_unavailable category=guardrail_storage")
             raise HTTPException(
                 status_code=503,
                 detail=(
-                    "Live reading is temporarily unavailable. "
-                    "Please try a sample offer."
+                    "Live reading is temporarily unavailable; please try a sample offer."
                 ),
             ) from None
-        except QuotaExceeded as exc:
-            logger.info("analysis_rejected category=per_ip_quota")
-            raise _quota_error(exc) from None
 
     payload = await _read_pdf(file)
     result = ingest(payload)
@@ -267,8 +341,7 @@ async def analyze(
         raise HTTPException(
             status_code=503,
             detail=(
-                "Live reading is temporarily unavailable. "
-                "Please try a sample offer."
+                "Live reading is temporarily unavailable; please try a sample offer."
             ),
         )
 
@@ -279,13 +352,12 @@ async def analyze(
         except QuotaExceeded as exc:
             logger.info("analysis_rejected category=daily_quota")
             raise _quota_error(exc) from None
-        except (OSError, sqlite3.Error):
+        except Exception:  # noqa: BLE001 - Redis/network failures fail closed
             logger.error("analysis_unavailable category=guardrail_storage")
             raise HTTPException(
                 status_code=503,
                 detail=(
-                    "Live reading is temporarily unavailable. "
-                    "Please try a sample offer."
+                    "Live reading is temporarily unavailable; please try a sample offer."
                 ),
             ) from None
 
@@ -299,7 +371,7 @@ async def analyze(
         raise HTTPException(
             status_code=422,
             detail=(
-                "FinePrint couldn't read this letter safely. Try a text-based "
+                "FinePrint couldn't read this letter safely; please try a text-based "
                 "PDF or a sample offer."
             ),
         ) from None
@@ -308,8 +380,7 @@ async def analyze(
         raise HTTPException(
             status_code=502,
             detail=(
-                "FinePrint couldn't finish reading this letter. "
-                "Please try again later."
+                "FinePrint couldn't finish reading this letter; please try again later."
             ),
         ) from None
     except Exception:  # noqa: BLE001 - fail closed without exposing internals
@@ -317,8 +388,7 @@ async def analyze(
         raise HTTPException(
             status_code=502,
             detail=(
-                "FinePrint couldn't finish reading this letter. "
-                "Please try again later."
+                "FinePrint couldn't finish reading this letter; please try again later."
             ),
         ) from None
 

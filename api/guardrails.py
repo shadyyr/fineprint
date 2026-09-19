@@ -1,11 +1,11 @@
 """Public-service safety controls for the extraction endpoint.
 
 The development server stays unchanged unless ``FINEPRINT_PUBLIC_MODE`` is
-enabled. In public mode, one small SQLite database provides a process-safe,
-persistent per-IP fixed-window limit and a UTC daily analysis cap.
+enabled. In public mode, Upstash Redis provides atomic fixed-window counters
+that survive Vercel function restarts and work across concurrent instances.
 
-Only an HMAC digest of the client address is stored. The address itself, PDF
-bytes, extracted text, filename, and model output never enter this database.
+Only an HMAC digest of the client address is used in a Redis key. The address
+itself, PDF bytes, extracted text, filename, and model output are never stored.
 """
 
 from __future__ import annotations
@@ -13,13 +13,12 @@ from __future__ import annotations
 import hashlib
 import hmac
 import os
-import sqlite3
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
-from pathlib import Path
+from typing import Any, Protocol
 
 
 TRUE_VALUES = {"1", "true", "yes", "on"}
@@ -41,8 +40,28 @@ def public_api_enabled() -> bool:
     return env_flag("FINEPRINT_PUBLIC_API_ENABLED")
 
 
-def trust_proxy_headers() -> bool:
-    return env_flag("FINEPRINT_TRUST_PROXY_HEADERS")
+def proxy_secret() -> str:
+    """Shared web-to-API secret used to authenticate the client address."""
+    return os.environ.get("FINEPRINT_PROXY_SECRET", "").strip()
+
+
+def _redis_credentials() -> tuple[str, str]:
+    """Read Vercel Marketplace names, with direct-Upstash names as fallback."""
+    url = (
+        os.environ.get("KV_REST_API_URL", "").strip()
+        or os.environ.get("UPSTASH_REDIS_REST_URL", "").strip()
+    )
+    token = (
+        os.environ.get("KV_REST_API_TOKEN", "").strip()
+        or os.environ.get("UPSTASH_REDIS_REST_TOKEN", "").strip()
+    )
+    return url, token
+
+
+def quota_configured() -> bool:
+    """Report configuration presence without connecting or exposing values."""
+    url, token = _redis_credentials()
+    return bool(url and token and os.environ.get("FINEPRINT_IP_HASH_SECRET", "").strip())
 
 
 class GuardrailConfigurationError(RuntimeError):
@@ -60,7 +79,8 @@ class QuotaExceeded(RuntimeError):
 
 @dataclass(frozen=True)
 class QuotaSettings:
-    database_path: Path
+    redis_url: str
+    redis_token: str
     ip_hash_secret: str
     requests_per_window: int
     window_seconds: int
@@ -68,6 +88,12 @@ class QuotaSettings:
 
     @classmethod
     def from_env(cls) -> QuotaSettings:
+        url, token = _redis_credentials()
+        if not url or not token:
+            raise GuardrailConfigurationError(
+                "Upstash Redis REST credentials are required in public mode"
+            )
+
         secret = os.environ.get("FINEPRINT_IP_HASH_SECRET", "").strip()
         if not secret:
             raise GuardrailConfigurationError(
@@ -75,11 +101,8 @@ class QuotaSettings:
             )
 
         return cls(
-            database_path=Path(
-                os.environ.get(
-                    "FINEPRINT_QUOTA_DB", "/var/data/fineprint-quota.sqlite3"
-                )
-            ),
+            redis_url=url,
+            redis_token=token,
             ip_hash_secret=secret,
             requests_per_window=_positive_int("FINEPRINT_RATE_LIMIT_REQUESTS", 3),
             window_seconds=_positive_int(
@@ -100,49 +123,77 @@ def _positive_int(name: str, default: int) -> int:
     return value
 
 
-class QuotaStore:
-    """Atomic quota counters backed by SQLite.
+class RedisClient(Protocol):
+    def eval(
+        self, script: str, *, keys: list[str], args: list[str]
+    ) -> Any: ...
 
-    A persistent disk plus one service instance makes the daily ceiling survive
-    restarts without adding a remotely reachable datastore. ``BEGIN IMMEDIATE``
-    serializes counter updates across concurrent request threads.
-    """
+
+# One server-side operation performs check + increment + expiry. The Upstash
+# key-locking flag keeps unrelated client windows concurrent while each key is
+# still updated atomically.
+_RESERVE_SCRIPT = """#!lua flags=allow-key-locking
+local current = tonumber(redis.call("GET", KEYS[1]) or "0")
+local limit = tonumber(ARGV[1])
+local ttl = tonumber(ARGV[2])
+if current >= limit then
+  local remaining = redis.call("TTL", KEYS[1])
+  if remaining < 1 then remaining = ttl end
+  return {0, remaining}
+end
+local updated = redis.call("INCR", KEYS[1])
+local remaining = redis.call("TTL", KEYS[1])
+if updated == 1 or remaining < 0 then
+  redis.call("EXPIRE", KEYS[1], ttl)
+  remaining = ttl
+end
+return {1, remaining}
+"""
+
+
+def _new_redis_client(settings: QuotaSettings) -> RedisClient:
+    try:
+        from upstash_redis import Redis
+    except ImportError as exc:  # pragma: no cover - deployment dependency check
+        raise GuardrailConfigurationError(
+            "The Upstash Redis client is not installed"
+        ) from exc
+
+    return Redis(
+        url=settings.redis_url,
+        token=settings.redis_token,
+        allow_telemetry=False,
+        rest_retries=0,
+    )
+
+
+class QuotaStore:
+    """Atomic Redis-backed quotas safe across serverless instances."""
 
     def __init__(
         self,
         settings: QuotaSettings,
         *,
+        redis: RedisClient | None = None,
         clock: Callable[[], float] = time.time,
     ):
         self.settings = settings
+        self._redis = redis or _new_redis_client(settings)
         self._clock = clock
-        settings.database_path.parent.mkdir(parents=True, exist_ok=True)
-        self._initialize()
 
-    def _connect(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(self.settings.database_path, timeout=10)
-        connection.execute("PRAGMA busy_timeout = 10000")
-        return connection
-
-    def _initialize(self) -> None:
-        with self._connect() as connection:
-            connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS ip_windows (
-                    ip_hash TEXT NOT NULL,
-                    window_start INTEGER NOT NULL,
-                    request_count INTEGER NOT NULL,
-                    PRIMARY KEY (ip_hash, window_start)
-                )
-                """
-            )
-            connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS daily_usage (
-                    utc_day TEXT PRIMARY KEY,
-                    analysis_count INTEGER NOT NULL
-                )
-                """
+    def _reserve(self, *, key: str, limit: int, ttl: int, scope: str) -> None:
+        response = self._redis.eval(
+            _RESERVE_SCRIPT,
+            keys=[key],
+            args=[str(limit), str(max(1, ttl))],
+        )
+        if not isinstance(response, (list, tuple)) or len(response) != 2:
+            raise RuntimeError("Redis returned an invalid quota response")
+        allowed, retry_after = int(response[0]), int(response[1])
+        if allowed != 1:
+            raise QuotaExceeded(
+                scope=scope,
+                retry_after_seconds=max(1, retry_after),
             )
 
     def check_ip(self, client_address: str) -> None:
@@ -156,36 +207,12 @@ class QuotaStore:
             client_address.encode(),
             hashlib.sha256,
         ).hexdigest()
-
-        with self._connect() as connection:
-            connection.execute("BEGIN IMMEDIATE")
-            row = connection.execute(
-                """
-                SELECT request_count FROM ip_windows
-                WHERE ip_hash = ? AND window_start = ?
-                """,
-                (digest, window_start),
-            ).fetchone()
-            count = row[0] if row else 0
-            if count >= self.settings.requests_per_window:
-                raise QuotaExceeded(
-                    scope="per_ip", retry_after_seconds=retry_after
-                )
-
-            connection.execute(
-                """
-                INSERT INTO ip_windows (ip_hash, window_start, request_count)
-                VALUES (?, ?, 1)
-                ON CONFLICT(ip_hash, window_start)
-                DO UPDATE SET request_count = request_count + 1
-                """,
-                (digest, window_start),
-            )
-            # Retain only the current and immediately previous fixed windows.
-            connection.execute(
-                "DELETE FROM ip_windows WHERE window_start < ?",
-                (window_start - window,),
-            )
+        self._reserve(
+            key=f"fineprint:v1:ip:{window_start}:{digest}",
+            limit=self.settings.requests_per_window,
+            ttl=retry_after,
+            scope="per_ip",
+        )
 
     def reserve_analysis(self) -> None:
         """Reserve one provider-backed analysis in the current UTC day."""
@@ -198,32 +225,12 @@ class QuotaStore:
             tzinfo=timezone.utc,
         )
         retry_after = int(tomorrow.timestamp() - now)
-
-        with self._connect() as connection:
-            connection.execute("BEGIN IMMEDIATE")
-            row = connection.execute(
-                "SELECT analysis_count FROM daily_usage WHERE utc_day = ?",
-                (utc_day,),
-            ).fetchone()
-            count = row[0] if row else 0
-            if count >= self.settings.daily_analysis_cap:
-                raise QuotaExceeded(
-                    scope="daily", retry_after_seconds=retry_after
-                )
-
-            connection.execute(
-                """
-                INSERT INTO daily_usage (utc_day, analysis_count)
-                VALUES (?, 1)
-                ON CONFLICT(utc_day)
-                DO UPDATE SET analysis_count = analysis_count + 1
-                """,
-                (utc_day,),
-            )
-            connection.execute(
-                "DELETE FROM daily_usage WHERE utc_day < ?",
-                ((current.date() - timedelta(days=7)).isoformat(),),
-            )
+        self._reserve(
+            key=f"fineprint:v1:daily:{utc_day}",
+            limit=self.settings.daily_analysis_cap,
+            ttl=retry_after,
+            scope="daily",
+        )
 
 
 @lru_cache(maxsize=8)
@@ -232,5 +239,5 @@ def _cached_store(settings: QuotaSettings) -> QuotaStore:
 
 
 def quota_store() -> QuotaStore:
-    """Return the store for the current environment-derived settings."""
+    """Return the Redis store for the current environment-derived settings."""
     return _cached_store(QuotaSettings.from_env())

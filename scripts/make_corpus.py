@@ -6,6 +6,10 @@ layout stresses a different extraction assumption:
 * ``college_financing_plan.pdf`` -- standardized form/table vocabulary.
 * ``narrative_offer.pdf`` -- amounts embedded in prose sentences.
 * ``per_term_offer.pdf`` -- Fall/Spring columns plus a period-unknown award.
+* ``payment_schedule_offer.pdf`` -- after-aid and installment views that must
+  remain visible but never become additive costs.
+* ``residency_rates_offer.pdf`` -- mutually exclusive tuition schedules that
+  must become one blocked amount choice rather than two additive costs.
 
 The checked-in PDFs are generated artifacts, but this script is the source of
 truth for their visible text.  Replay responses and hand-checked expectations
@@ -277,12 +281,159 @@ def per_term_offer(path: Path) -> None:
     c.save()
 
 
+def payment_schedule_offer(path: Path) -> None:
+    """A STAC-inspired summary where one obligation appears several ways."""
+    c = canvas.Canvas(str(path), pagesize=letter)
+    _meta(c, "Synthetic Cost and Payment Summary", "Northstar Polytechnic")
+    _header(
+        c,
+        "Northstar Polytechnic",
+        "2026-2027 Cost and Payment Summary",
+        "Annual costs, gift aid, and payment schedule",
+    )
+
+    c.setFillColor(PALE)
+    c.rect(54, HEIGHT - 150, WIDTH - 108, 24, fill=1, stroke=0)
+    _text(c, 62, 143, "ANNUAL COSTS", font="Helvetica-Bold", size=10)
+    rows = [
+        (176, "Tuition and required fees", "$30,000", False),
+        (202, "Housing and meal plan", "$12,000", False),
+        (234, "Total estimated costs", "$42,000", True),
+    ]
+    for y, label, amount, bold in rows:
+        font = "Helvetica-Bold" if bold else "Helvetica"
+        _text(c, 70, y, label, font=font, size=10)
+        _text(c, 475, y, amount, font=font, size=10)
+        c.setStrokeColor(RULE)
+        c.line(66, HEIGHT - y - 7, WIDTH - 66, HEIGHT - y - 7)
+
+    c.setFillColor(PALE)
+    c.rect(54, HEIGHT - 286, WIDTH - 108, 24, fill=1, stroke=0)
+    _text(c, 62, 279, "GRANTS AND SCHOLARSHIPS", font="Helvetica-Bold", size=10)
+    _text(c, 70, 312, "Northstar Access Grant", size=10)
+    _text(c, 475, 312, "$10,000", size=10)
+    _text(c, 70, 344, "Total grants and scholarships", font="Helvetica-Bold", size=10)
+    _text(c, 475, 344, "$10,000", font="Helvetica-Bold", size=10)
+
+    c.setFillColor(PALE)
+    c.rect(54, HEIGHT - 398, WIDTH - 108, 24, fill=1, stroke=0)
+    _text(c, 62, 391, "PAYMENT VIEWS - DO NOT ADD TO COSTS", font="Helvetica-Bold", size=10)
+    _text(c, 70, 426, "Cost after grant aid", font="Helvetica-Bold", size=10)
+    _text(c, 475, 426, "$32,000", font="Helvetica-Bold", size=10)
+    _text(c, 70, 454, "Fall 2026 amount due after aid", size=10)
+    _text(c, 475, 454, "$16,000", size=10)
+    _text(c, 70, 482, "Five monthly installments", size=10)
+    _text(c, 475, 482, "$3,200", size=10)
+
+    _text(
+        c,
+        62,
+        532,
+        "The $32,000 balance is the $42,000 annual cost after the $10,000 grant.",
+        size=9.5,
+    )
+    _text(
+        c,
+        62,
+        554,
+        "The Fall amount due and monthly installment are payment schedules for that same balance.",
+        size=9.5,
+    )
+    _text(
+        c,
+        62,
+        576,
+        "They are not additional tuition, housing, fees, or other costs.",
+        font="Helvetica-Bold",
+        size=9.5,
+    )
+    _text(
+        c,
+        62,
+        620,
+        "Books, transportation, personal expenses, and health insurance are not included.",
+        size=9.5,
+    )
+
+    _footer(c, "Northstar Polytechnic")
+    c.save()
+
+
+def residency_rates_offer(path: Path) -> None:
+    """A dual-rate schedule that deliberately leaves residency unstated."""
+    c = canvas.Canvas(str(path), pagesize=letter)
+    _meta(c, "Synthetic Alternative Tuition Schedule", "Northbridge Public University")
+    _header(
+        c,
+        "Northbridge Public University",
+        "2026-2027 Tuition Schedule and Aid Notice",
+        "The applicable residency classification is not stated",
+    )
+
+    _text(
+        c,
+        62,
+        142,
+        "This notice lists two mutually exclusive annual tuition rates; only one rate applies.",
+        font="Helvetica-Bold",
+        size=9.5,
+    )
+    _text(
+        c,
+        62,
+        164,
+        "The notice does not state which rate applies, and residency must not be inferred.",
+        size=9.5,
+    )
+
+    c.setFillColor(PALE)
+    c.rect(54, HEIGHT - 214, WIDTH - 108, 24, fill=1, stroke=0)
+    _text(c, 62, 207, "MUTUALLY EXCLUSIVE TUITION RATES", font="Helvetica-Bold", size=10)
+    _text(c, 70, 244, "In-state tuition and required fees - annual", size=10)
+    _text(c, 475, 244, "$19,800", size=10)
+    _text(c, 70, 274, "Out-of-state tuition and required fees - annual", size=10)
+    _text(c, 475, 274, "$32,800", size=10)
+
+    c.setFillColor(PALE)
+    c.rect(54, HEIGHT - 334, WIDTH - 108, 24, fill=1, stroke=0)
+    _text(c, 62, 327, "OTHER ANNUAL COSTS", font="Helvetica-Bold", size=10)
+    _text(c, 70, 364, "Housing and meal plan", size=10)
+    _text(c, 475, 364, "$12,000", size=10)
+
+    c.setFillColor(PALE)
+    c.rect(54, HEIGHT - 424, WIDTH - 108, 24, fill=1, stroke=0)
+    _text(c, 62, 417, "GRANTS AND SCHOLARSHIPS", font="Helvetica-Bold", size=10)
+    _text(c, 70, 454, "Northbridge Student Success Grant - annual", size=10)
+    _text(c, 475, 454, "$8,000", size=10)
+
+    _text(
+        c,
+        62,
+        516,
+        "Books, transportation, personal expenses, and health insurance are not included.",
+        size=9.5,
+    )
+    _text(
+        c,
+        62,
+        550,
+        "Ask the financial aid office to confirm the applicable tuition rate before comparing offers.",
+        font="Helvetica-Bold",
+        size=9.5,
+    )
+
+    _footer(c, "Northbridge Public University")
+    c.save()
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     builders = {
         "college_financing_plan.pdf": college_financing_plan,
         "narrative_offer.pdf": narrative_offer,
         "per_term_offer.pdf": per_term_offer,
+        "payment_schedule_offer.pdf": payment_schedule_offer,
+        "residency_rates_offer.pdf": residency_rates_offer,
     }
     for name, build in builders.items():
         path = OUT / name

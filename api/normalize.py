@@ -16,7 +16,9 @@ the TypeScript engine computes from them.
 from __future__ import annotations
 
 import itertools
+import re
 from datetime import datetime, timezone
+from typing import Callable, TypeVar
 
 from evidence import EvidenceResolver
 from ingest import IngestResult
@@ -54,6 +56,32 @@ _ROLLUP_LABEL_MARKERS = (
     "term charges",
 )
 
+_TERM_SUFFIX_RE = re.compile(
+    r"^(?P<base>.+?)\s*(?:[\u2010-\u2015-]|,|\()\s*"
+    r"(?P<term>fall|autumn|spring)"
+    r"(?:\s+(?P<year>20\d{2}))?\s*\)?$",
+    re.IGNORECASE,
+)
+_ACADEMIC_YEAR_RE = re.compile(
+    r"(?P<start>20\d{2})\s*[-\u2010-\u2015/]\s*(?P<end>(?:20)?\d{2})"
+)
+_NON_SUMMABLE_COST_PATTERNS = tuple(
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"\bcost\s+after\s+(?:all\s+)?(?:aid|awards?|grants?|scholarships?)\b",
+        r"\bafter[- ](?:aid|award)\s+(?:cost|balance|amount)\b",
+        r"\bfamily\s+obligation\b",
+        r"\b(?:fall|autumn|spring|winter|summer)(?:\s+20\d{2})?\s+"
+        r"(?:estimate|amount\s+due|balance)\b",
+        r"\b(?:monthly|per[- ]month)\s+(?:payment|installment)\b",
+        r"\b(?:payment|installment)\s+(?:amount|schedule)\b",
+        r"\bamount\s+due\s+(?:for|per|this)\b",
+    )
+)
+_PLAIN_DECIMAL_RE = re.compile(r"^-?\d+(?:\.\d+)?$")
+
+ItemT = TypeVar("ItemT", CostItem, AidItem)
+
 
 def _slug(text: str, fallback: str) -> str:
     cleaned = "".join(c.lower() if c.isalnum() else "_" for c in text).strip("_")
@@ -89,6 +117,180 @@ def _find_components(
 def _looks_like_rollup(label: str) -> bool:
     normalized = " ".join(label.lower().replace("—", " ").split())
     return any(marker in normalized for marker in _ROLLUP_LABEL_MARKERS)
+
+
+def _looks_like_non_summable_cost_view(label: str, quotes: list[str]) -> bool:
+    """Whether a verified figure is a balance/payment view, not a new cost.
+
+    Quote verification proves a number exists, but it cannot prove that an
+    after-aid balance or payment installment is an additive cost. These narrow
+    language patterns keep those real figures visible as rollups while ensuring
+    downstream sums never treat them as tuition, housing, or another expense.
+    """
+    context = " ".join((label, *quotes))
+    return any(pattern.search(context) for pattern in _NON_SUMMABLE_COST_PATTERNS)
+
+
+def _term_label(label: str) -> tuple[str, str, int | None] | None:
+    """Return (base label, term, year) for an explicit term suffix.
+
+    This is deliberately narrower than a general season parser. FinePrint only
+    combines rows when the label itself identifies a conventional Fall/Spring
+    partition; prose mentioning a term remains untouched.
+    """
+    match = _TERM_SUFFIX_RE.match(" ".join(label.split()))
+    if not match:
+        return None
+    base = match.group("base").strip(" \t,;:-\u2010-\u2015()")
+    if not base:
+        return None
+    term = match.group("term").casefold()
+    if term == "autumn":
+        term = "fall"
+    year = int(match.group("year")) if match.group("year") else None
+    return base, term, year
+
+
+def _academic_year_bounds(value: str | None) -> tuple[int, int] | None:
+    if not value:
+        return None
+    match = _ACADEMIC_YEAR_RE.search(value)
+    if not match:
+        return None
+    start = int(match.group("start"))
+    raw_end = match.group("end")
+    end = int(raw_end)
+    if len(raw_end) == 2:
+        end = start // 100 * 100 + end
+    if end != start + 1:
+        return None
+    return start, end
+
+
+def _term_semantics(item: CostItem | AidItem) -> tuple[object, ...]:
+    """Fields that must agree before two term rows can represent one item."""
+    if isinstance(item, CostItem):
+        return (item.category, item.direct_cost, item.role)
+    return (
+        item.category,
+        item.aid_type,
+        item.renewable,
+        tuple(item.conditions or []),
+        item.role,
+    )
+
+
+def _is_complete_fall_spring(
+    members: list[tuple[ItemT, str, int | None]],
+    academic_year: str | None,
+) -> bool:
+    if len(members) != 2 or {term for _, term, _ in members} != {"fall", "spring"}:
+        return False
+    if any(item.period not in {"semester", "term"} for item, _, _ in members):
+        return False
+
+    years = {term: year for _, term, year in members}
+    bounds = _academic_year_bounds(academic_year)
+    if bounds:
+        start, end = bounds
+        return (
+            years["fall"] in {None, start}
+            and years["spring"] in {None, end}
+        )
+
+    # Without a document-level academic year, both labels must establish the
+    # adjacent years themselves. A bare Fall/Spring pair is not enough proof.
+    return (
+        years["fall"] is not None
+        and years["spring"] is not None
+        and years["spring"] == years["fall"] + 1
+    )
+
+
+def _merge_term_partitions(
+    items: list[ItemT],
+    *,
+    academic_year: str | None,
+    unique: Callable[[str], str],
+    prefix: str,
+) -> tuple[list[ItemT], dict[str, ItemT]]:
+    """Collapse verified Fall/Spring source rows into derived annual facts.
+
+    Any explicitly term-labelled group that is not a complete, semantically
+    consistent academic-year partition is changed to ``period=unknown``. That
+    prevents downstream annualization from doubling a partial term and lets
+    the standard ambiguity safety net ask the reader instead of guessing.
+    """
+    parsed: dict[str, tuple[str, str, int | None]] = {}
+    groups: dict[tuple[object, ...], list[tuple[ItemT, str, int | None]]] = {}
+    for item in items:
+        term = _term_label(item.label)
+        if not term:
+            continue
+        base, season, year = term
+        parsed[item.id] = term
+        key = (base.casefold(), *_term_semantics(item))
+        groups.setdefault(key, []).append((item, season, year))
+
+    replacements: dict[str, ItemT] = {}
+    consumed: set[str] = set()
+    aliases: dict[str, ItemT] = {}
+
+    for members in groups.values():
+        if not _is_complete_fall_spring(members, academic_year):
+            for item, _, _ in members:
+                item.period = "unknown"
+            continue
+
+        first = min((item for item, _, _ in members), key=items.index)
+        base = parsed[first.id][0]
+        ordered = sorted((item for item, _, _ in members), key=items.index)
+        derived = first.model_copy(deep=True)
+        derived.id = unique(f"{prefix}_{_slug(base, first.id)}")
+        derived.label = base
+        derived.amount = sum(item.amount for item in ordered)
+        derived.period = "annual"
+        derived.provenance = "derived"
+        derived.confidence = min(item.confidence for item in ordered)
+        derived.evidence_ids = list(
+            dict.fromkeys(ev_id for item in ordered for ev_id in item.evidence_ids)
+        )
+        derived.components = None
+        derived.ambiguity_ids = None
+
+        replacements[first.id] = derived
+        consumed.update(item.id for item in ordered)
+        for item in ordered:
+            aliases[item.label] = derived
+
+    merged: list[ItemT] = []
+    for item in items:
+        if item.id in replacements:
+            merged.append(replacements[item.id])
+        elif item.id not in consumed:
+            merged.append(item)
+    return merged, aliases
+
+
+def _apply_rollup_guard(costs: list[CostItem], aid: list[AidItem]) -> None:
+    """Mark source/derived totals and attach their non-rollup components."""
+    for group in (costs, aid):
+        for candidate in group:
+            siblings = [
+                (other.id, other.amount)
+                for other in group
+                if other.id != candidate.id and other.role == "item"
+            ]
+            components = _find_components(candidate.amount, siblings)
+            if candidate.role == "rollup":
+                candidate.components = components or None
+            elif (
+                components
+                and len(components) >= 2
+                and _looks_like_rollup(candidate.label)
+            ):
+                candidate.role = "rollup"
+                candidate.components = components
 
 
 def normalize(
@@ -141,6 +343,10 @@ def normalize(
         ident = unique(f"{prefix}_{_slug(item.label, str(index))}")
 
         if item.kind == "cost":
+            non_summable = _looks_like_non_summable_cost_view(
+                item.label,
+                [record.quote for record in resolution.evidence],
+            )
             costs.append(
                 CostItem(
                     id=ident,
@@ -149,7 +355,7 @@ def normalize(
                     amount=item.amount,
                     period=item.period,
                     direct_cost=bool(item.direct_cost),
-                    role="rollup" if item.is_stated_total else "item",
+                    role="rollup" if item.is_stated_total or non_summable else "item",
                     provenance="source",
                     confidence=item.confidence,
                     evidence_ids=evidence_ids,
@@ -173,6 +379,25 @@ def normalize(
                 )
             )
 
+    # --- explicit academic-term partitions ----------------------------------
+    # A semester amount normally annualizes x2 downstream. That is correct for
+    # a single recurring semester rate, but not for a letter that gives the
+    # actual Fall and Spring rows separately. Collapse only a complete,
+    # explicitly-labelled pair. Partial/conflicting sets become unknown.
+
+    costs, cost_term_aliases = _merge_term_partitions(
+        costs,
+        academic_year=extraction.academic_year,
+        unique=unique,
+        prefix="cost",
+    )
+    aid, aid_term_aliases = _merge_term_partitions(
+        aid,
+        academic_year=extraction.academic_year,
+        unique=unique,
+        prefix="aid",
+    )
+
     # --- deterministic double-count guard -----------------------------------
     # The model flags stated totals, but missing one would silently inflate
     # every figure downstream. So check arithmetically as well: an item equal
@@ -181,28 +406,14 @@ def normalize(
     # a real item understates aid, which the incompleteness flags surface,
     # whereas double counting it overstates aid silently.
 
-    for group in (costs, aid):
-        for candidate in group:
-            siblings = [
-                (other.id, other.amount)
-                for other in group
-                if other.id != candidate.id and other.role == "item"
-            ]
-            components = _find_components(candidate.amount, siblings)
-            if candidate.role == "rollup":
-                candidate.components = components or None
-            elif (
-                components
-                and len(components) >= 2
-                and _looks_like_rollup(candidate.label)
-            ):
-                candidate.role = "rollup"
-                candidate.components = components
+    _apply_rollup_guard(costs, aid)
 
     # --- ambiguities ---------------------------------------------------------
 
     # Model-reported ambiguities, attached to the item they concern.
     by_label = {i.label: i for i in (*costs, *aid)}
+    by_label.update(cost_term_aliases)
+    by_label.update(aid_term_aliases)
     for n, raw in enumerate(extraction.ambiguities):
         target_item = by_label.get(raw.target_label)
         options = [
@@ -217,7 +428,53 @@ def normalize(
             continue
 
         amb_evidence: list[str] = []
-        if raw.citations:
+        if raw.kind == "amount_unclear":
+            # An amount choice can change headline math, so every numeric option
+            # independently passes the same quote-and-amount admission gate as a
+            # normal fact. Options are plain decimals for the frozen web schema.
+            if target_item is None or any(
+                not _PLAIN_DECIMAL_RE.fullmatch(option.value)
+                for option in options
+            ):
+                if target_item is not None:
+                    target_item.role = "rollup"
+                continue
+
+            option_amounts = [float(option.value) for option in options]
+            option_resolutions = []
+            options_verified = True
+            for amount in option_amounts:
+                resolution = resolver.resolve(
+                    label=raw.target_label,
+                    amount=amount,
+                    citations=raw.citations,
+                    prefix="amb",
+                )
+                if not resolution.ok:
+                    assert resolution.failure is not None
+                    unverified.append(resolution.failure)
+                    options_verified = False
+                    continue
+                option_resolutions.append(resolution)
+
+            if not options_verified or len(option_resolutions) != len(options):
+                target_item.role = "rollup"
+                continue
+
+            option_evidence: list[list[str]] = []
+            for resolution in option_resolutions:
+                evidence.extend(resolution.evidence)
+                ids = [record.id for record in resolution.evidence]
+                option_evidence.append(ids)
+                amb_evidence.extend(ids)
+
+            # The canonical item carries the first displayed option while the
+            # blocking ambiguity keeps it out of math until the reader chooses.
+            target_item.amount = option_amounts[0]
+            target_item.evidence_ids = list(
+                dict.fromkeys((*target_item.evidence_ids, *option_evidence[0]))
+            )
+        elif raw.citations:
             resolution = resolver.resolve(
                 label=raw.target_label, amount=None, citations=raw.citations, prefix="amb"
             )
@@ -229,13 +486,24 @@ def normalize(
             Ambiguity(
                 id=unique(f"amb_{_slug(raw.target_label, str(n))}"),
                 kind=raw.kind,
-                target=f"{target_item.id}.period" if target_item and raw.kind == "period_unknown"
-                else (target_item.id if target_item else raw.target_label),
-                severity="material" if raw.kind == "period_unknown" else "minor",
+                target=(
+                    f"{target_item.id}.period"
+                    if target_item and raw.kind == "period_unknown"
+                    else f"{target_item.id}.amount"
+                    if target_item and raw.kind == "amount_unclear"
+                    else target_item.id
+                    if target_item
+                    else raw.target_label
+                ),
+                severity=(
+                    "material"
+                    if raw.kind in {"period_unknown", "amount_unclear"}
+                    else "minor"
+                ),
                 question=raw.question,
                 why=raw.why,
                 options=options,
-                blocks_headline=raw.kind == "period_unknown",
+                blocks_headline=raw.kind in {"period_unknown", "amount_unclear"},
                 evidence_ids=amb_evidence or (target_item.evidence_ids if target_item else []),
             )
         )
@@ -279,7 +547,12 @@ def normalize(
         )
 
     for item in (*costs, *aid):
-        linked = [a.id for a in ambiguities if a.target.startswith(f"{item.id}.")]
+        linked = [
+            ambiguity.id
+            for ambiguity in ambiguities
+            if ambiguity.target == item.id
+            or ambiguity.target.startswith(f"{item.id}.")
+        ]
         if linked:
             item.ambiguity_ids = linked
 

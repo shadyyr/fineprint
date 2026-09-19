@@ -3,7 +3,7 @@
 This corpus contains only synthetic, fictional aid documents. No institution,
 applicant, award, or student identifier in these PDFs is real.
 
-The three layouts intentionally stress different assumptions:
+The five layouts intentionally stress different assumptions:
 
 - `college_financing_plan.pdf`: a College Financing Plan / Shopping Sheet-style
   form whose visual label and amount columns extract as separate text lines.
@@ -12,6 +12,12 @@ The three layouts intentionally stress different assumptions:
   outside the canonical facts.
 - `per_term_offer.pdf`: Fall/Spring amount columns, term rollups, and a separate
   scholarship whose period must remain `unknown`.
+- `payment_schedule_offer.pdf`: annual costs followed by an after-aid balance,
+  a Fall amount due, and a monthly installment that are real quoted figures but
+  must remain non-summable views of the same obligation.
+- `residency_rates_offer.pdf`: mutually exclusive in-state and out-of-state
+  tuition rates where the applicable classification is unstated. Both amounts
+  must be verified, and the unresolved choice must block headline math.
 
 `responses/` holds committed model-shaped `ExtractionResult` payloads. The
 default harness passes each one through `ReplayExtractor`, the real evidence
@@ -83,6 +89,23 @@ would be confusing in the X-Ray even though the combined $17,080 amount was
 preserved.
 
 This sample is evidence that quote verification is necessary but not sufficient.
-It is not approved as a public demo sample. A future hardening pass should add
-a relationship check for annual totals, after-aid balances, and their term or
-payment-plan breakdowns before any of those rows can become summable costs.
+It is not approved as a public demo sample.
+
+### H1 hardening result
+
+The relationship guard added on 2026-09-19 recognizes narrowly defined
+after-aid, family-obligation, amount-due, and installment language as a
+non-summable view, even when the quote and amount are genuine. The synthetic
+`payment_schedule_offer.pdf` deliberately supplies all three views as model
+cost claims; the evidence gate admits the quotes, then normalization marks the
+views as rollups so only the underlying annual costs participate in arithmetic.
+
+The official STAC PDF was downloaded again to a temporary directory and run
+through the updated live pipeline without committing it or its extraction.
+Terra completed in 37.216 seconds without a Sol fallback. The result contained
+five financial facts backed by 28 verified evidence records, zero unverified
+claims, three non-blocking ambiguities, and zero invariant violations. The
+previous `$22,015` Fall estimate, `$4,403` monthly payment, `$44,030` after-award
+balance, and conditional financing line were not emitted as costs. The accepted
+cost facts were tuition and fees, room and board, and their stated annual total;
+the accepted aid facts were the academic award and its stated rollup.

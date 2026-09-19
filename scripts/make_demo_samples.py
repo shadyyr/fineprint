@@ -37,6 +37,7 @@ load_dotenv(API / ".env")
 from extract import available  # noqa: E402
 from ingest import ingest  # noqa: E402
 from models import CanonicalDocument  # noqa: E402
+from normalize import _apply_rollup_guard, _merge_term_partitions  # noqa: E402
 from pipeline import analyze_document  # noqa: E402
 from run_corpus import diff_expected, invariant_violations  # noqa: E402
 
@@ -78,6 +79,15 @@ def _validate_cached_sample(document: CanonicalDocument) -> None:
         raise ValueError("demo document must be labelled as synthetic")
     if document.document.source_file_name != FIXTURE_PDF.name:
         raise ValueError("canonical source filename must match the published PDF")
+    annual_gift_aid = sum(
+        item.amount
+        for item in document.aid
+        if item.role == "item" and item.aid_type == "gift" and item.period == "annual"
+    )
+    if annual_gift_aid != 16_500:
+        raise ValueError(
+            "Summit annual gift aid must be $16,500 before the unresolved scholarship"
+        )
 
 
 def _comparison_copy(
@@ -157,6 +167,66 @@ def refresh_live() -> CanonicalDocument:
     return document
 
 
+def renormalize_cached() -> CanonicalDocument:
+    """Apply current deterministic normalization to the stored live result.
+
+    This preserves the original live model name, timestamp, citations, and
+    evidence geometry. It is for normalizer-only fixes; it never substitutes a
+    replay response for the live-built demo artifact.
+    """
+    document = CanonicalDocument.model_validate_json(FIXTURE_JSON.read_text())
+    old_item_ids = {item.id for item in (*document.costs, *document.aid)}
+    seen_ids = {
+        *(item.id for item in (*document.costs, *document.aid)),
+        *(row.id for row in document.evidence),
+        *(row.id for row in document.ambiguities),
+        *(row.id for row in document.missing_costs),
+        *(row.id for row in document.unverified_claims),
+    }
+
+    def unique(base: str) -> str:
+        ident, suffix = base, 1
+        while ident in seen_ids:
+            suffix += 1
+            ident = f"{base}_{suffix}"
+        seen_ids.add(ident)
+        return ident
+
+    document.costs, _ = _merge_term_partitions(
+        document.costs,
+        academic_year=document.document.academic_year,
+        unique=unique,
+        prefix="cost",
+    )
+    document.aid, _ = _merge_term_partitions(
+        document.aid,
+        academic_year=document.document.academic_year,
+        unique=unique,
+        prefix="aid",
+    )
+    _apply_rollup_guard(document.costs, document.aid)
+
+    new_item_ids = {item.id for item in (*document.costs, *document.aid)}
+    removed_ids = old_item_ids - new_item_ids
+    dangling = [
+        ambiguity.id
+        for ambiguity in document.ambiguities
+        if ambiguity.target.removesuffix(".period") in removed_ids
+    ]
+    if dangling:
+        raise ValueError(
+            "cannot renormalize a cached term row with attached ambiguities: "
+            + ", ".join(dangling)
+        )
+
+    document.extraction_meta.counts["costs"] = len(document.costs)
+    document.extraction_meta.counts["aid"] = len(document.aid)
+    document = CanonicalDocument.model_validate(document.model_dump(mode="json"))
+    _validate_cached_sample(document)
+    _write_json(FIXTURE_JSON, document.model_dump(mode="json", exclude_none=True))
+    return document
+
+
 def sync_public() -> CanonicalDocument:
     """Validate the fixture and deterministically mirror public artifacts."""
     if not FIXTURE_PDF.exists() or not FIXTURE_JSON.exists():
@@ -184,15 +254,38 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="replace the cached fixture using the live extraction pipeline",
     )
+    parser.add_argument(
+        "--renormalize-cached",
+        action="store_true",
+        help="reapply deterministic normalization to the stored live artifact",
+    )
+    parser.add_argument(
+        "--fixture-only",
+        action="store_true",
+        help="update/validate fixtures without writing generated web/public files",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    if args.refresh_live and args.renormalize_cached:
+        raise SystemExit("choose either --refresh-live or --renormalize-cached")
+    document = None
     if args.refresh_live:
-        refresh_live()
-    document = sync_public()
-    print(f"published {len(MANIFEST)} demo samples to {PUBLIC.relative_to(ROOT)}")
+        document = refresh_live()
+    elif args.renormalize_cached:
+        document = renormalize_cached()
+
+    if not args.fixture_only:
+        document = sync_public()
+        print(f"published {len(MANIFEST)} demo samples to {PUBLIC.relative_to(ROOT)}")
+    elif document is None:
+        document = CanonicalDocument.model_validate_json(FIXTURE_JSON.read_text())
+        _validate_cached_sample(document)
+        print("validated fixture without publishing web artifacts")
+
+    assert document is not None
     print(
         "cached sample: "
         f"{document.document.institution_name}, source={document.extraction_meta.source}, "

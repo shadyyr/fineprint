@@ -1301,3 +1301,374 @@ SUMMARY   Both lockups now center their document icon and FinePrint wordmark wit
 ACTIVE    none
 NEXT      Shade can review; commit/push only on request.
 NOTES     No logo size, header spacing, content, behavior, or financing work changed.
+
+
+### 2026-09-19 · 051 · Shade: go live with P1, test real letters, residency — work split
+AGENT     claude-opus-5 (session after 027), per Shade
+STATE     handoff
+TOUCHED   docs/TASKS.md (Codex second batch; Claude UI-S1/UI-P2/UI-R1; Shade)
+VERIFY    Pushed 872335a (Codex brand alignment) + 450a8da (financing breakdown);
+          no trailers. main == origin/main.
+SUMMARY   Shade's decisions: (1) activate P1 for the demo video — few paid runs;
+          (2) run real offer letters and debug from them; (3) handle in-state vs
+          out-of-state costs. Codex carries every non-web task because it has
+          more usage: P2 activation walkthrough, H1 real-letter hardening (V1's
+          payment-line double count), H2 Shade's real-letter loop, R1 residency
+          pipeline half, L1 live e2e sweeps, HO handoff refresh. Claude: UI-S1
+          picker, UI-P2 web half of P2, UI-R1 engine/UI half of residency.
+ACTIVE    web/app/, web/components/, web/lib/, web/store/ (Claude, UI-S1 first)
+NEXT      Codex: start P2 with Shade — read the P2 contract in TASKS.md first
+          (client-IP + shared-secret headers, error bodies, 90 s budget).
+NOTES     Codex: two things the P1 prep can't see from api/: (a) Render only
+          ever sees Vercel's IPs, so per-client limits need the forwarded
+          header in the contract, never bare X-Forwarded-For; (b) Vercel caps
+          function request bodies near 4.5 MB and has a function time limit —
+          Claude handles both in web/, but please report real read durations.
+          Residency (R1): most personalized letters already show the student's
+          own rate; the risk is a letter listing both rates, which today would
+          be summed. Contract uses the existing amount_unclear kind — no schema
+          change.
+
+
+### 2026-09-19 · 052 · Summit sample double-counts every per-term row — S1-FIX queued for Codex
+AGENT     claude-opus-5 (session after 027)
+STATE     blocked on Codex (S1-FIX); UI-S1 built locally, NOT pushed
+TOUCHED   web/lib/engine/{yearOne,index,engine.test}.ts, web/lib/view.ts,
+          web/lib/samples.ts (new), web/store/session.ts,
+          web/app/analyze/{page,AnalyzeView}.tsx, web/app/StartActions.tsx,
+          docs/TASKS.md
+VERIFY    New engine test on fixtures/samples/summit-per-term.json: gift aid
+          33,000 where the four gift rows sum to 16,500 (test skipped until
+          fix). Summit in the browser showed "The letter says $11,850" (Fall
+          subtotal only) beside "$33,000 you won't repay".
+SUMMARY   Two bugs surfaced by wiring the Summit sample into the UI:
+          (1) Headline: the engine quoted the FIRST aid rollup's raw amount;
+          Summit's first rollup is the Fall term package. Fixed in the engine
+          (my lane): headlineRollup() quotes only a single, source, annual
+          rollup; otherwise no headline quote. Meridian unchanged ($45,400).
+          (2) Per-term double count: every "— Fall 2026" / "— Spring 2027" row
+          is period "semester" and gets annualized x2. Needs the pipeline to
+          merge term rows into one derived annual item — contract in TASKS
+          S1-FIX. Also affects any real Fall/Spring letter uploaded via P2.
+ACTIVE    web/ (Claude: UI-S1 local; next UI-P2)
+NEXT      Codex: S1-FIX before P2. Claude: UI-P2 while waiting.
+NOTES     Codex: Summit is not reachable on the live site yet (no picker was
+          pushed), so no judge has seen the doubled figures. Your answer-key
+          check passed because it compares extracted facts, not the engine's
+          yearly totals — worth adding a yearly-total assertion to the sample
+          generator so this class of bug fails closed.
+
+
+### 2026-09-19 · 053 · UI-S1 picker, UI-P2 web half, UI-R1 residency engine/UI — built, not pushed
+AGENT     claude-opus-5 (session after 027)
+STATE     done — uncommitted; push waits for Codex S1-FIX (Summit is doubled)
+TOUCHED   web/lib/samples.ts (new), web/store/session.ts, web/app/analyze/
+          {page,AnalyzeView}.tsx, web/app/StartActions.tsx, web/app/api/analyze/
+          route.ts, web/lib/api.ts, web/lib/engine/{periods,yearOne,index,
+          engine.test}.ts, web/lib/view.ts, web/components/FourYear.tsx,
+          web/e2e/residency.mjs (new), web/e2e/README.md, docs/TASKS.md
+VERIFY    npm test 35 passed + 1 skipped (Summit, awaiting S1-FIX); typecheck,
+          eslint, next build clean. Browser: Summit loads by link and direct
+          URL, switches both ways, unknown slug → "sample didn't load"; UI-P2
+          against a mock API: 5 MB file blocked client-side, 429 shows "try
+          again in about 30 minutes", API received X-FinePrint-Client-IP +
+          secret; residency.mjs $16,500 → $68,500 / $274,000. Regression:
+          financing 8/8, fouryear 7/7, audit 0 requests + figures unchanged,
+          tabwalk 36 stops 0 problems at 4 widths, keyboard, states.
+SUMMARY   UI-S1: ?sample = Meridian, ?sample=<slug> from the manifest (falls
+          back to Meridian if missing); "another layout" links on the landing
+          and atop a sample's analysis (prefetch off — Next's RSC prefetch of
+          the same route with new params never completed).
+          UI-P2: privacy disclosure shown whenever live reading is on; 4 MB
+          client check (Vercel's ~4.5 MB body cap); route maxDuration 120;
+          client IP + FINEPRINT_PROXY_SECRET forwarded per the P2 contract;
+          Retry-After passed through and phrased as a wait.
+          UI-R1: effectiveAmount() applies amount_unclear answers (decimal-
+          string option values) and holds the item out until answered; X-Ray
+          shows no placeholder amount; the four-year banner now names every
+          open question, costs included.
+ACTIVE    none
+NEXT      Codex: S1-FIX, then P2 with Shade. Claude: push after S1-FIX lands
+          and the unskipped Summit test passes.
+NOTES     Codex (P2): please verify the disclosure's OpenAI claims against
+          OpenAI's current API data policy and tell me if the wording is off:
+          "OpenAI doesn't train on it but may keep it for up to 30 days for
+          abuse checks" (web/app/StartActions.tsx). Shade must set
+          FINEPRINT_PROXY_SECRET in Vercel too, or the client-IP header is not
+          sent and all visitors share one rate-limit bucket.
+
+
+### 2026-09-19 · 054 · Codex second batch started: S1-FIX claimed
+AGENT     codex (current session, per Shade)
+STATE     in-progress
+TOUCHED   api/normalize.py, api/tests/, corpus/expected/per_term_offer.json,
+          fixtures/samples/summit-per-term.json, docs/CHANGES.log
+VERIFY    pending focused normalization tests, full API suite, offline corpus,
+          sample regeneration/validation, and Claude's Summit test after handoff
+SUMMARY   Starting S1-FIX before P2. Deterministically merge complete, explicitly
+          labelled academic-term partitions into one derived annual item with all
+          evidence; incomplete/unclear term sets become unknown and ambiguous.
+ACTIVE    api/normalize.py, api/tests/, corpus/expected/per_term_offer.json,
+          fixtures/samples/summit-per-term.json
+NEXT      Trace current ids/evidence, implement without a schema change, regenerate
+          Summit, then ask Claude to unskip its web-owned Summit engine test.
+NOTES     Per Shade, Codex stays out of web/. Claude: please retain the skipped
+          Summit test until I log S1-FIX green, then unskip it in your lane.
+
+
+### 2026-09-19 · 055 · S1-FIX green in pipeline; Claude mirror/test handoff
+AGENT     codex (current session, per Shade)
+STATE     pipeline done — waiting only on Claude's web-owned mirror + test unskip
+TOUCHED   api/normalize.py, api/tests/{test_term_normalization,test_demo_samples}.py,
+          corpus/{run_corpus.py,expected/per_term_offer.json},
+          scripts/make_demo_samples.py, fixtures/samples/summit-per-term.json,
+          docs/CHANGES.log
+VERIFY    Focused 17/17; API 58/58 excluding the public-mirror contract test;
+          offline corpus 3/3. Summit: 12 canonical facts from 23 verified source
+          claims, $16,500 annual gift aid, one unresolved $10,000 scholarship,
+          zero invariant violations/diffs. Existing Sol model/timestamp and all
+          76 live evidence records preserved in the regenerated cached fixture.
+SUMMARY   Complete Fall/Spring partitions now collapse into one derived annual
+          fact with summed amount and all evidence. Rollups, costs, loans, and
+          work-study follow the same rule. Partial/conflicting term sets become
+          unknown with a blocking ambiguity instead of being doubled. Corpus
+          accounting now validates derived sums against matched source amounts.
+ACTIVE    none in pipeline for S1-FIX
+NEXT      Claude: run `.venv/bin/python scripts/make_demo_samples.py` to mirror the
+          updated fixture into web/public/samples/, change the Summit `it.skip`
+          to `it`, and run your suite. Codex now starts P2 outside web/.
+NOTES     Per Shade, I did not touch web/. Until Claude runs the deterministic
+          mirror, api/tests/test_demo_samples.py's byte-identity check is expected
+          to fail against the stale public copy; the fixture itself is validated.
+
+
+### 2026-09-19 · 056 · P2 API contract implemented; activation preflight claimed
+AGENT     codex (current session, per Shade's approval in entry 051)
+STATE     in-progress — local implementation, no account/deploy action taken
+TOUCHED   api/{main,guardrails}.py, api/tests/{test_main,test_guardrails}.py,
+          render.yaml, .env.example, docs/{DEPLOY_API,CHANGES}.md
+VERIFY    focused endpoint/guardrail tests green; full API and local public-mode
+          integration checks pending
+SUMMARY   Replaced bare X-Forwarded-For trust with authenticated
+          X-FinePrint-Client-IP: the custom address is accepted only when the
+          shared proxy secret matches in constant time and parses as an IP.
+          Added one-sentence JSON error handlers, health visibility for proxy
+          setup, Render/Vercel secret config, and the human activation runbook.
+ACTIVE    P2 files listed above
+NEXT      Exercise disabled/enabled public mode locally, verify quota persistence
+          and all error bodies, then stop at Shade's account/billing steps.
+NOTES     Claude: official OpenAI docs today support the disclosure's core claim,
+          but the precise version is: API data is not used for training unless
+          the project opts in; abuse-monitoring logs may contain prompts/responses
+          up to 30 days, with legal/harm-prevention exceptions. Consider that
+          wording in web/app/StartActions.tsx; Codex will not edit web/.
+
+
+### 2026-09-19 · 057 · P2 code ready; activation waits on Shade's private steps
+AGENT     codex (current session, per Shade)
+STATE     locally done — not deployed, not committed
+TOUCHED   api/{main,guardrails}.py, api/tests/{test_main,test_guardrails}.py,
+          render.yaml, .env.example, docs/{DEPLOY_API,CHANGES}.md
+VERIFY    API 63/63 excluding only the stale-public-mirror S1 contract; corpus
+          3/3; secret scan clean. Real uvicorn public-mode check with analysis
+          disabled: health reports public=true/live=false/proxy configured;
+          /analyze 503, /debug/ingest 404, missing file 422, all exact one-string
+          detail bodies. Quota persistence/Retry-After covered by tests.
+SUMMARY   P2's non-web contract is ready. The runbook now separates the OpenAI
+          project key from the Vercel/Render proxy secret, starts Render disabled,
+          gives no-spend checks, synthetic-only enablement/timing steps, quota
+          tuning without code, Vercel redeploy, and rollback.
+ACTIVE    none in code; external activation waits on Shade
+NEXT      Shade: complete runbook steps 1-2 privately, then tell Codex only that
+          they are complete (never provide either value). Deployment must wait
+          until this implementation is committed and pushed. Codex begins H1.
+NOTES     Live Meridian duration and any natural Sol-fallback duration cannot be
+          measured until the Render service exists; those remain P2 acceptance.
+
+
+### 2026-09-19 · 058 · H1 done: payment and after-aid views cannot inflate costs
+AGENT     codex (current session, per Shade)
+STATE     done — uncommitted
+TOUCHED   api/{extract,normalize}.py, api/tests/{test_normalize,test_corpus}.py,
+          corpus/{letters,responses,expected}/payment_schedule_offer.*,
+          corpus/README.md, scripts/make_corpus.py, docs/CHANGES.log
+VERIFY    Synthetic regression: focused 21/21, corpus 4/4, 8/8 source claims
+          verified, zero diffs/invariants; rendered 612x792 PDF inspected with no
+          layout defects. Temporary official STAC sample: Terra, no fallback,
+          37.216 s, 5 facts/28 evidence, 0 unverified, 3 non-blocking ambiguity,
+          0 invariant violations; no payment/after-aid line admitted as a cost.
+SUMMARY   The prompt now forbids treating payment views as new costs, and a
+          deterministic guard independently marks verified after-aid balances,
+          family obligations, term amounts due, and installments non-summable.
+          The synthetic STAC-pattern letter proves quote verification alone is
+          not enough and that annual cost stays $42,000 rather than ballooning.
+ACTIVE    none for H1
+NEXT      H2 when Shade places real letters in uploads/; meanwhile Codex starts
+          R1's pipeline half so progress does not depend on private files.
+NOTES     The official STAC PDF and live extraction remain under /tmp only and
+          will not be committed. Meridian and Summit source fixtures were not
+          changed by H1.
+
+
+### 2026-09-19 · 059 · R1 pipeline half claimed; H2 waiting on uploads/
+AGENT     codex (current session, per Shade)
+STATE     in-progress
+TOUCHED   api/{extract,normalize}.py, api/tests/, corpus/{letters,responses,
+          expected}/residency_rates_offer.*, scripts/make_corpus.py,
+          docs/CHANGES.log
+VERIFY    pending option-level evidence gate, corpus replay, visual PDF review,
+          and regressions against Meridian/Summit
+SUMMARY   Build the frozen-schema residency contract: one cost item, first
+          verified option as its provisional amount, a material blocking
+          `<cost_id>.amount` ambiguity, decimal-string choices, and evidence for
+          every rate. Never infer residency from address or choose a rate.
+ACTIVE    R1 pipeline files listed above
+NEXT      Add normalization/evidence invariants, fictional dual-rate letter and
+          replay, then run the full corpus/API suites.
+NOTES     H2 check found no uploads/ directory yet. Codex will not create it or
+          ask Shade for any document content; Shade can place files there later.
+
+
+### 2026-09-19 · 054 · P2 moves from Render to Vercel (Shade's call)
+AGENT     claude-opus-5 (session after 027), per Shade
+STATE     handoff
+TOUCHED   docs/TASKS.md (P2 rewritten; Shade's P2 line)
+VERIFY    Vercel docs (search): FastAPI is a zero-config backend on Vercel;
+          per-function maxDuration via vercel.json; excludeFiles for bundle size.
+SUMMARY   Shade asked why Render. The only reason was the disk-backed SQLite
+          quota. Decision: the API becomes a second Vercel project (root api/),
+          quotas move to Upstash Redis (Vercel Marketplace, free), and in public
+          mode /analyze REQUIRES the proxy secret so the API's URL works only
+          through the website. Shade reuses the existing OpenAI project key
+          (hard limit already set) by pasting it into the new project's env.
+ACTIVE    none
+NEXT      Codex: S1-FIX, then P2 per the rewritten contract. Claude: push the
+          web side (UI-S1/UI-P2/UI-R1) once S1-FIX lands — the web project must
+          have the disclosure live BEFORE FINEPRINT_API_URL is set.
+NOTES     Codex: render.yaml and the Render half of DEPLOY_API.md are now
+          obsolete. Consider an Ignored Build Step on the api project
+          (`git diff HEAD^ HEAD --quiet -- .`) so web-only pushes don't redeploy it.
+
+
+### 2026-09-19 · 060 · R1 pipeline contract complete
+AGENT     codex (current session, per Shade)
+STATE     done — uncommitted
+TOUCHED   api/{extract,normalize}.py, api/tests/{test_normalize,test_corpus}.py,
+          corpus/{letters,responses,expected}/residency_rates_offer.*,
+          corpus/{README,run_corpus.py}, scripts/make_corpus.py,
+          docs/{TASKS,CHANGES}.md
+VERIFY    R1 focused tests 25/25; offline corpus 5/5; synthetic 612x792 PDF
+          rendered and visually inspected with no layout defects. Three source
+          claims and both alternative amounts verify at 100%; zero invariant
+          violations or expected-output diffs.
+SUMMARY   A mutually exclusive rate schedule now yields one provisional cost
+          item plus a material blocking `<cost_id>.amount` ambiguity. Option
+          values are decimal strings, each option is independently evidence
+          gated, and a single bad option fails closed instead of entering math.
+ACTIVE    none for R1
+NEXT      Codex replaces its superseded Render P2 work with the Vercel + Upstash
+          contract in entry 054, without editing Claude's web/ lane.
+NOTES     The prompt explicitly forbids choosing a rate or inferring residency
+          from an address or school. H2 still waits for files under uploads/.
+
+
+### 2026-09-19 · 061 · S1-FIX mirrored, Summit test green; derived rows labelled; Codex: P2 → Vercel
+AGENT     claude-opus-5 (session after 027)
+STATE     done — uncommitted; ready to push with Codex's S1-FIX pipeline work
+TOUCHED   web/public/samples/summit-per-term.json (via make_demo_samples.py,
+          default mode — byte-identical to the fixture), web/lib/engine/
+          engine.test.ts (Summit tests live), web/lib/view.ts,
+          web/components/XRay.tsx, web/app/analyze/AnalyzeView.tsx
+VERIFY    npm test 36/36; Summit in browser: gift $16,500, cost $45,275, cover
+          $28,775, no "letter says" quote, Pell row highlights both terms.
+          Regression: financing 8/8, fouryear 7/7 to the dollar, audit 0
+          requests, residency, tabwalk 36 stops / 0 problems at 4 widths,
+          keyboard, states, picker — all pass.
+SUMMARY   Codex 055 asked for the mirror + unskip: done. The headline test now
+          asserts the intent (derived rollups are never quoted as the letter's
+          words) since the two term rollups merged into one derived rollup.
+          X-Ray labels derived figures honestly: "Terms added together ·" on
+          merged items, "Letter's term totals, added ·" on merged rollups —
+          previously "Stated total" for a $24,400 the letter never printed.
+ACTIVE    none
+NEXT      Shade: approve committing/pushing both lanes together (Summit fixture
+          + web mirror must land in the same push; api/tests/test_demo_samples
+          checks they are byte-identical).
+NOTES     Codex — IMPORTANT, read "054 · P2 moves from Render to Vercel" above
+          (my entry, appended after your 059): Shade chose Vercel over Render.
+          The P2 contract in TASKS.md is rewritten: second Vercel project with
+          root api/, Upstash Redis for quotas (no disk on Vercel), and in
+          public mode /analyze must REQUIRE the proxy secret. Your Render-based
+          render.yaml/DEPLOY_API.md changes need adapting before Shade starts.
+
+
+### 2026-09-19 · 062 · P2 Vercel contract locally ready; activation gated on push
+AGENT     codex (current session, per Shade)
+STATE     implementation done — uncommitted, not deployed
+TOUCHED   api/{main,guardrails}.py,
+          api/{requirements.txt,vercel.json,sample_offer.json},
+          api/tests/{test_main,test_guardrails}.py,
+          .env.example, docs/{DEPLOY_API,CHANGES}.md; removed render.yaml
+VERIFY    API 82/82; corpus 5/5; compileall and vercel.json parse clean; full
+          working-tree secret scan clean. Disabled public-mode HTTP check:
+          health reports fixture/proxy/quota configured and live=false;
+          /analyze 503; /debug/ingest 404. Clean dependency payload measured
+          144,121,838 file bytes / 157,536 KiB on disk, below Vercel's 500 MB
+          Python limit; first platform build remains the authoritative size test.
+SUMMARY   FastAPI is self-contained under api/ for Vercel Root Directory api/.
+          Public analysis now requires the constant-time authenticated proxy
+          headers. Atomic Upstash Lua counters enforce per-client hourly and
+          global daily caps using HMAC-only identifiers and fail closed on any
+          missing configuration or store error. The runbook now walks Shade
+          through a disabled first deploy, Marketplace Redis, synthetic-only
+          activation, persistence/429 checks, web connection, and rollback.
+ACTIVE    P2 external activation only; no credentials or account action by Codex
+NEXT      Shade must explicitly request commit + push. Then follow DEPLOY_API.md
+          steps 1-4 privately and report only pass/fail/non-secret API URL; Codex
+          can validate the public contract without ever receiving a key.
+NOTES     Official docs confirm Vercel Marketplace commonly injects
+          KV_REST_API_URL/KV_REST_API_TOKEN; direct Upstash REST variable names
+          are accepted as fallback. H2 still waits for uploads/. L1 waits for
+          the pending web push. HO remains last, after those states settle.
+
+
+### 2026-09-19 · 063 · L1 live baseline green except intentionally unpushed UI-R1
+AGENT     codex (current session, per Shade)
+STATE     partial — read-only sweep of current production; rerun after web push
+TOUCHED   docs/CHANGES.log only; web/ remained read-only
+VERIFY    https://fineprint-aid.vercel.app: audit 0 interaction requests and
+          highlights visible at 1280/1366/1100/900; four-year values match at
+          every lever with 0 requests/errors and no 400 px overflow; financing
+          all checks ok; keyboard 0 requests/errors; state matrix has an h1 and
+          actionable copy in every case; tabwalk 35 stops with no NO-RING,
+          OFFSCREEN, or COVERED finding at 1280/1100/900/390; headed Chrome:
+          CORRECT, 100% painted, upright=true, 59% ink width, real 15 px scrollbar.
+SUMMARY   Current production is sound for all behavior it contains. The new
+          residency script demonstrates that production does not yet implement
+          `<cost_id>.amount`: tuition remains $34,800 before/after the injected
+          choice and stays in totals. That is expected because Claude's UI-R1
+          files are still uncommitted, not a regression in the deployed commit.
+ACTIVE    L1 acceptance waits on the pending combined push and Vercel deployment
+NEXT      After Shade authorizes commit/push and Vercel publishes UI-R1, rerun
+          every e2e script (including headed) and require residency to show
+          $16,500 before the answer and $68,500/$274,000 after out-of-state.
+NOTES     puppeteer-core and all outputs lived under /tmp; nothing was installed
+          or written in web/. No live upload/provider call was made.
+
+
+### 2026-09-19 · 062 · Claude's web work committed as 5b9d8f5 — Codex pushes
+AGENT     claude-opus-5 (session after 027), per Shade
+STATE     done — committed locally, NOT pushed
+TOUCHED   web/ (17 files, 5b9d8f5; no trailers)
+VERIFY    npm test 36/36, typecheck, eslint, next build clean; secret scan clean.
+SUMMARY   5b9d8f5 = UI-S1 picker + Summit mirror, headline/derived-label
+          honesty, UI-P2 web half, UI-R1 residency. docs/ left uncommitted on
+          purpose (shared, holds Codex's in-progress entries).
+ACTIVE    none
+NEXT      Codex: per Shade, push 5b9d8f5 together with your own commits.
+NOTES     Codex: 5b9d8f5 includes web/public/samples/summit-per-term.json, the
+          mirror of your uncommitted S1-FIX fixture. Push them in the SAME push
+          (api/tests/test_demo_samples checks byte identity), and include
+          docs/CHANGES.log + docs/TASKS.md in your commit. Before pushing, run
+          `git log origin/main..HEAD --pretty='%h %an %(trailers:only)'` — Shade
+          wants no attribution trailers on any commit.

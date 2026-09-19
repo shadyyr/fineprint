@@ -19,6 +19,8 @@ sys.path.insert(0, str(API))
 
 from ingest import ingest  # noqa: E402
 from models import (  # noqa: E402
+    ExtractionAmbiguity,
+    ExtractionAmbiguityOption,
     ExtractionCitation,
     ExtractionItem,
     ExtractionMissingCost,
@@ -242,3 +244,98 @@ def test_output_validates_and_round_trips(ingested):
     doc = normalize(realistic_extraction(ingested), ingested, source_file_name="s.pdf")
     again = CanonicalDocument.model_validate_json(doc.model_dump_json())
     assert again == doc
+
+
+@pytest.mark.parametrize(
+    "label",
+    [
+        "Cost after all awards",
+        "Fall 2026 estimate",
+        "Fall 2026 amount due after aid",
+        "Monthly installment",
+        "Family obligation",
+    ],
+)
+def test_payment_and_after_aid_cost_views_are_non_summable(ingested, label):
+    extraction = realistic_extraction(ingested)
+    source = line_with(ingested, "Total Cost of Attendance")
+    extraction.items.append(
+        ExtractionItem(
+            kind="cost",
+            label=label,
+            amount=51300,
+            period="annual",
+            cost_category="other",
+            direct_cost=False,
+            confidence=0.95,
+            citations=[
+                ExtractionCitation(line_id=source.line_id, quote=source.text)
+            ],
+        )
+    )
+
+    document = normalize(extraction, ingested, source_file_name="s.pdf")
+    view = next(item for item in document.costs if item.label == label)
+    assert view.role == "rollup"
+
+
+def _amount_choice(ingested, *, second_value: str) -> ExtractionAmbiguity:
+    tuition = line_with(ingested, "Tuition and Fees")
+    total = line_with(ingested, "Total Cost of Attendance")
+    return ExtractionAmbiguity(
+        kind="amount_unclear",
+        target_label="Tuition and Fees",
+        question="Which tuition rate applies?",
+        why="The letter lists two mutually exclusive rates.",
+        options=[
+            ExtractionAmbiguityOption(
+                value="34800", label="In-state: $34,800 a year"
+            ),
+            ExtractionAmbiguityOption(
+                value=second_value, label="Out-of-state: $51,300 a year"
+            ),
+        ],
+        citations=[
+            ExtractionCitation(line_id=tuition.line_id, quote=tuition.text),
+            ExtractionCitation(line_id=total.line_id, quote=total.text),
+        ],
+    )
+
+
+def test_amount_choice_is_material_blocking_and_evidence_gated(ingested):
+    extraction = realistic_extraction(ingested)
+    extraction.ambiguities.append(_amount_choice(ingested, second_value="51300"))
+
+    document = normalize(extraction, ingested, source_file_name="s.pdf")
+    tuition = next(item for item in document.costs if item.label == "Tuition and Fees")
+    ambiguity = next(row for row in document.ambiguities if row.kind == "amount_unclear")
+
+    assert ambiguity.target == f"{tuition.id}.amount"
+    assert ambiguity.severity == "material"
+    assert ambiguity.blocks_headline is True
+    assert tuition.amount == 34800
+    assert [option.value for option in ambiguity.options] == ["34800", "51300"]
+    matched = {
+        evidence.amount_text
+        for evidence in document.evidence
+        if evidence.id in ambiguity.evidence_ids
+        and evidence.verification.amount_matched
+    }
+    assert matched == {"$34,800", "$51,300"}
+
+
+def test_amount_choice_fails_closed_when_any_option_is_unverified(ingested):
+    extraction = realistic_extraction(ingested)
+    extraction.ambiguities.append(_amount_choice(ingested, second_value="99999"))
+
+    document = normalize(extraction, ingested, source_file_name="s.pdf")
+    tuition = next(item for item in document.costs if item.label == "Tuition and Fees")
+
+    assert not any(row.kind == "amount_unclear" for row in document.ambiguities)
+    assert tuition.role == "rollup"
+    assert any(
+        claim.claimed_label == "Tuition and Fees"
+        and claim.claimed_amount == 99999
+        and claim.reason == "amount_mismatch"
+        for claim in document.unverified_claims
+    )

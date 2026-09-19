@@ -81,20 +81,34 @@ they are not double counted. Never mark an ordinary grant, scholarship, loan, or
 cost as a total merely because its amount happens to equal a combination of other \
 rows.
 
+7. Cost after aid, family obligation, balance due, amount due per term, payment \
+installments, and similar payment-schedule views are NOT additional costs. Do \
+not emit them as cost items. They describe how or when the already stated costs \
+are covered, often after aid has already been subtracted.
+
+8. If a letter lists mutually exclusive cost rates (for example in-state and \
+out-of-state tuition) without saying which applies, emit ONE cost item using the \
+first listed rate as its provisional amount. Also emit an `amount_unclear` \
+ambiguity targeting that item. Each option value must be the amount as a plain \
+decimal string (for example "19800"), and the ambiguity must cite every option \
+row. Never infer residency from a name, address, institution, or typical rate. \
+If the letter explicitly says which rate applies, emit only that rate and no \
+amount ambiguity.
+
 TABLE STRUCTURE.
 
-7. When one row has separate term columns (for example Fall and Spring), emit one \
+9. When one row has separate term columns (for example Fall and Spring), emit one \
 item for EACH amount and include the term in the label. Use period "semester" or \
 "term" only when the document's headings establish it. A separate award outside \
 that table does not inherit the table's period.
 
 AMBIGUITIES AND GAPS.
 
-8. Raise an ambiguity whenever the document leaves something materially unclear, \
+10. Raise an ambiguity whenever the document leaves something materially unclear, \
 especially an amount whose period is not stated. Give at least two concrete \
 options a student could choose between.
 
-9. missing_costs: list cost categories the letter names but does not price, and \
+11. missing_costs: list cost categories the letter names but does not price, and \
 standard categories absent entirely (transportation, personal expenses, health \
 insurance). Never invent an amount for them.
 

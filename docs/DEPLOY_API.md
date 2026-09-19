@@ -1,89 +1,253 @@
-# Public API deployment: prepared, not activated
+# Public API activation runbook
 
-FinePrint's live upload path is ready to host, but it is not deployed. Do not
-create the Render service, expose an API URL, set Vercel's
-`FINEPRINT_API_URL`, or enable analysis until Shade explicitly approves it.
-The existing sample experience at <https://fineprint-aid.vercel.app> does not
-need this service.
+Shade approved a small public deployment for the demo video on 2026-09-19.
+The API is a second Vercel project from this repository with Root Directory
+`api/`; it is not a Render service.
 
-## What the prepared service does
+Shade performs every account, billing, key, and secret step. Never paste an
+OpenAI key, Redis token, or FinePrint secret into chat, Git, a command output,
+or a screenshot. Codex never needs to see any of their values.
 
-[`render.yaml`](../render.yaml) describes one paid Render web service with one
-worker, one instance, automatic deploys off, and a 1 GB persistent disk. It
-starts with `FINEPRINT_PUBLIC_API_ENABLED=false`, so `/analyze` returns 503 and
-does not read the upload or call OpenAI. `/sample` and `/health` remain usable;
-the local-only `/debug/ingest` route returns 404 in public mode.
+The sample-only site at <https://fineprint-aid.vercel.app> remains usable during
+every step. Do not connect the web project to the API until the disabled and
+enabled checks below pass and the disclosure/headers are live on the web site.
 
-When enabled, the service applies two independent controls before a model can
-be called:
+## What the service enforces
 
-- Three `/analyze` attempts per hashed client address per fixed hour. The
-  SQLite database stores an HMAC-SHA256 digest, never the raw address.
-- Twenty-five provider-backed analyses across the service per UTC day. A call
-  that reaches OpenAI consumes a slot even if the model refuses or fails.
+[`api/vercel.json`](../api/vercel.json) configures Vercel's recognized
+`main.py:app` FastAPI entrypoint for a 120-second maximum duration and excludes
+tests and fixture directories from the function bundle. A clean local staging
+install measured 144,121,838 file bytes (157,536 KiB on disk), below Vercel's
+500 MB standard uncompressed Python limit. The first Vercel build is the final
+size check because Linux wheels can differ from the local macOS wheels.
 
-The counters survive restarts on the disk. The design intentionally uses one
-instance: Render disks attach to only one instance, and a local SQLite ceiling
-would not be global across replicas. Uvicorn access logging is disabled. The
-application logs only event categories; it never logs PDF bytes, extracted
-text, filenames, model output, provider error text, or raw client addresses.
+The service starts with `FINEPRINT_PUBLIC_API_ENABLED=false`. In public mode,
+`POST /analyze` returns 503 before reading a file or calling OpenAI until that
+switch is enabled. `POST /debug/ingest` always returns 404 in public mode.
 
-## Cost and privacy decision
+Once enabled, `/analyze` requires both headers sent by the web project:
 
-Each accepted letter normally makes one Terra request. Sol is called only when
-the primary extraction fails validation or leaves a material ambiguity, so a
-single analysis can make two provider calls. The default app cap therefore
-limits analyses, not tokens or dollars: at 25 analyses per day, the theoretical
-maximum is 50 model requests per day, with cost still varying by document and
-model usage. Render compute and its persistent disk also cost money.
+- `X-FinePrint-Client-IP`
+- `X-FinePrint-Proxy-Secret`
 
-An app quota is not a billing guarantee. Before activation, create a separate
-OpenAI project for this public demo and enforce a small **hard monthly spend
-limit** on that project. OpenAI notes that hard-limit enforcement is not
-instantaneous, so a small overrun is still possible. Add spend alerts as an
-early warning, not as the cap.
+The proxy secret is checked with constant-time comparison. A missing or wrong
+secret returns 403, so the public API URL cannot be used directly. Bare
+`X-Forwarded-For` is never trusted.
 
-Aid letters can contain names, IDs, addresses, and financial details. The PDF
-exists only in request/process memory and FinePrint sends its extracted text and
-page images to OpenAI with `store=false`; neither FinePrint nor the quota store
-persists the document. That reduces retention but does not remove third-party
-processing: Render receives the upload and OpenAI processes its contents. The
-live UI must disclose that before accepting a real letter. Do not invite users
-to upload documents until that disclosure is visible.
+Upstash Redis enforces two independent quotas before a provider call:
 
-## Activation checklist — only after Shade says go
+- `FINEPRINT_RATE_LIMIT_REQUESTS=3` attempts per HMAC'd client identifier per
+  `FINEPRINT_RATE_LIMIT_WINDOW_SECONDS=3600` fixed window.
+- `FINEPRINT_DAILY_ANALYSIS_CAP=25` provider-backed analyses per UTC day.
 
-1. In OpenAI, create a production-only project key with an expiration date and
-   a rotation plan. Set a hard monthly project spend limit and lower project
-   rate limits where practical.
-2. Review current Render pricing. Import `render.yaml` as a Blueprint and enter
-   the project key when Render prompts for `OPENAI_API_KEY`. Do not put the key
-   in Git or paste it into the YAML.
-3. Confirm Render created one instance and mounted `/var/data`. Keep automatic
-   deploys and preview environments off.
-4. While `FINEPRINT_PUBLIC_API_ENABLED=false`, check `/health`: it should return
-   `ok: true` and `live_extraction: false`. Confirm `/analyze` returns 503 and
-   `/debug/ingest` returns 404.
-5. Inspect service logs and confirm no access log, filename, document text,
-   provider response, or raw client address appears.
-6. Set `FINEPRINT_PUBLIC_API_ENABLED=true` in Render, deploy manually, and send
-   only a synthetic test letter. Confirm valid analysis, a `Retry-After` header
-   after the per-client limit, and persistent counters across a restart.
-7. Only after those checks, set Vercel's server-side `FINEPRINT_API_URL` to the
-   HTTPS Render URL and redeploy the web app. Test the synthetic letter again
-   from <https://fineprint-aid.vercel.app>.
+Each check/increment/expiry is one atomic Redis Lua operation. Redis keys contain
+only an HMAC digest, window timestamp, or UTC date—never a raw address. Counters
+survive function restarts and concurrent Vercel instances. If Redis credentials,
+the HMAC secret, or Redis itself are unavailable, analysis fails closed with 503.
+
+Every non-2xx body is `{"detail":"<one student-facing sentence>"}`. A 429 also
+has an integer `Retry-After` header. Application logs contain event categories,
+not PDF bytes, extracted text, filenames, model responses, secrets, raw addresses,
+or provider error details. No application data is written to disk.
+
+## Cost and privacy boundary
+
+An accepted letter normally makes one Terra request. Sol is called only when
+the primary result fails validation or leaves a blocking material ambiguity, so
+one analysis can make two provider calls. The app cap limits analyses, not tokens
+or dollars; the OpenAI project hard spend limit remains the billing backstop.
+Hard-limit enforcement can lag slightly.
+
+Aid letters can contain names, IDs, addresses, and financial details. FinePrint
+keeps the upload in request/process memory and sends extracted text and page
+images to OpenAI with `store=false`; it does not persist the upload or result.
+OpenAI does not train on API data unless the project opts in. Default abuse-
+monitoring logs may contain prompts and responses for up to 30 days, with longer
+retention possible when legally required or reasonably necessary to prevent
+harm. Vercel processes the upload. Upstash receives only quota keys and counts.
+
+## Activation walkthrough
+
+### 0. Commit gate
+
+Do not import or redeploy from an older commit. First commit and push the P2
+implementation, then confirm the GitHub copy contains:
+
+- `api/vercel.json`
+- `api/guardrails.py` using Upstash rather than SQLite
+- `api/sample_offer.json`
+- no `render.yaml`
+
+This gate is intentionally still closed until Shade explicitly asks for a
+commit and push.
+
+### 1. Shade: prepare three private values
+
+The existing isolated OpenAI project key and enforced hard spend limit can be
+reused. Separately generate and store two independent high-entropy values:
+
+- `FINEPRINT_PROXY_SECRET`: shared by the API and web Vercel projects.
+- `FINEPRINT_IP_HASH_SECRET`: used only by the API to HMAC client identifiers.
+
+For example, run `openssl rand -hex 32` separately for each value and put them
+directly in a password manager/Vercel. Do not send either value to Codex. Never
+give them a `NEXT_PUBLIC_` prefix.
+
+### 2. Shade: create the disabled API project
+
+1. In Vercel, choose **Add New → Project** and import this same Git repository a
+   second time.
+2. Name it something unambiguous such as `fineprint-api`.
+3. Set **Root Directory** to `api/` and **Framework Preset** to FastAPI (automatic
+   detection is also acceptable). Leave Build Command and Output Directory at
+   their defaults.
+4. Keep the production branch as `main`. Under Root Directory, keep **Skip
+   deployments when there are no changes** enabled. If that feature is not
+   available, use Ignored Build Step `git diff HEAD^ HEAD --quiet -- .`.
+5. Add these Production environment variables. Shade enters every private value
+   directly in Vercel; nobody else needs it:
+
+   | Variable | Initial value |
+   | --- | --- |
+   | `OPENAI_API_KEY` | existing FinePrint project key |
+   | `FINEPRINT_MODEL` | `gpt-5.6-terra` |
+   | `FINEPRINT_FALLBACK_MODEL` | `gpt-5.6-sol` |
+   | `FINEPRINT_REASONING_EFFORT` | `medium` |
+   | `FINEPRINT_PUBLIC_MODE` | `true` |
+   | `FINEPRINT_PUBLIC_API_ENABLED` | `false` |
+   | `FINEPRINT_PROXY_SECRET` | private shared secret |
+   | `FINEPRINT_IP_HASH_SECRET` | private HMAC secret |
+   | `FINEPRINT_RATE_LIMIT_REQUESTS` | `3` |
+   | `FINEPRINT_RATE_LIMIT_WINDOW_SECONDS` | `3600` |
+   | `FINEPRINT_DAILY_ANALYSIS_CAP` | `25` |
+
+6. Deploy. In the build output, confirm Vercel detected FastAPI, built one Python
+   function from `main.py`, applied `maxDuration: 120`, and did not report a
+   bundle-size error. Copy the `https://…vercel.app` API URL; the URL is not a
+   secret.
+
+### 3. Shade: connect Upstash Redis
+
+1. In the API project, open **Storage/Marketplace**, select **Upstash Redis**, and
+   create or connect a free-tier Redis database.
+2. Connect it only to the FinePrint API project and Production environment.
+3. Confirm Project Settings → Environment Variables now contains
+   `KV_REST_API_URL` and `KV_REST_API_TOKEN`. Those are the Vercel Marketplace
+   names. FinePrint also accepts Upstash's direct
+   `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` names, but do not create
+   duplicates when the Marketplace variables exist.
+4. Redeploy so the new variables reach the function.
+
+### 4. Disabled-state checks (no provider spend)
+
+From the repository root, set only the non-secret public API URL in the shell:
+
+```bash
+export FINEPRINT_API_URL="https://YOUR-API-PROJECT.vercel.app"
+curl --fail-with-body "$FINEPRINT_API_URL/health"
+curl --silent --show-error --output /tmp/fineprint-disabled.json \
+  --write-out 'HTTP %{http_code}\n' \
+  -F 'file=@fixtures/sample_offer.pdf;type=application/pdf' \
+  "$FINEPRINT_API_URL/analyze"
+curl --silent --show-error --output /tmp/fineprint-debug.json \
+  --write-out 'HTTP %{http_code}\n' \
+  -F 'file=@fixtures/sample_offer.pdf;type=application/pdf' \
+  "$FINEPRINT_API_URL/debug/ingest"
+```
+
+The health body must report `ok: true`, `fixture_available: true`,
+`live_extraction: false`, `public_mode: true`,
+`proxy_identity_configured: true`, and `quota_store_configured: true`.
+`/analyze` must be 503 and `/debug/ingest` 404, each with one string-valued
+`detail`. Check Vercel logs: no filename, document text, response body, raw
+address, or secret may appear.
+
+### 5. Shade: enable and run the synthetic smoke test
+
+1. Change `FINEPRINT_PUBLIC_API_ENABLED` to `true` in the API project's
+   Production environment and redeploy.
+2. Confirm `/health` now reports `live_extraction: true`.
+3. In a private terminal, load `FINEPRINT_PROXY_SECRET` without printing it.
+   Time one Meridian analysis using the reserved documentation address as the
+   synthetic client:
+
+```bash
+read -s FINEPRINT_PROXY_SECRET
+export FINEPRINT_PROXY_SECRET
+curl --fail-with-body --silent --show-error \
+  --output /tmp/fineprint-meridian-result.json \
+  --write-out 'HTTP %{http_code} total=%{time_total}s\n' \
+  -H 'X-FinePrint-Client-IP: 198.51.100.77' \
+  -H "X-FinePrint-Proxy-Secret: $FINEPRINT_PROXY_SECRET" \
+  -F 'file=@fixtures/sample_offer.pdf;type=application/pdf' \
+  "$FINEPRINT_API_URL/analyze"
+```
+
+Validate the saved result locally and record `extraction_meta.model` plus the
+curl duration. A normal run should report Terra. Do not force a paid Sol
+fallback merely to create a timing number. The result must finish within the
+web route's 90-second wait.
+
+4. Confirm a direct call without the secret returns 403. Then use a tiny invalid
+   synthetic payload to reach the per-client cap without additional OpenAI
+   calls. Since the successful smoke used one of three attempts, two invalid
+   requests should return 415 and the third should return 429 with an integer
+   `Retry-After` header:
+
+```bash
+printf 'not a PDF' > /tmp/fineprint-not-a-pdf.txt
+curl --include --silent --show-error \
+  -H 'X-FinePrint-Client-IP: 198.51.100.77' \
+  -H "X-FinePrint-Proxy-Secret: $FINEPRINT_PROXY_SECRET" \
+  -F 'file=@/tmp/fineprint-not-a-pdf.txt;type=application/pdf' \
+  "$FINEPRINT_API_URL/analyze"
+```
+
+5. Redeploy the same API commit, repeat the last request with the same synthetic
+   client address, and confirm it remains 429. That proves the counter survived
+   a function replacement in Upstash rather than process memory.
+
+### 6. Shade: connect the production web project
+
+Do this only after Claude's disclosure and authenticated-header changes are
+committed, pushed, and visible on <https://fineprint-aid.vercel.app>.
+
+In the existing web project's Production environment, add:
+
+- `FINEPRINT_API_URL` = the API project's HTTPS base URL, without `/analyze`.
+- `FINEPRINT_PROXY_SECRET` = the same private value as the API project.
+
+Neither variable is public and neither uses a `NEXT_PUBLIC_` prefix. Redeploy
+the web project, upload only `fixtures/sample_offer.pdf`, and confirm a successful
+analysis. Record end-to-end duration; it must remain within 90 seconds.
+
+## Changing limits without code
+
+Change any of these in the API project's Production environment and redeploy:
+
+- `FINEPRINT_RATE_LIMIT_REQUESTS`
+- `FINEPRINT_RATE_LIMIT_WINDOW_SECONDS`
+- `FINEPRINT_DAILY_ANALYSIS_CAP`
+
+No code change is required. Lowering a limit does not erase live Redis keys.
 
 ## Fast rollback
 
-Set `FINEPRINT_PUBLIC_API_ENABLED=false` first. This blocks new analyses before
-their upload is read. Then remove `FINEPRINT_API_URL` from Vercel and redeploy
-the web app. If a key or logs might have been exposed, revoke the OpenAI key,
-replace it with a new expiring project key, and review both provider dashboards.
+Set `FINEPRINT_PUBLIC_API_ENABLED=false` in the API project first and redeploy;
+this blocks new analyses before application file handling or provider calls.
+Then remove `FINEPRINT_API_URL` and `FINEPRINT_PROXY_SECRET` from the web
+project's Production environment and redeploy the web site. If a credential or
+log might have been exposed, revoke the OpenAI key, rotate both FinePrint
+secrets, reset the Upstash token, and review the provider dashboards.
 
 ## References checked September 19, 2026
 
-- [Render Blueprint YAML reference](https://render.com/docs/blueprint-spec)
-- [Render persistent disks](https://render.com/docs/disks)
-- [Render web services](https://render.com/docs/web-services)
 - [OpenAI spend limits](https://developers.openai.com/api/docs/guides/spend-limits)
-- [OpenAI production best practices](https://developers.openai.com/api/docs/guides/production-best-practices)
+- [OpenAI API data controls](https://developers.openai.com/api/docs/guides/your-data)
+- [Vercel FastAPI deployment](https://vercel.com/kb/guide/ship-a-fastapi-app-on-vercel)
+- [Vercel Python runtime and bundle exclusions](https://vercel.com/docs/functions/runtimes/python)
+- [Vercel function limits](https://vercel.com/docs/functions/limitations)
+- [Vercel monorepo Root Directory](https://vercel.com/docs/monorepos)
+- [Upstash Vercel integration](https://upstash.com/docs/redis/howto/vercelintegration)
+- [Upstash Python SDK](https://github.com/upstash/redis-py)
+- [Upstash atomic key locking](https://upstash.com/docs/redis/features/key-locking)
