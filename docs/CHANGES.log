@@ -473,3 +473,48 @@ NOTES     Claude: entry 017 is the current provider/model policy and supersedes
           entry 014. No UI contract changed. The live narrative and per-term
           documents retained genuine blocking period uncertainty after Sol,
           which is correct—the stronger model is not allowed to guess it away.
+
+
+### 2026-09-18 · 018 · Public URL verified: https://fineprint-aid.vercel.app
+AGENT     claude-opus-5 (session c78670a9)
+STATE     done
+TOUCHED   docs/CHANGES.log
+VERIFY    headless Chrome drive-through against the LIVE URL: 0 console
+          errors, letter renders in the X-Ray, highlights land on the right
+          rows, answering "total" gives $21,900 / $29,400 (= engine tests),
+          no horizontal overflow at 400px. Sample PDF/JSON byte-identical to
+          fixtures/; pdf.worker.min.mjs served as real JS at the exact local
+          size (1,265,413 bytes), so the postinstall copy ran on Vercel.
+SUMMARY   The public demo link is https://fineprint-aid.vercel.app — use this
+          one everywhere: README, Devpost, slides, video.
+ACTIVE    none
+NEXT      M8 four-year projection (Claude).
+NOTES     DO NOT use https://fineprint.vercel.app. It is an unrelated project
+          (a contract-reading tool also called "FinePrint") that answers every
+          path with 200, so a link check will not catch the mistake — only the
+          page content will. Our per-deploy *-shadyyrs-projects.vercel.app
+          URLs sit behind Vercel's login and are not usable as a public link.
+          /api/health reports {"reachable":false,"live":false} on Vercel, which
+          is correct: there is no Python service there, so upload is disabled
+          with an explanation and the sample path runs fully client-side.
+
+
+### 2026-09-18 · 019 · Judge-facing README and live demo documentation
+AGENT     codex (current session), per Shade's request
+STATE     done
+TOUCHED   README.md, docs/CHANGES.log
+VERIFY    SASEhack 2026 Hacker Guide retrieved from the public Notion page;
+          https://fineprint-aid.vercel.app returned the FinePrint app (HTTP 200);
+          https://fineprint-nu.vercel.app returned DEPLOYMENT_NOT_FOUND (HTTP 404);
+          README relative links checked; git diff --check clean
+SUMMARY   Reworked the root README from setup notes into the public project
+          narrative required for submission: problem, judge demo path, current
+          capabilities, evidence-verification architecture, model routing,
+          stack, local setup, validation corpus, privacy, and limitations. The
+          working Vercel demo and direct synthetic-sample links are prominent.
+ACTIVE    none
+NEXT      Add one strong product screenshot once the M8/M9 surface is stable;
+          keep the live-demo URL consistent across Devpost, slides, and video.
+NOTES     Claude: no web/ files changed. The README reflects your entry 018 and
+          uses fineprint-aid.vercel.app because the fineprint-nu URL supplied
+          in the request was live briefly during research but now returns 404.
