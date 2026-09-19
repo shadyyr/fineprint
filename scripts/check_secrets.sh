@@ -51,16 +51,28 @@ BLOCKED_PATHS_RE='(^|/)(\.env(\..*)?|credentials\.json|secrets\.json|.*\.(pem|ke
 ALLOWED_PATHS_RE='(^|/)\.env\.example$'
 
 # Secret-shaped content. Kept deliberately narrow: a noisy scanner that people
-# learn to bypass is worse than a quiet one they trust.
+# learn to bypass is worse than a quiet one they trust. Prefixes are named
+# explicitly rather than matching any "sk-..." run, because a generic pattern
+# also flags ordinary hyphenated words ending in "sk" (risk-adjusted-...,
+# task-management-...).
+#
+# Current OpenAI keys are "sk-proj-", "sk-svcacct-" or "sk-admin-" followed by
+# a long run that includes hyphens and underscores. The legacy "sk-" + 48
+# alphanumerics pattern does NOT match them -- the hyphen after "proj" ends the
+# run -- so a project key pasted bare into source used to pass this scan.
+#
+# Anthropic keys stay covered even though the project extracts with OpenAI:
+# a key is a key regardless of which provider this repo calls today.
 read -r -d '' SECRET_RE <<'PATTERNS' || true
-sk-ant-[A-Za-z0-9_-]{16,}
+sk-(proj|svcacct|admin)-[A-Za-z0-9_-]{20,}
+sk-ant-[A-Za-z0-9_-]{20,}
 sk-[A-Za-z0-9]{32,}
 AKIA[0-9A-Z]{16}
 ghp_[A-Za-z0-9]{36}
 github_pat_[A-Za-z0-9_]{50,}
 xox[baprs]-[A-Za-z0-9-]{10,}
 -----BEGIN [A-Z ]*PRIVATE KEY-----
-(ANTHROPIC|OPENAI|AWS_SECRET|GOOGLE)[A-Z_]*(KEY|TOKEN|SECRET)[[:space:]]*[:=][[:space:]]*['"]?[A-Za-z0-9/_+-]{16,}
+(OPENAI|ANTHROPIC|AWS_SECRET|GOOGLE)[A-Z_]*(KEY|TOKEN|SECRET)[[:space:]]*[:=][[:space:]]*['"]?[A-Za-z0-9/_+-]{16,}
 PATTERNS
 SECRET_RE_JOINED="$(printf '%s' "$SECRET_RE" | paste -sd'|' -)"
 
