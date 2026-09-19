@@ -1,279 +1,141 @@
-# Handoff — pick up here
+# FinePrint engineering handoff
 
-Written 2026-09-19 at the end of the first Claude session so a fresh session can
-continue without the old conversation. Read this whole file, then the files in
-§1. It is the state of the project at `106a75b`; anything newer is in the tail
-of [CHANGES.log](CHANGES.log).
+Updated 2026-09-19 during the final stabilization pass. The current committed
+HEAD is `3ce8732c9d3f5e9e7c62fcf357661eab0d781a83`; final stabilization changes are
+still uncommitted unless a later `CHANGES.log` entry says otherwise.
 
-**Deadline: Sunday 2026-09-20, 11:59 PM PT.** No code changes after that.
+Deadline: Sunday 2026-09-20, 11:59 PM PT. Engineering is feature-frozen. Only
+correctness, reliability, accessibility, deployment, severe visual, or
+demo-blocking fixes belong in the product now.
 
----
+## Read first
 
-## 1. Read these, in this order
+1. `CLAUDE.md` for non-negotiable product rules.
+2. The tail of `docs/CHANGES.log` for live ownership and uncommitted work.
+3. `docs/TASKS.md` for the board and lane rules.
+4. `docs/PLAN.md` for architecture.
+5. `docs/FinePrint_SASEhack_2026_Master_Context.md` for the local, gitignored
+   product specification.
 
-1. **This file.**
-2. [`CLAUDE.md`](../CLAUDE.md) — the rules that are not negotiable.
-3. [`docs/FinePrint_SASEhack_2026_Master_Context.md`](FinePrint_SASEhack_2026_Master_Context.md)
-   — the product spec. §6–8 are scope, §13 financial semantics, §17 the demo
-   script, §24 the "must not do" list, §25 the Devpost skeleton. It is
-   **gitignored** (local to this machine, not in the public repo); the original
-   is `~/Downloads/FinePrint_SASEhack_2026_Master_Context.md`. If it's missing
-   from `docs/`, copy it from there or ask Shade.
-4. [`docs/TASKS.md`](TASKS.md) — who owns what, the rules for two agents
-   sharing one tree, and the task board.
-5. The **tail** of [`docs/CHANGES.log`](CHANGES.log) — the last few entries are
-   the current state. Earlier entries hold the reasoning behind decisions.
-6. [`docs/PLAN.md`](PLAN.md) — architecture of record.
+`docs/read-fineprint-sasehack-2026-master-cont-linear-goblet.md` is an old
+implementation-plan snapshot, not the master context. Ignore it.
 
-> **Naming trap:** `docs/read-fineprint-sasehack-2026-master-cont-linear-goblet.md`
-> is **not** the master context, despite the name. It is an old snapshot of the
-> implementation plan (Claude Code names plan files after the first message of a
-> chat, which began "Read FinePrint_SASEhack_2026_Master_Context.md…"). It has
-> already been mistaken for the spec once. Ignore it; use the two files above.
+## Working rules
 
----
+- Two agents share one working tree. Saves are immediately visible; there is
+  no merge step to catch clobbering.
+- Claude owns `web/`; Codex owns `api/`, `corpus/`, and `scripts/`. Announce
+  shared-file work in `docs/CHANGES.log` before editing.
+- Never use `git add -A`. Stage only explicitly owned paths.
+- Commit and push only when Shade asks for that specific action.
+- Never add author, collaborator, AI, or co-author trailers.
+- Never commit real student letters, extraction dumps, `.env` files, or keys.
+  Private local letters belong only in gitignored `uploads/`.
+- Shade owns accounts, credentials, billing, Vercel settings, Devpost, slides,
+  and video work.
 
-## 2. How Shade works — follow these exactly
+## Product state
 
-- **No Claude attribution, ever.** No `Co-Authored-By`, no "Generated with
-  Claude Code", on any commit or PR. Every commit is authored as shade rahman.
-  Check trailers before pushing: `git log -1 --pretty='%(trailers:only)'`.
-- **Commit and push only when asked, and treat each ask separately.** Shade
-  often says "commit, don't push" — Codex or Shade may push. Asking to push
-  once does not authorize the next push.
-- **Never `git add -A`.** Two agents share this working tree; stage your own
-  lane by path (`git add web/ docs/...`). Run `git status` first — Codex's
-  uncommitted work may be sitting there.
-- **Verify, then report with evidence.** Shade responds well to measured
-  claims ("0 network requests", "matches the engine test to the dollar") and to
-  honest "I could not reproduce this" when true. Don't claim a fix you have not
-  watched work.
-- **Pronouns:** not stated — use they/them.
+The core path is shipped:
 
----
+```text
+PDF/sample → semantic extraction → deterministic evidence gate
+→ canonical facts → Overview → ambiguity resolution → Financial X-Ray
+→ financing choices → four-year What-If
+```
 
-## 3. Working alongside Codex
+The financial invariants are enforced by the engine and browser regressions:
 
-**Codex is a second AI agent (OpenAI's Codex) working this project in
-parallel with you, in the same VS Code window, on the same working tree.** It
-has its own lane and its own task queue. It can be away for stretches; its queue
-waits for it in `docs/TASKS.md` and it picks up from there when it's back.
+- gift aid, loans, and work-study remain separate;
+- loans and work-study never reduce “Estimated amount to cover”;
+- accepted loans reduce only “Still to cover from other sources” and display
+  principal borrowed with no invented repayment estimate;
+- work-study defaults off and is labelled earned/not paid upfront;
+- unknown periods, alternate residency rates, missing costs, and rejected
+  evidence are never silently counted;
+- rollups, term rows, payment schedules, and after-aid balances are protected
+  against duplicate summation;
+- source facts, user overrides, and scenario assumptions remain distinct.
 
-| Lane | Owner | Directories |
-|---|---|---|
-| Product | **Claude** (you) | `web/` |
-| Pipeline | **Codex** | `api/`, `corpus/`, `scripts/` |
-| Shared | agreement first | `fixtures/`, `web/lib/schema.ts` ↔ `api/models.py`, `docs/`, root files |
-| Human | Shade | keys, Vercel settings, video, Devpost, slides |
+Students may enter their own yearly estimates for costs a letter names without
+pricing, or a whole yearly cost when the letter contains no cost figure. These
+values remain in the overrides layer and are visibly labelled “Your estimate”
+or “Provided by you”; clearing one returns it to missing, never to a silent $0.
 
-### You see each other's work live — no git involved
-- Every save lands on disk instantly for both agents. Nobody pulls, pushes or
-  fetches to coordinate; commits are checkpoints and the submission, not
-  messages.
-- **You will see Codex's edits appear while you work**: modified or new files
-  in `api/`, `corpus/`, `scripts/` in `git status`, and "file changed on disk"
-  notices for files you've read. That is Codex, working. **Never revert or
-  "fix" Codex's files.** If something in its lane looks wrong, say so in the
-  log and to Shade.
-- The flip side: with no merge step, two agents saving the same file means the
-  second write silently wins. Stay in `web/`, and announce in the log *before*
-  touching a shared file.
+## Production
 
-### Where you talk to each other
-- **`docs/CHANGES.log` — the channel.** Append-only; newest at the bottom;
-  format at the top of the file. The **last entry is the current state** and
-  its `ACTIVE` line lists files an agent is holding.
-  - Read the tail before you start and after any pause.
-  - Append when you finish a unit of work or change plans — not batched at the
-    end, because Codex reads it while you work.
-  - **To ask Codex for something**, write an entry with a `NOTES` line that
-    starts `Codex: …`. Codex addresses you the same way (`Claude: …`).
-  - Entry numbers are **not unique** — both agents appending at once has
-    produced two 011s and two 019s. Use (last number + 1) and refer to entries
-    by number *and* title.
-- **`docs/TASKS.md` — the board.** Lanes, the eight two-agent rules, each
-  agent's queue, and cross-lane contracts (e.g. S1 ↔ UI-S1). Tick your own
-  boxes; don't edit Codex's section except to add work Shade asked for.
-- **When Shade asks you to give Codex work**: add it to Codex's queued
-  section in TASKS.md with any contract it needs, log it, then hand Shade a
-  short prompt for Codex that points at those two files rather than restating
-  everything. (Codex's current queue was assigned this way — log entry 025.)
+- Web: <https://fineprint-aid.vercel.app>
+- API: <https://api-six-pi-52.vercel.app>
+- Never use `fineprint.vercel.app`; that is a different product.
 
-### Codex's status right now
-- Away at the time of writing. Latest Codex entry: **021** (Anthropic
-  references removed).
-- Its queue, in order: **S1** second demo sample in a different layout
-  (contract with your UI-S1 in TASKS.md) → **D1** Devpost draft → **V1** a real,
-  published sample letter → **P1** public API, prepared but not switched on
-  without Shade → M5c polish.
-- Uncommitted Codex work may be in the tree when you arrive. Leave it.
+The public site has two synthetic cached samples. Live text-PDF extraction is
+enabled through a server-side web proxy to the separate Vercel FastAPI project.
+The API requires a constant-time-checked proxy secret and a forwarded client
+identity; Upstash Redis holds atomic per-client hourly and global daily quotas
+and public mode fails closed without quota storage. Direct unauthenticated
+analysis returns 403. `/debug/ingest` is hidden in public mode. Terra is the
+normal model; Sol runs only after typed-output failure, zero verified facts, or
+an evidence rejection—not for a legitimate ambiguity. OpenAI SDK retries are
+disabled, each call has a 40-second timeout, and logs contain usage counts only.
 
-### Commits across lanes
-Each agent commits its own lane by path. Shade has sometimes had one agent push
-both agents' commits ("Codex will push both"). Before any push, run
-`git log --oneline origin/main..HEAD` so you know whose commits are going out,
-and check every one for attribution trailers.
+The cached sample path is independent of the API and remains the guaranteed
+demo route. A failed personal upload is never replaced with sample results.
 
-### Housekeeping
-- Schema frozen: `web/lib/schema.ts` and `api/models.py` describe the same
-  JSON. Propose changes in the log and wait for Codex's reply.
-- Don't run Codex's test suite while it's mid-edit — you'd be testing
-  half-saved files.
-- Only one agent runs `npm run dev` (ports 3000/8000). Use `next start -p 3100`
-  for local checks.
+## Verified state
 
----
+Final stabilization checks:
 
-## 4. Where things stand
+- API: `84 passed` (`pytest api/tests -q`; six dependency deprecation warnings).
+- Web: `50 passed` across two Vitest files.
+- Corpus: `5/5 passed`, zero invariant violations.
+- TypeScript: clean.
+- ESLint: clean.
+- Next.js 16 production build: clean with `next build --webpack`.
+- Secret/sensitive-file scanner: clean across 130 files.
+- Browser checks: financing and missing-cost flows at desktop and 390 px;
+  four-year calculations; keyboard flow; residency alternatives; error and
+  empty states; responsive/layout audit at 1280/1366/1100/900; tab walks at
+  1280/1100/900/390/360; and visible-Chrome PDF rendering all pass.
+- `/debug/boxes`: sample renders two pages, 48 overlays, sufficient text layer,
+  and no browser errors. Rotation behavior is covered in API tests.
+- Production manual path: Meridian ambiguity, bidirectional evidence linking,
+  both loans, work-study, changed renewal/growth assumptions, 390×844, and the
+  alternate Summit sample/evidence linking all behave correctly.
 
-### Shipped
-| Milestone | What | Commit |
-|---|---|---|
-| M0–M3 | Schema, fixture, pure TS engine, PyMuPDF ingest with verified geometry | `eee0466` |
-| M4–M5 | Live extraction (OpenAI), deterministic evidence gate, 3-layout corpus + replay harness | Codex, `d5c21dc` |
-| M6–M7 | Landing page, Overview contrast, Financial X-Ray | `6c3c046` |
-| fixes | X-Ray on narrow screens + print; secret scanner catches `sk-proj-` keys | `47a2d05`, `e409a12` |
-| fix | Upside-down letter on real Macs (render into a fresh canvas each time) | `351c599` |
-| M8–M9 | Four-year projection + what-if simulator | `106a75b` |
+## Remaining human boundary
 
-- **Not everything is pushed.** At the time of writing `origin/main` was at
-  `dcff426` with the four-year work (`106a75b`) and the handoff commits only
-  local, so the live site lacks the four-year section until they're pushed.
-  Always check `git status -sb` and `git log --oneline origin/main..HEAD`.
-- Tests: `cd web && npm test` → **31 pass**. `.venv/bin/pytest api/tests -q` →
-  **45 pass**. `.venv/bin/python corpus/run_corpus.py` → **3/3**.
+`H2` remains waiting because `uploads/` is absent. If Shade adds a private real
+letter there, run it locally, report only generic failure categories, and turn
+every bug into a synthetic regression. Never commit or quote the private file,
+its text, or its model response.
 
-### Live site
-- **https://fineprint-aid.vercel.app** — the only correct link.
-  **Never use `fineprint.vercel.app`**: it is an unrelated product also called
-  "FinePrint", and it answers every path with 200, so a link check won't catch
-  the mistake.
-- Vercel settings Shade set: Framework Preset **Next.js**, Root Directory **web**.
-- `/api/health` returns `{"reachable":false,"live":false}` on Vercel: there is
-  no public Python service, so upload is disabled with an explanation and the
-  **sample path runs entirely in the browser**. That is intended. Making upload
-  live is Codex task P1 and needs Shade's go-ahead (it spends Shade's OpenAI
-  credits on every visitor and handles uploaded student letters).
+The current uncommitted stabilization changes must be reviewed, committed, and
+pushed before production can receive them. Do not deploy from an older commit.
 
-### Model
-OpenAI Responses API, `gpt-5.6-terra` at medium reasoning; one `gpt-5.6-sol`
-retry only on schema failure, zero verified facts, a claim rejected by the
-evidence gate, or a blocking ambiguity (CHANGES.log 017). Key in `api/.env`
-(gitignored). **The model is called in exactly one place: `api/extract.py`.**
+## Known limits
 
----
+- Text-layer PDFs only. Scans and image-only PDFs fail clearly; OCR is out of
+  scope for this release.
+- Live extraction depends on Vercel, Upstash, and OpenAI and is subject to the
+  configured quotas and provider latency. Samples do not share that dependency.
+- FinePrint reports loan principal only. It intentionally does not predict
+  interest rates, repayment plans, eligibility, monthly payments, duration, or
+  total repayment.
+- User-entered missing costs are explicit estimates, not verified letter facts.
 
-## 5. What to do next
-
-### Claude — your queue
-1. **M10 polish.** Candidates, in rough value order:
-   - On phones the what-if controls sit above the results, so a change's effect
-     is a scroll away. A small pinned "Left to cover: $X (±$Y)" bar while the
-     section is on screen would fix it.
-   - Keyboard walk-through of the whole demo path (Overview → question →
-     X-Ray rows → what-if) and a screen-reader pass over the chart tables and
-     the `aria-live` comparison.
-   - JavaScript `scrollIntoView({behavior:"smooth"})` ignores the CSS
-     reduced-motion rule; respect `prefers-reduced-motion` in the three places
-     that call it (`XRay.tsx`, `AnalyzeView.tsx`).
-   - README's "What the demo shows" was written before M8/M9 — coordinate with
-     Codex (task D1 owns the README's judges section).
-2. **UI-S1 · sample picker** once Codex lands S1. Contract in TASKS.md: read
-   `web/public/samples/index.json` (`[{slug,title,layout,note,pdf,json}]`),
-   fall back to the single Meridian sample if it's missing. A sample's
-   `extraction_meta.source` will be `"cached"`; the badge must say so.
-3. Support Shade's M11 (video, Devpost, slides) — screenshots, the demo path.
-
-### Codex — queued in TASKS.md
-S1 second demo sample in a different layout → D1 Devpost draft → V1 a real,
-publicly published sample letter → P1 public API (prepare only) → M5c polish.
-
-### Decisions only Shade can make
-- **P1**: put the extraction API online? (Cost + PII exposure; optional under
-  the rules; the video can show live upload on localhost instead.)
-- **The master context file**: it holds judging strategy and competitor notes.
-  It's in `docs/` for agents to read and **gitignored** so it isn't published
-  with the public repo. Remove its line from `.gitignore` only if Shade wants it
-  public.
-
----
-
-## 6. Things that already cost time — don't relearn them
-
-### Next.js 16 (read `web/node_modules/next/dist/docs/` before guessing)
-- A client `useSearchParams` without a Suspense boundary **works in dev and
-  fails `next build`**. `/analyze` reads `?sample` in a server component
-  instead.
-- `export const dynamic` is gone from route segment config. A GET handler that
-  reads no request data can be prerendered at build time — `/api/health` calls
-  `connection()` to prevent baking in "unreachable".
-- `next dev` **rejects dev connections from `127.0.0.1` when served as
-  `localhost`** (HMR websocket fails, page never hydrates, shows "No offer
-  loaded"). Use `http://localhost:PORT` for dev; `next start` is fine on
-  `127.0.0.1`.
-- Turbopack refuses a `node_modules` symlink pointing outside the project.
-  Use `next dev --webpack` if you need that.
-
-### pdf.js 6
-- `destroy()` lives on the **loading task**, not the document proxy.
-- Import it lazily in the browser only (`lib/pdf.ts`); a top-level import runs
-  it on the server during SSR.
-- **Never draw into a canvas that is on screen or still rendering.** A second
-  render that resizes a canvas wipes the flip, scale and white fill pdf.js set
-  up, and the first render finishes in raw PDF coordinates: upside down,
-  unscaled, transparent. Each render now gets a fresh canvas swapped in when
-  complete, and superseded renders are cancelled. Pass pdf.js only
-  `{ canvas, viewport }`, with the pixel ratio folded into the viewport scale.
-- The trigger was a **real, space-taking scrollbar** appearing in the letter
-  pane mid-render (any Mac with a mouse, Windows). **Headless Chrome, WebKit and
-  Firefox all passed while the live site was broken.** Use
-  `web/e2e/headed.mjs` (a visible window) for rendering bugs.
-- Printing re-lays the page out and fires the width observer; it is guarded so
-  the letter is not re-rendered mid-snapshot. `print-color-adjust: exact` keeps
-  the bar and swatches in print.
-
-### Coordinates (PyMuPDF ↔ pdf.js)
-PyMuPDF reports geometry for the **unrotated** page; pdf.js applies `/Rotate`.
-`api/ingest.py` applies `page.rotation_matrix`. Verified at 0/90/180/270°. Don't
-"simplify" it away. `/debug/boxes` draws every extracted line box over the page.
-
-### Security guard (`scripts/check_secrets.sh`, pre-commit hook)
-- OpenAI project keys are `sk-proj-…` with hyphens; the scanner names those
-  prefixes explicitly. Keep the Anthropic patterns too (a key is a key).
-- PDFs are blocked outside `fixtures/`, `corpus/letters/` and the one allowed
-  `web/public/sample_offer.pdf`. Never commit a real student's letter.
-- A fresh clone re-enables the hook through `npm install` (`core.hooksPath`).
-
-### Design system (see `web/app/globals.css`)
-Category colors came from the dataviz palette validator, not by eye: gift
-`#008300`, loans `#d55181`, work-study `#2a78d6`, needs-an-answer `#4a3aa7`,
-"you cover" neutral `#4a5163`. The first draft (orange loans) made gift and
-loans nearly identical to red-green colorblind readers. Every category also
-carries an icon and a text label. One hero figure per page (the Overview's
-gift-aid number). Light mode only, deliberately.
-
-### Honesty rules baked into the UI
-- A precomputed result always shows the "Precomputed sample" badge; `POST
-  /analyze` never falls back to the fixture (it would show another school's
-  numbers for someone's own letter).
-- Periods are never guessed; an unanswered question keeps that award out of
-  every total and says so.
-- Money never goes negative: when gift aid exceeds costs, "left to cover" is $0
-  with a note that schools usually reduce aid when costs drop.
-- Award conditions are quoted in the letter's own words, never paraphrased.
-
----
-
-## 7. Verify before you claim anything
+## Verification commands
 
 ```bash
-cd web && npm test && npm run typecheck && npx eslint app components lib store
-cd web && npx next build            # catches the prod-only Next 16 traps
-.venv/bin/pytest api/tests -q        # Codex's lane; don't run it while Codex is mid-edit
+.venv/bin/pytest api/tests -q
+.venv/bin/python corpus/run_corpus.py
+cd web && npm test
+cd web && npm run typecheck
+cd web && npm run lint
+cd web && npx next build --webpack
 scripts/check_secrets.sh --all
 ```
 
-Browser checks (need a running server) are in [`web/e2e/`](../web/e2e/README.md):
-`audit.mjs` (0 network requests, widths, print), `fouryear.mjs` (every what-if
-lever against engine-tested values), `headed.mjs` (visible window — the only
-thing that catches scrollbar-dependent rendering bugs).
+Browser scripts and expected output are documented in `web/e2e/README.md`.
+Use a local production build on port 3100; only one agent should own the server
+ports at a time. Keep `/debug/boxes` intact after any ingest or PDF-rendering
+change.

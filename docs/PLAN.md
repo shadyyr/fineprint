@@ -12,17 +12,17 @@
 | Milestone | State |
 |---|---|
 | M0 skeleton + contract | done |
-| M1 engine + tests | done — 31 vitest tests |
+| M1 engine + tests | done — current Vitest suite green |
 | M2 sample PDF | done — generated from shared layout data |
 | M3 ingest + coordinate proof | done — chain verified numerically at every layer |
 | M4 live extraction + admission gate | done — OpenAI typed extraction, deterministic evidence gate, live tested |
-| M5 multi-layout corpus | done — three synthetic layouts, replay + live harness |
+| M5 multi-layout corpus | done — five layouts, replay + live harness |
 | M6 Financial X-Ray | done — bidirectional document/evidence selection |
 | M7 Overview | done — headline aid vs. confirmed gift-aid contrast |
 | M8 four-year projection | done — `106a75b`; per-year bars, figures vs. the letter as written |
 | M9 what-if simulator | done — `106a75b`; growth, renewal, housing, loans, work-study; 0 network requests |
-| M10 uncertainty + accessibility | in progress — ambiguity, source badge, empty/error states shipped |
-| M11 submission | in progress — README and public sample demo shipped; video/slides/Devpost remain |
+| M10 uncertainty + accessibility | done — ambiguity, source badges, failure states, keyboard/responsive checks |
+| M11 submission | human-owned — README and public product shipped; video/slides/Devpost remain Shade's work |
 
 Also added (not in the original plan): a three-layer secret/PII guard —
 hardened `.gitignore`, a pre-commit scanner (`scripts/check_secrets.sh`)
@@ -32,7 +32,7 @@ blocking key-shaped strings, `.env` files, oversized files and PDFs outside
 
 ## Context
 
-SASEhack 2026 build (hacking window: **Fri Sep 18 5:00 PM PT → Sun Sep 20 11:59 PM PT**, ~55 wall-clock hours, **solo**). The core pipeline, validation corpus, Overview, and Financial X-Ray are implemented; projection, scenarios, final polish, and submission materials remain.
+SASEhack 2026 build (hacking window: **Fri Sep 18 5:00 PM PT → Sun Sep 20 11:59 PM PT**, ~55 wall-clock hours, **solo**). The core pipeline, validation corpus, Overview, Financial X-Ray, projections, scenarios, public samples, and protected live extraction are implemented. Engineering is feature-frozen; submission materials remain Shade's work.
 
 `FinePrint_SASEhack_2026_Master_Context.md` is the source of truth. The product converts an unstandardized financial-aid offer letter into an **evidence-linked, executable financial model**: it separates gift aid / loans / work-study / costs, traces every number back to its exact location in the source PDF, computes a Year-1 picture, projects four years, and runs what-if scenarios.
 
@@ -225,8 +225,10 @@ Sleep is in the schedule. A broken demo from an exhausted solo dev scores worse 
 
 **Never cut:** live extraction, verified evidence linking, deterministic engine correctness, uncertainty handling, or submission materials. Falling back to the fixture during judging is an emergency measure, disclosed on screen — not a planned scope reduction.
 
-### Post-core stretch (only once every core milestone is done)
-OCR / scanned-document / image-only input. This is gated rather than merely deprioritized: supporting it means producing facts that cannot be verified against a text layer, which contradicts the admission rule above. If it is ever built, it needs its own provenance path and its own visible labeling — not a quiet reuse of the verified-fact pipeline.
+### Outside the hackathon feature freeze
+OCR / scanned-document / image-only input. Supporting it would require a new
+provenance path because vision-only facts cannot meet the current text-layer
+admission rule. It is intentionally not part of this release.
 
 ---
 

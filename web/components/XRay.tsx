@@ -13,9 +13,9 @@
  *  - The analysis panel comes first in the DOM and the document second, then
  *    CSS places the document on the left. Screen readers and keyboard users
  *    reach the findings before the evidence.
- *  - Document highlights are real buttons but sit outside the tab order. The
- *    panel is the keyboard path; without this, a keyboard user would tab
- *    through two dozen highlights before reaching the list.
+ *  - Document highlights are real, keyboard-reachable buttons. Activating one
+ *    selects and returns to the corresponding analysis row, matching pointer
+ *    behavior without making color or position the only navigation path.
  *  - Selection is announced in a live region.
  */
 
@@ -241,14 +241,13 @@ function Highlight({
   return (
     <button
       type="button"
-      tabIndex={-1}
       data-evidence={evidence.id}
       onClick={onSelect}
       aria-pressed={active}
       aria-label={`${owner.label}${owner.amount !== null ? `, ${formatUSD(owner.amount)}` : ""}${
         meta ? `, ${meta.label}` : ""
       }. Page ${evidence.page}.`}
-      className="pointer-events-auto absolute cursor-pointer rounded-[3px] transition-[opacity,background-color,box-shadow] duration-200"
+      className="pointer-events-auto absolute cursor-pointer rounded-[3px] transition-[opacity,background-color,box-shadow] duration-200 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       style={{
         left: box.left - pad,
         top: box.top - pad,

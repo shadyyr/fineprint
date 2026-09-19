@@ -25,18 +25,17 @@ sample offer. The quickest path through the project is:
    changes without pretending the college costs less.
 
 FinePrint uses a model for one narrow job: extracting typed claims from an
-unstandardized letter. There is one model call site in `api/extract.py`, and an
-architecture audit measured model-touching code at 298 of 4,731 application
-lines, about 6%. Every claim then has to pass a deterministic quote-and-amount
-check against the PDF. Evidence selection, ambiguity answers, projections, and
-financing choices all recompute in the browser with zero model or network
-requests.
+unstandardized letter, with one model call site in `api/extract.py`. Every claim
+then has to pass a deterministic quote-and-amount check against the PDF.
+Evidence selection, ambiguity answers, projections, and financing choices all
+recompute in the browser with zero model or network requests.
 
-The public site uses cached analyses of synthetic letters. Live upload needs
-the Python service and is available locally; it is not enabled on Vercel yet.
-FinePrint currently accepts text-based PDFs only, with no OCR, because it will
-not use a number it cannot trace back to an authoritative text layer. The full
-submission draft and screenshot list are in [docs/DEVPOST.md](docs/DEVPOST.md).
+The public site has two guaranteed cached synthetic samples and also supports
+live upload through a separately deployed, protected FastAPI service. If that
+service is unavailable, the cached sample path remains fully functional; a
+failed personal upload is never silently replaced with sample data. FinePrint
+accepts text-based PDFs only, with no OCR, because it will not use a number it
+cannot trace back to an authoritative text layer.
 
 ## The problem
 
@@ -84,9 +83,9 @@ FinePrint turns that letter into a clearer set of questions:
 4. Select a grant, loan, cost, or missing item to open the Financial X-Ray.
 5. Select rows and PDF highlights in both directions to inspect the evidence.
 
-The hosted Vercel experience always supports the committed synthetic sample.
+The hosted Vercel experience always supports both committed synthetic samples.
 Uploading a personal PDF is enabled only when the deployment can reach the
-Python extraction service; otherwise FinePrint says so before a file is
+protected extraction service; otherwise FinePrint says so before a file is
 selected. Locally, both services run together and live extraction is available
 when an OpenAI API key is configured.
 
@@ -128,14 +127,16 @@ This creates a hard boundary:
 
 Normal extraction uses `gpt-5.6-terra` at medium reasoning. FinePrint retries
 once with `gpt-5.6-sol` only when Terra fails the typed output contract, the
-deterministic evidence gate rejects a claim, no financial fact verifies, or a
-material ambiguity blocks headline calculations. Minor ambiguity and provider
-failures do not automatically invoke the more expensive model.
+deterministic evidence gate rejects a claim, or no financial fact verifies.
+Ambiguity is a valid result under the never-infer rule and does not trigger the
+more expensive model; provider failures are not silently retried.
 
 Aid letters may contain private student information, so extraction is
 stateless and OpenAI response storage is disabled. FinePrint does not persist
 uploaded PDFs or analyses; the browser keeps the active analysis for the
-current tab.
+current tab. Under [OpenAI's API data controls](https://developers.openai.com/api/docs/guides/your-data),
+API data is not used for training unless the project opts in, while default
+abuse-monitoring logs may retain request and response content for up to 30 days.
 
 ## Architecture and stack
 
@@ -148,7 +149,8 @@ current tab.
 | Document ingest | PyMuPDF | Text lines, stable IDs, bounding boxes, page images |
 | Extraction | OpenAI Responses API | Typed interpretation of nonstandard offer letters |
 | Validation | Python admission gate + synthetic corpus | Quote/amount verification and multi-layout regression testing |
-| Hosted demo | Vercel | Frontend and committed synthetic sample |
+| Hosted web | Vercel | Frontend, server-side API proxy, committed synthetic samples |
+| Hosted API | Vercel + Upstash Redis | Protected FastAPI extraction and persistent quotas |
 
 The API performs document interpretation but no financial arithmetic. The
 browser engine is deterministic and recomputes locally, which keeps scenarios
@@ -235,11 +237,11 @@ cd ..
 scripts/check_secrets.sh --all
 ```
 
-The corpus contains three fictional layouts: a College Financing Plan-style
-table, a narrative letter, and a per-term two-column offer. Replay responses
-make the admission gate testable without an API key; `--live` runs those same
-documents through the configured models. See [corpus/README.md](corpus/README.md)
-for details.
+The corpus contains five layouts covering a College Financing Plan-style table,
+a narrative letter, per-term rows, payment-schedule/after-aid representations,
+and mutually exclusive residency rates. Replay responses make the admission
+gate testable without an API key; `--live` runs those same documents through
+the configured models. See [corpus/README.md](corpus/README.md) for details.
 
 `/debug/boxes` is the coordinate-system check. It draws every extracted line
 box over the rendered PDF so changes to PyMuPDF or pdf.js cannot silently break

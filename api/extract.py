@@ -17,7 +17,9 @@ The contract with the model, enforced by the prompt and then verified in code:
 
 from __future__ import annotations
 
+import logging
 import os
+import time
 from typing import Any, Protocol
 
 from openai import OpenAI
@@ -36,6 +38,12 @@ DEFAULT_REASONING_EFFORT = os.environ.get(
 )
 
 MAX_TOKENS = 16000
+OPENAI_MAX_RETRIES = 0
+# A primary call plus one validation fallback must fit inside the web proxy's
+# 90-second budget, with time left for ingest, verification, and transport.
+OPENAI_TIMEOUT_SECONDS = 40.0
+
+logger = logging.getLogger("fineprint.extract")
 
 SYSTEM = """\
 You are a financial-aid document analyst. You convert an unstandardized college \
@@ -183,12 +191,20 @@ class OpenAIExtractor:
         reasoning_effort: str = DEFAULT_REASONING_EFFORT,
         api_key: str | None = None,
         client: Any | None = None,
+        is_fallback: bool = False,
     ):
         self.model = model
         self.reasoning_effort = reasoning_effort
-        self._client = client or OpenAI(api_key=api_key)
+        self.is_fallback = is_fallback
+        self._client = client if client is not None else OpenAI(
+            api_key=api_key,
+            max_retries=OPENAI_MAX_RETRIES,
+            timeout=OPENAI_TIMEOUT_SECONDS,
+        )
 
     def extract(self, result: IngestResult) -> ExtractionResult:
+        started = time.perf_counter()
+        response: Any | None = None
         try:
             response = self._client.responses.parse(
                 model=self.model,
@@ -203,6 +219,13 @@ class OpenAIExtractor:
             raise ExtractionValidationFailed(
                 "The model response did not match the extraction schema."
             ) from exc
+        finally:
+            _log_usage(
+                response,
+                model=self.model,
+                is_fallback=self.is_fallback,
+                elapsed_ms=round((time.perf_counter() - started) * 1000),
+            )
 
         parsed = response.output_parsed
         if parsed is None:
@@ -221,6 +244,35 @@ class OpenAIExtractor:
                 "The model returned no valid structured output."
             )
         return parsed
+
+
+def _usage_count(value: Any) -> int | str:
+    """Return a token count without letting absent provider metadata fail work."""
+    return value if isinstance(value, int) and value >= 0 else "unavailable"
+
+
+def _log_usage(
+    response: Any | None,
+    *,
+    model: str,
+    is_fallback: bool,
+    elapsed_ms: int,
+) -> None:
+    """Log billing-relevant counts only -- never document or response content."""
+    usage = getattr(response, "usage", None)
+    input_details = getattr(usage, "input_tokens_details", None)
+    output_details = getattr(usage, "output_tokens_details", None)
+    logger.info(
+        "model_call model=%s input_tokens=%s output_tokens=%s "
+        "reasoning_tokens=%s cached_input_tokens=%s fallback=%s elapsed_ms=%s",
+        model,
+        _usage_count(getattr(usage, "input_tokens", None)),
+        _usage_count(getattr(usage, "output_tokens", None)),
+        _usage_count(getattr(output_details, "reasoning_tokens", None)),
+        _usage_count(getattr(input_details, "cached_tokens", None)),
+        str(is_fallback).lower(),
+        max(0, elapsed_ms),
+    )
 
 
 def _refusal_text(response: Any) -> str | None:

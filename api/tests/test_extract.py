@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -12,10 +13,13 @@ from openai.lib._pydantic import to_strict_json_schema
 API = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(API))
 
+import extract as extract_module  # noqa: E402
 from extract import (  # noqa: E402
     DEFAULT_MODEL,
     DEFAULT_REASONING_EFFORT,
     FALLBACK_MODEL,
+    OPENAI_MAX_RETRIES,
+    OPENAI_TIMEOUT_SECONDS,
     ExtractionFailed,
     ExtractionRefused,
     ExtractionValidationFailed,
@@ -71,7 +75,7 @@ def test_user_content_uses_responses_api_image_shape():
     assert content[-1]["type"] == "input_text"
 
 
-def test_openai_extractor_requests_typed_nonstored_output():
+def test_openai_extractor_requests_typed_nonstored_output_without_usage(caplog):
     claims = ExtractionResult(institution_name="Test University")
     response = SimpleNamespace(
         output_parsed=claims,
@@ -80,7 +84,8 @@ def test_openai_extractor_requests_typed_nonstored_output():
     )
     client = FakeClient(response)
 
-    actual = OpenAIExtractor(model="test-model", client=client).extract(ingested())
+    with caplog.at_level(logging.INFO, logger="fineprint.extract"):
+        actual = OpenAIExtractor(model="test-model", client=client).extract(ingested())
 
     assert actual is claims
     request = client.responses.kwargs
@@ -89,6 +94,55 @@ def test_openai_extractor_requests_typed_nonstored_output():
     assert request["store"] is False
     assert request["reasoning"] == {"effort": "medium"}
     assert request["input"][0]["role"] == "user"
+    line = next(record.message for record in caplog.records if "model_call" in record.message)
+    assert "input_tokens=unavailable" in line
+    assert "reasoning_tokens=unavailable" in line
+
+
+def test_openai_extractor_logs_usage_counts_only(caplog):
+    claims = ExtractionResult(institution_name="Private Student University")
+    response = SimpleNamespace(
+        output_parsed=claims,
+        output=[],
+        status="completed",
+        usage=SimpleNamespace(
+            input_tokens=7000,
+            output_tokens=900,
+            input_tokens_details=SimpleNamespace(cached_tokens=125),
+            output_tokens_details=SimpleNamespace(reasoning_tokens=300),
+        ),
+    )
+
+    with caplog.at_level(logging.INFO, logger="fineprint.extract"):
+        OpenAIExtractor(
+            model="test-model",
+            client=FakeClient(response),
+            is_fallback=True,
+        ).extract(ingested())
+
+    line = next(record.message for record in caplog.records if "model_call" in record.message)
+    assert "model=test-model" in line
+    assert "input_tokens=7000" in line
+    assert "output_tokens=900" in line
+    assert "reasoning_tokens=300" in line
+    assert "cached_input_tokens=125" in line
+    assert "fallback=true" in line
+    assert "elapsed_ms=" in line
+    assert "Private Student University" not in line
+
+
+def test_openai_client_disables_hidden_retries_and_fits_proxy_budget(monkeypatch):
+    captured = {}
+
+    def fake_openai(**kwargs):
+        captured.update(kwargs)
+        return FakeClient(None)
+
+    monkeypatch.setattr(extract_module, "OpenAI", fake_openai)
+    OpenAIExtractor(api_key="not-a-real-key")
+
+    assert captured["max_retries"] == OPENAI_MAX_RETRIES == 0
+    assert captured["timeout"] == OPENAI_TIMEOUT_SECONDS == 40.0
 
 
 def test_openai_refusal_is_reported_clearly():

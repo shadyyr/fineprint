@@ -19,7 +19,6 @@ from models import (  # noqa: E402
     ExtractionResult,
 )
 from pipeline import (  # noqa: E402
-    MATERIAL_AMBIGUITIES,
     STRUCTURED_VALIDATION_FAILURE,
     UNVERIFIED_CLAIMS,
     analyze_document,
@@ -112,15 +111,17 @@ def test_evidence_gate_rejection_calls_sol(ingested):
     assert fallback.calls == 1
 
 
-def test_material_blocking_ambiguity_calls_sol(ingested):
+def test_material_blocking_ambiguity_is_kept_without_calling_sol(ingested):
     primary = StubExtractor(claims(period="unknown"))
     fallback = StubExtractor(claims(period="unknown"))
 
     result = route(primary, fallback, ingested)
 
-    assert result.model == "gpt-5.6-sol"
-    assert result.fallback_reasons == (MATERIAL_AMBIGUITIES,)
-    assert fallback.calls == 1
+    assert result.model == "gpt-5.6-terra"
+    assert result.fallback_reasons == ()
+    assert len(result.document.ambiguities) == 1
+    assert result.document.ambiguities[0].blocks_headline is True
+    assert fallback.calls == 0
 
 
 def test_minor_ambiguity_does_not_call_sol(ingested):

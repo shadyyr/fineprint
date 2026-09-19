@@ -12,7 +12,9 @@ No code changes after. Built by Shade with two AI agents working one shared tree
 **Claude owns `web/`**, **Codex owns `api/`, `corpus/`, `scripts/`**.
 
 **Live:** https://fineprint-aid.vercel.app — never `fineprint.vercel.app`, an
-unrelated product.
+unrelated product. Live text-PDF extraction is enabled through the separate,
+proxy-protected Vercel FastAPI project; cached samples remain the guaranteed
+demo path.
 
 ## Before you start
 
@@ -81,10 +83,10 @@ Both schemas describe the same JSON. **Change one, change the other.**
 ## Verify
 
 ```bash
-cd web && npm test          # 31 engine tests
-cd web && npm run typecheck && npx next build   # build catches prod-only Next 16 traps
-.venv/bin/pytest api/tests -q   # 45 pipeline tests
-.venv/bin/python corpus/run_corpus.py   # 3/3 layouts
+cd web && npm test
+cd web && npm run typecheck && npx next build --webpack
+.venv/bin/pytest api/tests -q
+.venv/bin/python corpus/run_corpus.py   # 5 layouts
 scripts/check_secrets.sh --all
 cd web && npm run dev       # web :3000, api :8000
 ```

@@ -2,11 +2,12 @@
 
 The normal path uses GPT-5.6 Terra at medium reasoning. GPT-5.6 Sol is called
 only when Terra cannot satisfy the typed response contract, when the
-deterministic evidence gate rejects one or more claims, or when normalization
-surfaces an ambiguity that is both material and blocks headline calculations.
+deterministic evidence gate rejects one or more claims, or when no financial
+fact verifies.
 
 This routing happens after the admission gate. A merely low confidence score,
-a minor ambiguity, or a transient provider failure does not trigger Sol.
+an ambiguity of any severity, or a transient provider failure does not trigger
+Sol. Ambiguity is an honest result under the never-infer rule, not a failure.
 """
 
 from __future__ import annotations
@@ -27,7 +28,6 @@ from normalize import normalize
 STRUCTURED_VALIDATION_FAILURE = "structured_output_validation"
 NO_VERIFIED_FACTS = "no_verified_financial_facts"
 UNVERIFIED_CLAIMS = "unverified_claims"
-MATERIAL_AMBIGUITIES = "material_blocking_ambiguities"
 
 
 @dataclass(frozen=True)
@@ -52,12 +52,6 @@ def fallback_reasons(document: CanonicalDocument) -> tuple[str, ...]:
         reasons.append(NO_VERIFIED_FACTS)
     if document.unverified_claims:
         reasons.append(UNVERIFIED_CLAIMS)
-    if any(
-        ambiguity.severity == "material" and ambiguity.blocks_headline
-        for ambiguity in document.ambiguities
-    ):
-        reasons.append(MATERIAL_AMBIGUITIES)
-
     return tuple(reasons)
 
 
@@ -108,7 +102,10 @@ def analyze_document(
                 model=primary_model,
             )
 
-    fallback = fallback_extractor or OpenAIExtractor(model=fallback_model)
+    fallback = fallback_extractor or OpenAIExtractor(
+        model=fallback_model,
+        is_fallback=True,
+    )
     fallback_extraction = fallback.extract(ingested)
     fallback_document = _normalize(
         fallback_extraction,

@@ -4,6 +4,13 @@ Shade approved a small public deployment for the demo video on 2026-09-19.
 The API is a second Vercel project from this repository with Root Directory
 `api/`; it is not a Render service.
 
+**Current production state (2026-09-19):** the API is deployed at
+`https://api-six-pi-52.vercel.app`, public mode is enabled, Upstash-backed
+quotas are configured, and the web project at
+`https://fineprint-aid.vercel.app` is connected through its server-side proxy.
+Direct analysis calls without the shared proxy secret are rejected. The steps
+below remain the rebuild, verification, and rollback runbook.
+
 Shade performs every account, billing, key, and secret step. Never paste an
 OpenAI key, Redis token, or FinePrint secret into chat, Git, a command output,
 or a screenshot. Codex never needs to see any of their values.
@@ -53,10 +60,15 @@ or provider error details. No application data is written to disk.
 ## Cost and privacy boundary
 
 An accepted letter normally makes one Terra request. Sol is called only when
-the primary result fails validation or leaves a blocking material ambiguity, so
-one analysis can make two provider calls. The app cap limits analyses, not tokens
-or dollars; the OpenAI project hard spend limit remains the billing backstop.
-Hard-limit enforcement can lag slightly.
+the primary result fails the typed output contract, verifies no financial facts,
+or has a claim rejected by the evidence gate. A genuine ambiguity is kept for
+the student to answer and does not trigger Sol. One analysis can therefore make
+two provider calls, but the SDK performs no additional automatic retries. Each
+call has a 40-second timeout so a primary plus fallback can fit inside the web
+route's 90-second budget. The app cap limits analyses, not tokens or dollars;
+the OpenAI project hard spend limit remains the billing backstop. Hard-limit
+enforcement can lag slightly. Vercel logs record token counts, fallback status,
+and elapsed milliseconds only—not letter or model content.
 
 Aid letters can contain names, IDs, addresses, and financial details. FinePrint
 keeps the upload in request/process memory and sends extracted text and page
@@ -66,9 +78,16 @@ monitoring logs may contain prompts and responses for up to 30 days, with longer
 retention possible when legally required or reasonably necessary to prevent
 harm. Vercel processes the upload. Upstash receives only quota keys and counts.
 
-## Activation walkthrough
+To inspect cost without exposing a letter, open the API project's Vercel
+**Observability → Logs** view and filter for `model_call`. Each provider call
+reports `model`, input/output/reasoning/cached token counts, `fallback`, and
+`elapsed_ms`. It never includes a filename, document text, quote, structured
+model output, address, or secret. Missing provider usage appears as
+`unavailable` and does not fail the analysis.
 
-### 0. Commit gate
+## Deployment and activation runbook
+
+### 0. Deployment gate
 
 Do not import or redeploy from an older commit. First commit and push the P2
 implementation, then confirm the GitHub copy contains:
@@ -78,8 +97,9 @@ implementation, then confirm the GitHub copy contains:
 - `api/sample_offer.json`
 - no `render.yaml`
 
-This gate is intentionally still closed until Shade explicitly asks for a
-commit and push.
+The production deployment has passed this gate. Repeat it before any future
+redeploy from a materially changed API revision; Shade still controls every
+commit, push, credential, and billing action.
 
 ### 1. Shade: prepare three private values
 
@@ -207,7 +227,7 @@ curl --include --silent --show-error \
    client address, and confirm it remains 429. That proves the counter survived
    a function replacement in Upstash rather than process memory.
 
-### 6. Shade: connect the production web project
+### 6. Shade: connect the production web project (completed)
 
 Do this only after Claude's disclosure and authenticated-header changes are
 committed, pushed, and visible on <https://fineprint-aid.vercel.app>.

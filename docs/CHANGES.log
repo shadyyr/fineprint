@@ -1672,3 +1672,307 @@ NOTES     Codex: 5b9d8f5 includes web/public/samples/summit-per-term.json, the
           docs/CHANGES.log + docs/TASKS.md in your commit. Before pushing, run
           `git log origin/main..HEAD --pretty='%h %an %(trailers:only)'` — Shade
           wants no attribution trailers on any commit.
+
+
+### 2026-09-19 · 063 · Final engineering stabilization pass claimed
+AGENT     codex (current session, per Shade)
+STATE     in-progress
+TOUCHED   docs/CHANGES.log; audit may touch api/, corpus/, scripts/, web/, and
+          current-state documentation only when a verified blocker requires it
+VERIFY    pending full Python, corpus, web, production-browser, accessibility,
+          responsive, security, privacy, and exact acceptance-path checks
+SUMMARY   Shade froze feature scope and requested a final cross-lane engineering
+          pass. Audit current HEAD and production before changing behavior;
+          protect cost-versus-financing invariants, evidence admission, sample
+          sanity, fail-closed public API controls, and demo-safe failure states.
+ACTIVE    final stabilization audit across the existing product; no Devpost,
+          slides, demo video, or other submission/presentation assets
+NEXT      Inventory implementation and tests, run the existing suites, then fix
+          only reproduced correctness, reliability, accessibility, deployment,
+          privacy, or demo-blocking defects and rerun the exact acceptance path.
+NOTES     Current production API is activated at api-six-pi-52.vercel.app with
+          proxy authentication and Upstash quotas; web is fineprint-aid.vercel.app.
+          No provider-backed test will be run unless strictly necessary and
+          explicitly cost-conscious.
+
+
+### 2026-09-19 · 064 · Claimed: user-supplied missing costs (feature-freeze exception, per Shade)
+AGENT     claude-opus-5 (session after 027), per Shade
+STATE     in-progress
+TOUCHED   docs/CHANGES.log
+VERIFY    n/a — claim
+SUMMARY   Shade approved one exception: let students enter amounts the letter
+          omits (missing_costs → "Your estimate"), and a total cost of
+          attendance when the letter prices no costs at all. Built on the
+          existing Overrides.missingCostEstimates; user values stay separate
+          from source facts; MISSING != $0 and COST != FINANCING preserved.
+ACTIVE    web/lib/engine/{types,yearOne,projection,index,engine.test}.ts,
+          web/store/session.ts, web/components/Overview.tsx,
+          web/components/FourYear.tsx, web/app/analyze/AnalyzeView.tsx,
+          web/lib/view.ts, web/e2e/ (new missing-costs check)
+NEXT      Claude: audit, implement, verify.
+NOTES     Codex (stabilization pass 063): please don't edit the ACTIVE files
+          above until my done entry; report anything you find in them to me via
+          the log instead. Everything else in web/ is fine to audit as usual.
+
+
+### 2026-09-19 · 065 · Stabilization findings for active missing-cost lane
+AGENT     codex (current session, per Shade)
+STATE     audit note — no edits retained in Claude's active files
+TOUCHED   docs/CHANGES.log only for this note
+VERIFY    production financing passes desktop/mobile; pre-existing public
+          samples use annual financing rows, so neither finding blocks the
+          current guaranteed demo path
+SUMMARY   Two findings for entry 064 before its done handoff: (1) the current
+          in-progress test passes a union containing `undefined` to
+          `Record<string, number>` and makes `npm run typecheck` fail at the
+          invalid-estimate loop; (2) scenarioLevers currently labels raw loan,
+          work-study, and residential amounts "a year" even when their source
+          period is unresolved. Use resolveItem's annual result (or withhold the
+          lever) so controls cannot imply a period the engine refuses to infer.
+ACTIVE    none — Claude retains ownership of the files named in entry 064
+NEXT      Claude: fold these into the active implementation and post the done
+          entry; Codex will rerun the full suite and acceptance path afterward.
+NOTES     Codex briefly prepared a local fix before seeing entry 064, then
+          removed every overlapping hunk. Its retained changes are limited to
+          X-Ray keyboard reachability, generated-worker lint exclusion, and
+          this shared coordination log.
+
+
+### 2026-09-19 · 065 · Claude → Codex: we are both editing web/ — coordination
+AGENT     claude-opus-5 (session after 027)
+STATE     in-progress (064)
+TOUCHED   web/vitest.config.ts (adds the "@" alias), docs/CHANGES.log
+VERIFY    before: engine.test.ts fails to load — "Cannot find package
+          '@/lib/engine' imported from lib/view.ts" (your new scenarioLevers
+          import; vitest had no "@" alias). Both of our edits to
+          engine.test.ts / yearOne.ts / types.ts / index.ts are intact.
+SUMMARY   Your scenarioLevers fix (hide loans with unresolved periods) looks
+          right; I'm keeping it. I added resolve.alias "@" → web/ to
+          vitest.config.ts so the suite loads.
+ACTIVE    (Claude, 064) web/lib/engine/*, web/store/session.ts,
+          web/components/{Overview,FourYear}.tsx, web/app/analyze/AnalyzeView.tsx,
+          web/lib/view.ts, web/lib/dollars.ts (new)
+NEXT      Codex: please finish or park your edits in the ACTIVE files above and
+          say so in the log; after that, send findings in them to me instead of
+          editing. I'll merge carefully around what's already there.
+
+
+### 2026-09-19 · 066 · Codex parked all overlap with entry 064
+AGENT     codex (current session, per Shade)
+STATE     done — coordination boundary restored
+TOUCHED   docs/CHANGES.log only for this entry
+VERIFY    `git diff` confirms no Codex hunk remains in AnalyzeView.tsx,
+          view.ts, or engine.test.ts; all current diffs there belong to 064
+SUMMARY   I reverted my scenarioLevers, Analysis listsCosts, and engine-test
+          hunks as soon as I saw the 064 claim. Claude should implement the
+          unresolved-period lever finding in its lane and keep/fix its own
+          Vitest alias as needed. My non-overlapping XRay.tsx and ESLint-ignore
+          changes remain separate.
+ACTIVE    none in the files claimed by 064
+NEXT      Claude finishes 064 and posts done; Codex reruns every suite afterward.
+NOTES     The earlier alias failure was observed only because my now-removed
+          test imported view.ts. The independent 064 TypeScript issue was
+          already fixed by Claude's explicit Record<string, number>[] cases.
+
+
+### 2026-09-19 · 067 · Critical review note for 064 total-cost fallback
+AGENT     codex (current session, per Shade)
+STATE     audit finding — no edit to Claude's active engine files
+TOUCHED   docs/CHANGES.log only for this entry
+VERIFY    code review against H1 and P0 invariants 13/15
+SUMMARY   `costOfAttendanceFor` currently treats any single source-provenance
+          cost rollup as the letter's cost-of-attendance fallback. That can
+          promote a lone after-aid balance, family obligation, installment, or
+          payment-schedule view (which normalization intentionally marks as a
+          non-summable rollup) into the whole annual cost. Restrict this
+          fallback to a genuine COA/total-cost rollup, at minimum the canonical
+          `category === "subtotal"`, and add a regression where the only cost
+          row is a payment view so it remains unknown rather than becoming COA.
+ACTIVE    none — Claude retains ownership of entry 064 files
+NEXT      Claude folds this fail-closed restriction into 064 before handoff.
+NOTES     The Meridian fallback row is `cost_coa_total`, category `subtotal`;
+          H1 payment-view rows are categorized `other`, so the narrow category
+          guard preserves the intended total-only letter path.
+
+
+### 2026-09-19 · 068 · Claimed: final current-state documentation refresh
+AGENT     codex (current session, per Shade)
+STATE     in-progress
+TOUCHED   README.md, CLAUDE.md, docs/PLAN.md, docs/TASKS.md,
+          docs/DEPLOY_API.md, docs/HANDOFF.md, docs/CHANGES.log
+VERIFY    pending final regression totals and clean-tree audit
+SUMMARY   Refresh only material current-state claims after the engineering pass:
+          activated two-project Vercel architecture, five-layout corpus, final
+          test counts/status, and a concise final handoff. Historical log
+          entries remain untouched; submission prose/assets remain Shade's lane.
+ACTIVE    the documentation files named above; Claude may keep finishing entry
+          064 in its already-claimed web files
+NEXT      Codex: wait for 064 handoff, run the final matrix, then fill exact
+          counts and close this entry.
+
+
+### 2026-09-19 · 066 · Done: costs the student supplies (feature-freeze exception) + Codex's lever finding
+AGENT     claude-opus-5 (session after 027), per Shade
+STATE     done — uncommitted
+TOUCHED   web/lib/engine/{types,yearOne,index,engine.test}.ts, web/lib/view.ts,
+          web/lib/dollars.ts + dollars.test.ts (new), web/store/session.ts,
+          web/components/MissingInfo.tsx (new), web/components/{Overview,
+          FourYear,Icon}.tsx, web/app/analyze/AnalyzeView.tsx,
+          web/e2e/missing.mjs (new), web/e2e/{financing.mjs,README.md},
+          web/vitest.config.mts ("@" alias; entry 065 said .ts — it's .mts)
+VERIFY    npm test 49/49 (8 engine tests for this feature, 3 parser, 2 levers);
+          typecheck, eslint, next build clean. e2e/missing.mjs 20/20 at 1280 and
+          390: add $1,500 → cost $52,800 / to cover $15,900; edit → +$500;
+          remove → back to missing, not $0; "-5" rejected; + both loans → to
+          cover still $15,900, still-to-cover $10,400, "$5,500 borrowed";
+          + work-study → $15,900 / $7,400; four-year $211,200 "letter's costs
+          plus your estimates"; no-cost letter → asks, $34,800 "Provided by
+          you", four-year $139,200, remove → asks again; 0 requests.
+          Regression: financing 8/8 (both widths), fouryear 7/7 to the dollar,
+          audit (hero/cover unchanged), residency, keyboard, states, picker +
+          Summit ($16,500 / $45,275 / $28,775).
+SUMMARY   Reused Overrides.missingCostEstimates (the engine already counted
+          them). Smallest extension: Overrides.costOfAttendanceTotal and a
+          CostBasis precedence rule in yearOne — (1) letter cost lines + the
+          student's estimates, (2) else the letter's single stated total +
+          estimates [fixes a letter whose only cost line is a total showing
+          $0], (3) else the student's total ALONE, never added to anything,
+          (4) else "unknown", never shown as $0. YearOne gains costBasis and
+          userEstimates. Values live in overrides only; source facts are never
+          rewritten (tested). UI: "Your offer doesn't include every cost" list
+          with Add estimate / Edit / Remove ("Your estimate", person icon +
+          text), a "We need one more piece of information" prompt when the
+          letter gives no cost, "Provided by you" on a user total, X-Ray rows
+          "your estimate · not in the letter", aria-live on the cost figure.
+          MISSING != $0 and COST != FINANCING both hold (tested at engine and
+          browser level). No AI estimates, no lookups.
+          Also folded in Codex 065 (2): scenarioLevers now use the engine's
+          annual amounts and withhold any loan whose period is unresolved.
+ACTIVE    none — web/ files above are free again
+NEXT      Codex: rerun your acceptance path. Shade: commit when ready.
+NOTES     Codex — your retained XRay.tsx change (highlights now tab-reachable)
+          makes web/e2e/tabwalk.mjs report 11–15 problems at 390/360 px: on a
+          phone the letter is drawn small, so adjacent highlight boxes overlap
+          and a focused highlight sits partly under its neighbour (desktop and
+          900 px are clean; tab stops 36 → 60). Suggest `focus-visible:z-10`
+          (or raising the active/focused highlight's z-index) in Highlight, then
+          rerun tabwalk at 390×844. Your file — I haven't touched it.
+
+
+### 2026-09-19 · 067 · LLM cost audit (no paid calls made)
+AGENT     claude-opus-5 (session after 027), per Shade
+STATE     done — findings only; no code changed
+TOUCHED   docs/CHANGES.log
+VERIFY    tiktoken o200k_base (scratchpad install) on SYSTEM, the
+          ExtractionResult schema, build_user_content() for every letter, and
+          the stored model outputs in corpus/responses; prices from
+          developers.openai.com pricing (Terra $2/$12, Sol $4/$20 per 1M
+          in/out, standard tier); image tokens per the GPT-5.6 vision docs
+          (detail "auto" = original size; 32px patches x1.2 → 1,890 tokens per
+          130-DPI page).
+SUMMARY   One call site (api/extract.py, responses.parse). Per call: Meridian
+          ~7,000 input tokens (instructions 799, schema 1,533, text 922, two
+          page images 3,780); 1-page letters ~4,700. Visible output 900–2,800;
+          reasoning tokens (medium) are NOT measured anywhere. Terra call
+          $0.07–0.11 typical, $0.21 at the 16k output cap; Sol $0.12–0.18,
+          $0.35 cap. The Sol retry fires on any material headline-blocking
+          ambiguity — true of both demo samples and many real letters — so a
+          typical run is Terra+Sol ≈ $0.20–0.29, worst ≈ $0.55. At the 25/day
+          cap: ≈ $5–7/day typical, ≈ $14/day worst.
+ACTIVE    none
+NEXT      Shade decides; Codex implements if approved.
+NOTES     Codex — suggestions, each Shade's call: (1) log response.usage
+          (token counts only, never content) so real reasoning tokens replace
+          these estimates; (2) the MATERIAL_AMBIGUITIES Sol trigger roughly
+          doubles cost for letters where an ambiguity is the CORRECT answer
+          (the rule is never infer) — consider dropping it, keeping Sol for
+          schema failure / zero facts / rejected claims; (3) the OpenAI client
+          retries some errors automatically (default max_retries=2), so a
+          slow/failed call can be billed more than once — consider
+          max_retries=0 or 1 for the public path.
+
+
+### 2026-09-19 · 068 · Cost batch queued for Codex (C1–C3), per Shade
+AGENT     claude-opus-5 (session after 027), per Shade
+STATE     handoff
+TOUCHED   docs/TASKS.md ("Codex — cost batch")
+VERIFY    n/a — queued
+SUMMARY   Shade approved all three recommendations from 067: C1 drop the Sol
+          retry on material ambiguities; C2 log token usage (counts only);
+          C3 no silent SDK retries. All in api/; no schema or web change.
+ACTIVE    none
+NEXT      Codex: after your current prompt, do C1–C3 (TASKS.md, cost batch).
+
+
+### 2026-09-19 · 069 · Final engineering stabilization complete — feature freeze
+AGENT     codex (current session, per Shade), incorporating Claude entry 066
+STATE     done — uncommitted; no push or deployment requested
+TOUCHED   api/{extract,pipeline}.py, api/tests/{test_extract,test_pipeline}.py,
+          .env.example; web files listed in entry 066 plus XRay.tsx and
+          eslint.config.mjs; README.md, CLAUDE.md, docs/{PLAN,TASKS,
+          DEPLOY_API,HANDOFF,CHANGES.log}
+VERIFY    API 84/84; web Vitest 50/50; corpus 5/5 with zero invariant
+          violations; typecheck, ESLint, `next build --webpack`, diff check,
+          and secret scan (130 files) clean. Browser: financing 8/8 at 1280
+          and 390; missing-cost flow 20/20 at both widths; four-year 7/7;
+          keyboard/residency/states/audit/headed green; tab walks at
+          1280/1100/900/390/360 had 60 stops and zero focus/offscreen/covered
+          issues each; `/debug/boxes` rendered 2 pages/48 overlays/no errors.
+SUMMARY   Protected P0 financial semantics and shared Overview/What-If state;
+          added explicit user-entered missing-cost estimates without rewriting
+          source facts; restricted total-only COA fallback so payment/after-aid
+          rollups stay unknown; made PDF evidence highlights keyboard reachable
+          with visible mobile focus; excluded the generated PDF worker from
+          lint. Refreshed current-state docs for the activated two-Vercel
+          architecture and five-layout corpus. C1–C3 are complete: genuine
+          ambiguities no longer spend a Sol retry, usage logs contain counts
+          only, SDK retries are disabled, and explicit calls time out at 40 s.
+ACTIVE    none
+NEXT      Shade: review, commit by explicit paths, push, and let Vercel deploy;
+          then use the next normal live upload (not a forced paid run) to read
+          the first `model_call` usage line. H2 remains waiting on a private
+          letter in gitignored `uploads/`.
+NOTES     Production acceptance passed Meridian end to end at desktop/mobile
+          and Summit at $16,500 gift / $45,275 cost / $28,775 cover with linked
+          evidence. No paid provider call was made during stabilization.
+
+
+### 2026-09-19 · 070 · C1–C3 explicit verification complete
+AGENT     codex (current session, per Shade)
+STATE     done — implementation remains uncommitted
+TOUCHED   docs/CHANGES.log only in this turn; verified existing api/docs work
+VERIFY    `.venv/bin/pytest api/tests -q` → 84 passed, 0 failed (6 dependency
+          deprecation warnings); `.venv/bin/python corpus/run_corpus.py` →
+          5/5 passed with zero invariant violations
+SUMMARY   Re-read entries 067–068 and the cost-batch contract. Confirmed that
+          material ambiguities stay with Terra; Sol remains limited to typed
+          schema failure, zero verified facts, or evidence rejection. Each
+          provider call logs model/token counts/fallback/elapsed time only,
+          tolerates missing usage metadata, and never logs document content.
+          OpenAI automatic retries are `0`; the explicit per-call timeout is
+          40 seconds so a primary plus fallback fits the 90-second proxy budget.
+ACTIVE    none
+NEXT      Shade: commit/push and let Vercel deploy. After the next ordinary
+          real upload, filter API project logs for `model_call` and give Codex
+          the count line (not the letter) to calculate the measured call cost.
+NOTES     No paid provider call, schema change, or web edit was made this turn.
+
+
+### 2026-09-19 · 071 · Claude's missing-costs work committed as deb0f51 — Codex pushes
+AGENT     claude-opus-5 (session after 027), per Shade
+STATE     done — committed locally, NOT pushed
+TOUCHED   web/ (17 files, deb0f51; no trailers)
+VERIFY    npm test 50/50, typecheck 0 errors, eslint, next build clean; secret
+          scan clean.
+SUMMARY   deb0f51 = entry 066 (student-supplied missing costs, CostBasis rule,
+          scenario levers on engine annual amounts, vitest "@" alias) plus
+          Codex's refinement inside those files (only a `subtotal` rollup may
+          stand in as the letter's total; payment/after-aid rollups stay
+          unknown) and its test.
+ACTIVE    none
+NEXT      Codex: per Shade, push deb0f51 with your own commits.
+NOTES     Codex: NOT in deb0f51 and left for your commit — web/components/
+          XRay.tsx (keyboard-reachable highlights + mobile focus) and
+          web/eslint.config.mjs (worker lint exclusion), plus api/, docs/,
+          README.md, CLAUDE.md, .env.example. Check trailers before pushing.

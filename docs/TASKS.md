@@ -41,7 +41,7 @@ in CHANGES.log as a request and keep going on something else.
    breaks the build in the opposite lane. To propose a change: log it, state
    what breaks, wait for the other agent's entry before editing.
 3. **`fixtures/sample_offer.json` is load-bearing.** The entire UI and the
-   engine's 31 tests are built against it. Codex owns regeneration (it comes
+   engine tests are built against it. Codex owns regeneration (it comes
    from `scripts/`), but announce any change that alters ids, shapes or
    amounts before making it.
 4. **Re-read the tail of CHANGES.log before you start, and append before you
@@ -84,7 +84,7 @@ Milestone numbers refer to [PLAN.md](PLAN.md).
 - [x] **M5d** Make the harness runnable without an API key via `ReplayExtractor`
       and committed model responses, so it works in CI and when the key is out.
 
-The offline corpus passes 3/3, and the live corpus has reached OpenAI with every
+The offline corpus passes 5/5, and the live corpus has reached OpenAI with every
 returned fact passing the evidence gate. Optional comparator polish remains for
 institution-name casing and replay-only deliberately rejected claims.
 
@@ -180,7 +180,7 @@ usage than Claude right now, so Codex carries every task that isn't `web/`.
         (`web/lib/engine/engine.test.ts`, one `it.skip`).
       - Claude holds the UI-S1 push until this lands, so nobody can open
         Summit with doubled numbers.
-- [ ] **P2 · Activate the public API with Shade — on Vercel, not Render.**
+- [x] **P2 · Activate the public API with Shade — on Vercel, not Render.**
       Shade approved going live (log 051) and chose Vercel (log 054): the API
       becomes a **second Vercel project** from the same repo with Root
       Directory `api/`, next to the existing `web/` project. Few paid runs;
@@ -220,6 +220,10 @@ usage than Claude right now, so Codex carries every task that isn't `web/`.
       Retry-After, counters survive a redeploy) → only after Claude has pushed
       the web side (disclosure + headers), Shade sets `FINEPRINT_API_URL` and
       `FINEPRINT_PROXY_SECRET` on the web project and redeploys.
+      **Completed:** the protected API is live at
+      `https://api-six-pi-52.vercel.app`; the web proxy is connected, Upstash
+      quota storage is configured, direct unauthenticated analysis is rejected,
+      and cached samples remain independent of API availability.
 - [x] **H1 · Real-letter hardening (V1's finding).** Payment-schedule lines
       (amount due per term, installments), "after aid" balances and similar
       views of the same money must never become summable cost items. Add a
@@ -251,12 +255,53 @@ usage than Claude right now, so Codex carries every task that isn't `web/`.
       - Add a synthetic corpus letter with both rates + expected output +
         replay response.
       Claude builds the engine/UI half (task UI-R1) against this contract.
-- [ ] **L1 · Live verification sweep** after each push that touches `web/`:
+- [x] **L1 · Live verification sweep** after each push that touches `web/`:
       run `web/e2e/*.mjs` against https://fineprint-aid.vercel.app
       (puppeteer-core installed outside the repo; see `web/e2e/README.md`),
       including `headed.mjs` once, and log the results. Read-only for `web/`.
-- [ ] **HO · Refresh `docs/HANDOFF.md`** to the final state before submission
+- [x] **HO · Refresh `docs/HANDOFF.md`** to the final state before submission
       (announce first; shared doc).
+
+#### Codex — cost batch, queued 2026-09-19 (Shade approved; after the current prompt)
+
+From Claude's cost audit (CHANGES.log 067). A typical live upload is Terra +
+Sol ≈ $0.20–0.30 because Sol also fires on legitimate ambiguities. All three
+are in `api/`; no schema or web change.
+
+- [x] **C1 · Stop the Sol retry on material ambiguities.** In `api/pipeline.py`,
+      remove `MATERIAL_AMBIGUITIES` from `fallback_reasons()`. An open question
+      is the correct output under the never-infer rule, not a failure. Keep Sol
+      for: structured-output validation failure, zero verified facts, and any
+      claim rejected by the evidence gate. Update the pipeline tests and the
+      routing docstring, and every current-state doc that describes the old
+      trigger (README, docs/HANDOFF.md §4 "Model", docs/DEPLOY_API.md cost
+      note, docs/DEVPOST.md if it mentions it). Historical log entries stay.
+- [x] **C2 · Log token usage — counts only.** After each `responses.parse`,
+      log one line per call: model, input_tokens, output_tokens,
+      reasoning_tokens (from `usage.output_tokens_details`), cached input
+      tokens if present, whether it was the Sol fallback, and elapsed ms.
+      Never log document text, quotes, filenames, model output or client IP
+      (same privacy rule as P2). Missing `usage` must not break the request.
+      Test it with a fake client. Then tell Shade how to read these in Vercel
+      logs, and after the next real run report the measured cost per upload
+      (Terra $2/$12, Sol $4/$20 per 1M in/out) to replace Claude's estimate.
+- [x] **C3 · No silent paid retries.** Construct the OpenAI client with
+      `max_retries=0` (or 1 if you judge a single retry on connection errors
+      worth it — say which and why), so one upload can't be billed several
+      times by the SDK's automatic retries. Keep the 90 s web budget in mind:
+      the per-call timeout must still fit inside it. Test that the setting is
+      applied.
+
+Acceptance: `.venv/bin/pytest api/tests -q` and the corpus green; the cost
+note in docs/DEPLOY_API.md updated to "Terra only, unless the output fails
+validation, has no verified facts, or has a rejected claim".
+
+Completed in the final stabilization pass: ambiguities remain Terra results;
+usage logging is content-free and tolerates absent metadata; SDK retries are
+`0`; each provider call times out at 40 seconds so an explicit primary plus
+fallback fits inside the 90-second proxy window. The next production upload
+after deployment will provide the first measured usage/cost sample in Vercel
+logs; no paid call was made merely to populate that number.
 
 ### Claude — product
 
@@ -286,7 +331,7 @@ usage than Claude right now, so Codex carries every task that isn't `web/`.
 - [x] M11: public README and deployed sample-demo URL.
 - [ ] M11: demo video, Devpost description, screenshots, and slides. Start by
       Sunday 18:00 PT.
-- [ ] P2 on Vercel (log 054): new Vercel project for `api/`, its env vars
+- [x] P2 on Vercel (log 054): new Vercel project for `api/`, its env vars
       (OpenAI key pasted by Shade), Upstash Redis from the Marketplace, then
       `FINEPRINT_API_URL` + `FINEPRINT_PROXY_SECRET` on the web project.
       Codex walks through it; only Shade touches keys and billing.
