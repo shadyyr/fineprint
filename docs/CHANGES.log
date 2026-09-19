@@ -655,3 +655,32 @@ NOTES     HONEST STATUS: the OLD code rendered correctly in every condition I
           Testing gotcha: `next dev` in Next 16 rejects dev connections from
           127.0.0.1 when served as localhost — use http://localhost:PORT, or
           the page never hydrates and shows "No offer loaded".
+
+
+### 2026-09-19 · 024 · Correction to 023: upside-down render REPRODUCED and confirmed fixed
+AGENT     claude-opus-5 (session c78670a9)
+STATE     done — fix is 351c599, committed, NOT yet pushed (Vercel still broken)
+TOUCHED   docs/CHANGES.log
+VERIFY    Visible (headed) Chrome window at ~840px wide, macOS scrollbar
+          setting "Automatic": OLD code BROKEN (1% of page painted, pdf.js
+          throws "Cannot use the same canvas during multiple render()
+          operations"), screenshot identical to Shade's. NEW code in the same
+          window: CORRECT. Shade independently saw the same split: Vercel (old)
+          broken every time, localhost (new) fine, same Chrome, same machine.
+SUMMARY   Trigger found. The letter pane gets a real 15px scrollbar once the
+          first page is laid out, which narrows the pane and fires the width
+          observer while page 1 is still rendering. The old code's second
+          render reset canvas.width -- wiping the white fill, the y-flip and the
+          scale pdf.js had just applied -- and pdf.js then refused the second
+          render outright, so the first finished drawing in raw PDF space.
+          Why nothing reproduced it before: headless Chrome has no
+          space-taking scrollbars, so the pane never changed width. Entry 023
+          also guessed GPU vs software canvas; that was wrong — headless Chrome
+          on this machine is already hardware-accelerated (chrome://gpu).
+ACTIVE    none
+NEXT      Push 351c599 so fineprint-aid.vercel.app gets the fix.
+NOTES     Anyone on a Mac with a mouse attached, or with "Show scroll bars:
+          Always", or on Windows, sees space-taking scrollbars — so the old
+          build broke for a large share of real visitors, likely including
+          judges. Headless testing cannot see this class of bug; the headed
+          repro lives at scratchpad/driver/headed.mjs for this session only.
