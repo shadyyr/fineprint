@@ -17,7 +17,7 @@ API = Path(__file__).resolve().parent.parent
 ROOT = API.parent
 sys.path.insert(0, str(API))
 
-from ingest import ingest  # noqa: E402
+from ingest import IngestResult, LayoutLine, PageRender, ingest  # noqa: E402
 from models import (  # noqa: E402
     ExtractionAmbiguity,
     ExtractionAmbiguityOption,
@@ -154,6 +154,100 @@ def test_a_total_the_model_forgot_to_flag_is_still_caught(ingested):
     assert package.role == "rollup", "arithmetic guard should have caught the total"
     assert package.components is not None and len(package.components) >= 2
     assert sum(a.amount for a in doc.aid if a.role == "item") == 45400
+
+
+def test_repeated_summary_facts_are_coalesced_without_losing_evidence():
+    """Detail and summary occurrences are one fact; coincidences are not."""
+    texts = [
+        "Scholarship Alpha $100",
+        "Scholarship Beta $200",
+        "Total Scholarships $300",
+        "Scholarships (Financial Aid Summary) $300",
+        "Direct Subsidized Loan $50",
+        "Federal Direct Subsidized Loans (Financial Aid Summary) $50",
+        "Scholarship Gamma $100",
+        "Total Federal Loans Offered $50",
+        "Total Loans Offered $50",
+    ]
+    lines = [
+        LayoutLine(
+            line_id=f"p1_l{index}",
+            page=1,
+            text=text,
+            bbox=(0.1, index / 20, 0.8, (index + 1) / 20),
+            char_boxes=[(0.1, index / 20, 0.8, (index + 1) / 20)] * len(text),
+        )
+        for index, text in enumerate(texts, start=1)
+    ]
+    source = IngestResult(
+        lines=lines,
+        pages=[PageRender(page=1, width_pt=612, height_pt=792, rotation=0)],
+        char_count=sum(map(len, texts)),
+    )
+
+    def claim(index, *, label, amount, category, role=False, aid_type=None):
+        return ExtractionItem(
+            kind="aid",
+            label=label,
+            amount=amount,
+            period="annual",
+            citations=[
+                ExtractionCitation(line_id=f"p1_l{index}", quote=texts[index - 1])
+            ],
+            confidence=0.9,
+            aid_category=category,
+            aid_type=aid_type or (
+                "loan" if category == "subsidized_loan" else "gift"
+            ),
+            is_stated_total=role,
+        )
+
+    extraction = ExtractionResult(
+        institution_name="Example University",
+        items=[
+            claim(1, label="Scholarship Alpha", amount=100, category="scholarship"),
+            claim(2, label="Scholarship Beta", amount=200, category="scholarship"),
+            claim(3, label="Total Scholarships", amount=300, category="scholarship", role=True),
+            # Summary tables often classify the same category total generically.
+            claim(4, label="Scholarships (Financial Aid Summary)", amount=300, category="subtotal", role=True),
+            claim(5, label="Direct Subsidized Loan", amount=50, category="subsidized_loan"),
+            claim(6, label="Federal Direct Subsidized Loans (Financial Aid Summary)", amount=50, category="subsidized_loan", role=True),
+            # Same amount and category as Alpha, but a different award.
+            claim(7, label="Scholarship Gamma", amount=100, category="scholarship"),
+            claim(8, label="Total Federal Loans Offered", amount=50, category="subtotal", role=True, aid_type="loan"),
+            claim(9, label="Total Loans Offered", amount=50, category="subtotal", role=True, aid_type="loan"),
+        ],
+    )
+
+    document = normalize(extraction, source, source_file_name="synthetic.pdf")
+
+    scholarship_total = [
+        aid for aid in document.aid if aid.role == "rollup" and aid.amount == 300
+    ]
+    assert len(scholarship_total) == 1
+    assert len(scholarship_total[0].evidence_ids) == 2
+    assert scholarship_total[0].components is not None
+
+    subsidized = [
+        aid for aid in document.aid if aid.category == "subsidized_loan"
+    ]
+    assert len(subsidized) == 1
+    assert subsidized[0].role == "item"
+    assert len(subsidized[0].evidence_ids) == 2
+
+    loan_totals = [
+        aid
+        for aid in document.aid
+        if aid.role == "rollup" and aid.category == "subtotal" and aid.amount == 50
+    ]
+    assert len(loan_totals) == 1
+    assert len(loan_totals[0].evidence_ids) == 2
+
+    # Same-dollar awards with different names remain independently summable.
+    assert {aid.label for aid in document.aid if aid.amount == 100} == {
+        "Scholarship Alpha",
+        "Scholarship Gamma",
+    }
 
 
 def test_unknown_period_always_raises_a_blocking_question(ingested):

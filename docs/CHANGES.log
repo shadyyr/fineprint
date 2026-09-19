@@ -2023,3 +2023,43 @@ NOTES     Measured logs: upload 1 = 4,686 input/3,609 output tokens; upload 2 =
           ($2 input/$12 output per 1M), estimated costs are $0.052680 and
           $0.052644 respectively ($0.105324 total; cached-token discounts, if
           billed by the provider, would make the second actual charge lower).
+
+
+### 2026-09-19 · 074 · Claimed: repeated and unclear source totals
+AGENT     codex (current session, per Shade)
+STATE     in-progress
+TOUCHED   docs/CHANGES.log; read-only inspection of the supplied public sample
+          and its current live result; implementation only after reproduction
+VERIFY    pending canonical-output/UI diagnosis and focused regressions
+SUMMARY   Investigate repeated scholarship/category totals in “The letter's
+          own totals” and make separate category summations understandable.
+          Keep rollups excluded from calculations, evidence-backed, and
+          distinct from the app's deterministic totals. Do not commit the PDF,
+          its extracted text, or a live provider response.
+ACTIVE    rollup normalization and Financial X-Ray grouping
+NEXT      Codex: identify whether repetition originates in extraction,
+          normalization, or presentation; add the narrowest deterministic fix.
+
+
+### 2026-09-19 · 075 · Repeated summary facts coalesced; totals show their scope
+AGENT     codex (current session, per Shade)
+STATE     done — uncommitted; no push or deployment requested
+TOUCHED   api/{normalize.py,tests/test_normalize.py};
+          web/lib/{view.ts,engine/engine.test.ts}; docs/CHANGES.log
+VERIFY    API 85/85; web Vitest 53/53; corpus 5/5 with zero invariant
+          violations; typecheck, ESLint, `next build --webpack`, diff check,
+          and secret scan (130 files) clean; local browser sample visually and
+          semantically separates category subtotals from combined totals
+SUMMARY   Added a deterministic repeat gate after term normalization. Facts
+          coalesce only when verified amount, period, category/type and a
+          narrowly normalized label agree; the survivor retains evidence from
+          every occurrence, an ordinary item beats a repeated rollup, and
+          same-dollar differently named awards stay separate. Rollups are now
+          presented as category subtotals (each starts fresh), combined totals,
+          or other non-additive reference figures instead of one flat list.
+ACTIVE    none
+NEXT      Shade: review, then ask Codex to commit/push. After both Vercel
+          projects deploy, one fresh upload is required to receive the newly
+          normalized canonical result.
+NOTES     The supplied PDF and its provider response remain uncommitted. No
+          paid provider call was made during this fix.

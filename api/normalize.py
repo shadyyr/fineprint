@@ -79,6 +79,15 @@ _NON_SUMMABLE_COST_PATTERNS = tuple(
     )
 )
 _PLAIN_DECIMAL_RE = re.compile(r"^-?\d+(?:\.\d+)?$")
+_SUMMARY_PAREN_RE = re.compile(r"\([^)]*\bsummary\b[^)]*\)", re.IGNORECASE)
+_REPEAT_LABEL_NOISE = {"offered", "subtotal", "summary", "total"}
+_SINGULAR_LABEL_TOKEN = {
+    "awards": "award",
+    "grants": "grant",
+    "loans": "loan",
+    "scholarships": "scholarship",
+    "totals": "total",
+}
 
 ItemT = TypeVar("ItemT", CostItem, AidItem)
 
@@ -107,7 +116,7 @@ def _find_components(
         return [ident for ident, _ in candidates]
 
     limit = min(len(candidates), _MAX_COMPONENTS)
-    for size in range(2, limit + 1):
+    for size in range(1, limit + 1):
         for combo in itertools.combinations(candidates, size):
             if abs(sum(a for _, a in combo) - total) < _CENTS:
                 return [ident for ident, _ in combo]
@@ -129,6 +138,136 @@ def _looks_like_non_summable_cost_view(label: str, quotes: list[str]) -> bool:
     """
     context = " ".join((label, *quotes))
     return any(pattern.search(context) for pattern in _NON_SUMMABLE_COST_PATTERNS)
+
+
+def _repeat_label_tokens(label: str) -> tuple[str, ...]:
+    """Meaningful label tokens used only for exact-repeat coalescing.
+
+    Summary tables commonly repeat a detailed row as ``Total X`` or
+    ``X (Financial Aid Summary)``. Strip only those presentation words and
+    normalize a few financial plurals; category, amount and period still have
+    to agree independently before two facts can be coalesced.
+    """
+    without_summary = _SUMMARY_PAREN_RE.sub("", label.casefold())
+    tokens = re.findall(r"[a-z0-9]+", without_summary)
+    normalized = (
+        _SINGULAR_LABEL_TOKEN.get(token, token)
+        for token in tokens
+        if token not in _REPEAT_LABEL_NOISE
+    )
+    return tuple(token for token in normalized if token not in _REPEAT_LABEL_NOISE)
+
+
+def _labels_repeat_same_fact(left: str, right: str) -> bool:
+    first = _repeat_label_tokens(left)
+    second = _repeat_label_tokens(right)
+    if not first or not second:
+        return False
+    if first == second:
+        return True
+
+    # Some tables say "Federal Direct Subsidized Loan" while the detailed row
+    # says "Direct Subsidized Loan", or one section says "Total Loans" while
+    # another says "Total Federal Loans". Permit only that one extra qualifier
+    # and only for loan labels.
+    shorter, longer = sorted((first, second), key=len)
+    return (
+        "loan" in shorter
+        and len(longer) == len(shorter) + 1
+        and tuple(token for token in longer if token != "federal") == shorter
+    )
+
+
+def _same_repeat_semantics(left: ItemT, right: ItemT) -> bool:
+    if type(left) is not type(right):
+        return False
+    if abs(left.amount - right.amount) >= _CENTS or left.period != right.period:
+        return False
+    if isinstance(left, CostItem) and isinstance(right, CostItem):
+        category_compatible = left.category == right.category or (
+            (left.role == "rollup" or right.role == "rollup")
+            and "subtotal" in {left.category, right.category}
+        )
+        return (
+            category_compatible
+            and left.direct_cost == right.direct_cost
+        )
+    if isinstance(left, AidItem) and isinstance(right, AidItem):
+        category_compatible = left.category == right.category or (
+            (left.role == "rollup" or right.role == "rollup")
+            and "subtotal" in {left.category, right.category}
+        )
+        renewable_compatible = (
+            left.renewable is None
+            or right.renewable is None
+            or left.renewable == right.renewable
+        )
+        return (
+            category_compatible
+            and left.aid_type == right.aid_type
+            and renewable_compatible
+        )
+    return False
+
+
+def _merge_repeat(survivor: ItemT, repeated: ItemT) -> None:
+    """Attach every verified occurrence to one canonical financial fact."""
+    survivor.evidence_ids = list(
+        dict.fromkeys((*survivor.evidence_ids, *repeated.evidence_ids))
+    )
+    survivor.confidence = max(survivor.confidence, repeated.confidence)
+    if survivor.role == "rollup":
+        survivor.components = list(
+            dict.fromkeys((*(survivor.components or []), *(repeated.components or [])))
+        ) or None
+    if isinstance(survivor, AidItem) and isinstance(repeated, AidItem):
+        if survivor.renewable is None:
+            survivor.renewable = repeated.renewable
+        survivor.conditions = list(
+            dict.fromkeys((*(survivor.conditions or []), *(repeated.conditions or [])))
+        ) or None
+
+
+def _coalesce_repeated_facts(
+    items: list[ItemT],
+) -> tuple[list[ItemT], dict[str, ItemT]]:
+    """Coalesce the same verified fact repeated in a summary table.
+
+    An ordinary item wins over a rollup-shaped repetition so it remains in the
+    financial calculation exactly once. The survivor keeps evidence from every
+    location, so the X-Ray can still point to both the detail and summary rows.
+    Same-dollar coincidences with different labels remain separate.
+    """
+    coalesced: list[ItemT] = []
+    aliases: dict[str, ItemT] = {}
+
+    for candidate in items:
+        match_index = next(
+            (
+                index
+                for index, existing in enumerate(coalesced)
+                if _same_repeat_semantics(existing, candidate)
+                and _labels_repeat_same_fact(existing.label, candidate.label)
+            ),
+            None,
+        )
+        if match_index is None:
+            coalesced.append(candidate)
+            continue
+
+        existing = coalesced[match_index]
+        if existing.role == "rollup" and candidate.role == "item":
+            _merge_repeat(candidate, existing)
+            coalesced[match_index] = candidate
+            for label, target in tuple(aliases.items()):
+                if target is existing:
+                    aliases[label] = candidate
+            aliases[existing.label] = candidate
+        else:
+            _merge_repeat(existing, candidate)
+            aliases[candidate.label] = existing
+
+    return coalesced, aliases
 
 
 def _term_label(label: str) -> tuple[str, str, int | None] | None:
@@ -398,6 +537,13 @@ def normalize(
         prefix="aid",
     )
 
+    # A summary near the end of a letter often repeats rows or subtotals from
+    # the detailed tables. Keep one canonical fact, but retain verified
+    # evidence from every occurrence. This also prevents an unflagged repeated
+    # summary row from entering calculations twice.
+    costs, cost_repeat_aliases = _coalesce_repeated_facts(costs)
+    aid, aid_repeat_aliases = _coalesce_repeated_facts(aid)
+
     # --- deterministic double-count guard -----------------------------------
     # The model flags stated totals, but missing one would silently inflate
     # every figure downstream. So check arithmetically as well: an item equal
@@ -414,6 +560,8 @@ def normalize(
     by_label = {i.label: i for i in (*costs, *aid)}
     by_label.update(cost_term_aliases)
     by_label.update(aid_term_aliases)
+    by_label.update(cost_repeat_aliases)
+    by_label.update(aid_repeat_aliases)
     for n, raw in enumerate(extraction.ambiguities):
         target_item = by_label.get(raw.target_label)
         options = [

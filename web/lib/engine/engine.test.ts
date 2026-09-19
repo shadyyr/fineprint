@@ -22,7 +22,7 @@ import {
 } from "./index";
 import { annualize } from "./periods";
 import type { Assumptions, Overrides } from "./types";
-import { scenarioLevers } from "../view";
+import { scenarioLevers, xrayGroups } from "../view";
 
 const doc = parseCanonicalDocument(
   JSON.parse(
@@ -131,6 +131,43 @@ describe("double counting", () => {
     expect(model.yearOne.costOfAttendance.value).toBe(51300);
     const stated = doc.costs.find((c) => c.id === "cost_coa_total");
     expect(stated?.amount).toBe(51300);
+  });
+
+  it("separates category subtotals from totals that combine categories", () => {
+    const groups = xrayGroups(doc, emptyOverrides());
+    const category = groups.find((group) => group.key === "totals-category");
+    const combined = groups.find((group) => group.key === "totals-combined");
+
+    expect(category?.rows.map((row) => row.id)).toEqual(["cost_direct_subtotal"]);
+    expect(combined?.rows.map((row) => row.id)).toEqual([
+      "aid_package_total",
+      "cost_coa_total",
+    ]);
+    expect(category?.meaning).toContain("starts fresh");
+  });
+
+  it("keeps subsidized and unsubsidized rows under one loan subtotal", () => {
+    const packageTotal = doc.aid.find((aid) => aid.id === "aid_package_total")!;
+    const withLoanSubtotal = {
+      ...doc,
+      aid: [
+        ...doc.aid,
+        {
+          ...packageTotal,
+          id: "aid_loan_subtotal",
+          label: "Total Federal Loans Offered",
+          amount: 5500,
+          category: "subtotal" as const,
+          aid_type: "loan" as const,
+          components: ["aid_sub_loan", "aid_unsub_loan"],
+        },
+      ],
+    };
+
+    const category = xrayGroups(withLoanSubtotal, emptyOverrides()).find(
+      (group) => group.key === "totals-category",
+    );
+    expect(category?.rows.map((row) => row.id)).toContain("aid_loan_subtotal");
   });
 });
 

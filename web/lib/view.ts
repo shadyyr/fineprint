@@ -235,14 +235,39 @@ function toRow(item: AnyItem, doc: CanonicalDocument, overrides: Overrides): XRa
   };
 }
 
+type RollupScope = "category" | "combined" | "reference";
+
+/** The kind of money/cost a rollup component belongs to for display grouping. */
+function componentScope(item: AnyItem): string {
+  if (!isAid(item)) return `cost:${item.direct_cost ? "direct" : "indirect"}`;
+  if (
+    item.category === "subsidized_loan" ||
+    item.category === "unsubsidized_loan" ||
+    item.category === "parent_plus_loan" ||
+    item.category === "private_loan"
+  ) {
+    return "aid:loan";
+  }
+  return `aid:${item.category}`;
+}
+
+/** Whether a stated figure restarts one category or combines several. */
+function rollupScope(item: AnyItem, itemsById: Map<string, AnyItem>): RollupScope {
+  const components = (item.components ?? [])
+    .map((id) => itemsById.get(id))
+    .filter((component): component is AnyItem => Boolean(component));
+  if (!components.length) return "reference";
+  return new Set(components.map(componentScope)).size === 1 ? "category" : "combined";
+}
+
 export function xrayGroups(doc: CanonicalDocument, overrides: Overrides): XRayGroup[] {
   const aidRows = doc.aid.filter((a) => a.role === "item").map((a) => toRow(a, doc, overrides));
   const costRows = doc.costs
     .filter((c) => c.role === "item")
     .map((c: CostItem) => toRow(c, doc, overrides));
-  const totals = [...doc.aid, ...doc.costs]
-    .filter((i) => i.role === "rollup")
-    .map((i) => toRow(i, doc, overrides));
+  const allItems: AnyItem[] = [...doc.aid, ...doc.costs];
+  const itemsById = new Map(allItems.map((item) => [item.id, item] as const));
+  const totals = allItems.filter((item) => item.role === "rollup");
 
   const by = (key: CategoryKey) => aidRows.filter((r) => r.category === key);
   const group = (key: CategoryKey, rows: XRayRow[]): XRayGroup => ({
@@ -262,15 +287,45 @@ export function xrayGroups(doc: CanonicalDocument, overrides: Overrides): XRayGr
     group("cost", costRows),
   ].filter((g) => g.rows.length > 0);
 
-  if (totals.length) {
+  const totalGroups: Array<{
+    scope: RollupScope;
+    title: string;
+    meaning: string;
+    note: string;
+  }> = [
+    {
+      scope: "category",
+      title: "The letter's category subtotals",
+      meaning: "Each row starts fresh within the category it names",
+      note: "Scholarships, grants, loans and similar categories are separate subtotals. FinePrint never adds them again.",
+    },
+    {
+      scope: "combined",
+      title: "The letter's combined totals",
+      meaning: "Figures that combine more than one category",
+      note: "These combine rows already shown above, so FinePrint keeps them for reference and never adds them again.",
+    },
+    {
+      scope: "reference",
+      title: "Other non-additive figures",
+      meaning: "Alternate totals or balances shown for reference",
+      note: "FinePrint keeps these visible but never treats them as another cost or award.",
+    },
+  ];
+
+  for (const definition of totalGroups) {
+    const rows = totals
+      .filter((item) => rollupScope(item, itemsById) === definition.scope)
+      .map((item) => toRow(item, doc, overrides));
+    if (!rows.length) continue;
     groups.push({
-      key: "totals",
-      title: "The letter's own totals",
-      meaning: "Shown for reference, never added again",
+      key: `totals-${definition.scope}`,
+      title: definition.title,
+      meaning: definition.meaning,
       icon: "total",
       color: "var(--color-ink-3)",
-      rows: totals,
-      note: "Each of these equals the sum of rows above, so counting it would double the money.",
+      rows,
+      note: definition.note,
     });
   }
   return groups;
