@@ -12,7 +12,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { loadPdf, renderPage, type PDFDocumentProxy } from "@/lib/pdf";
+import { isRenderCancelled, loadPdf, renderPage, type PDFDocumentProxy } from "@/lib/pdf";
 
 export interface PageSize {
   width: number;
@@ -128,31 +128,49 @@ function PdfPage({
   onSize,
   renderOverlay,
 }: PdfPageProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  // The finished canvas is swapped into this holder in one step. Nothing ever
+  // draws into a canvas that is already on screen, so a render cannot be reset
+  // halfway through and left behind half-drawn (see renderPage).
+  const holderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
+    let job: ReturnType<typeof renderPage> | null = null;
 
     (async () => {
       const page = await doc.getPage(pageNumber);
-      const canvas = canvasRef.current;
-      if (cancelled || !canvas) return;
-      const rendered = await renderPage(page, canvas, width);
-      if (!cancelled) onSize(rendered);
+      if (cancelled) return;
+      job = renderPage(page, width);
+      try {
+        const done = await job.promise;
+        // A newer render superseded this one while it was drawing. Its canvas
+        // never reaches the page.
+        if (cancelled || !holderRef.current) return;
+        holderRef.current.replaceChildren(done.canvas);
+        onSize({ width: done.width, height: done.height });
+      } catch (error) {
+        if (!isRenderCancelled(error)) throw error;
+      }
     })();
 
     return () => {
       cancelled = true;
+      job?.cancel();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc, pageNumber, width]);
 
   return (
     <figure
-      className="relative m-0 shadow-sm ring-1 ring-slate-300 print:break-inside-avoid print:shadow-none"
+      className="relative m-0 bg-white shadow-sm ring-1 ring-slate-300 print:break-inside-avoid print:shadow-none"
       style={{ width }}
     >
-      <canvas ref={canvasRef} className="block" />
+      {/* Until the first render lands, hold the page's space at letter
+          proportions so the layout doesn't jump when it arrives. */}
+      <div
+        ref={holderRef}
+        style={size ? undefined : { width, height: Math.round(width * (11 / 8.5)) }}
+      />
       {size && renderOverlay ? (
         <div
           className="pointer-events-none absolute inset-0"

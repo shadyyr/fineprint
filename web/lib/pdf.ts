@@ -57,38 +57,61 @@ export async function loadPdf(data: ArrayBuffer | Uint8Array): Promise<LoadedPdf
 }
 
 /**
- * Render a page to a canvas at a given CSS width, accounting for device
- * pixel ratio so text stays sharp on retina displays.
+ * Render a page at a given CSS width into a canvas of its own.
  *
- * Returns the CSS pixel size of the rendered page, which is the box the
- * evidence overlay is positioned against.
+ * Every render gets a brand-new canvas that the caller swaps into the page only
+ * once it is completely drawn. The previous version drew into the canvas that
+ * was already on screen, and re-rendered it whenever the pane's width changed
+ * -- which a space-taking scrollbar appearing does moments after the first
+ * render starts. Setting canvas.width to begin the second render cleared the
+ * canvas and reset its drawing state while the first render was still
+ * painting, so the rest of page 1 was drawn with no viewport transform: upside
+ * down (PDF space is y-up), at one device pixel per point, on a transparent
+ * background. A canvas that nothing else ever draws into cannot be reset out
+ * from under a render.
+ *
+ * The device pixel ratio is folded into the viewport's scale rather than passed
+ * as pdf.js's separate `transform` option, and only `{ canvas, viewport }` is
+ * passed: the plainest form of the pdf.js 6 render call, with nothing left for
+ * a browser to compose differently.
  */
-export async function renderPage(
-  page: PDFPageProxy,
-  canvas: HTMLCanvasElement,
-  cssWidth: number,
-): Promise<{ width: number; height: number }> {
+export interface PageRenderJob {
+  /** Resolves with the finished canvas and its CSS size. */
+  promise: Promise<{ canvas: HTMLCanvasElement; width: number; height: number }>;
+  /** Stops a render that has been superseded. */
+  cancel: () => void;
+}
+
+export function renderPage(page: PDFPageProxy, cssWidth: number): PageRenderJob {
   const base = page.getViewport({ scale: 1 });
   const scale = cssWidth / base.width;
-  const viewport = page.getViewport({ scale });
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-  canvas.width = Math.floor(viewport.width * dpr);
-  canvas.height = Math.floor(viewport.height * dpr);
-  canvas.style.width = `${viewport.width}px`;
-  canvas.style.height = `${viewport.height}px`;
+  const cssViewport = page.getViewport({ scale });
+  const deviceViewport = page.getViewport({ scale: scale * dpr });
 
-  const context = canvas.getContext("2d");
-  if (!context) throw new Error("Could not get a 2D canvas context.");
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.floor(deviceViewport.width);
+  canvas.height = Math.floor(deviceViewport.height);
+  canvas.style.width = `${cssViewport.width}px`;
+  canvas.style.height = `${cssViewport.height}px`;
+  canvas.style.display = "block";
 
-  await page.render({
-    canvas,
-    canvasContext: context,
-    viewport,
-    transform: dpr === 1 ? undefined : [dpr, 0, 0, dpr, 0, 0],
-  }).promise;
+  const task = page.render({ canvas, viewport: deviceViewport });
 
-  return { width: viewport.width, height: viewport.height };
+  return {
+    cancel: () => task.cancel(),
+    promise: task.promise.then(() => ({
+      canvas,
+      width: cssViewport.width,
+      height: cssViewport.height,
+    })),
+  };
+}
+
+/** True for the rejection pdf.js raises when a render is deliberately cancelled. */
+export function isRenderCancelled(error: unknown): boolean {
+  return (error as { name?: string } | null)?.name === "RenderingCancelledException";
 }
 
 /** Convert a normalized bbox into CSS pixel offsets within a rendered page. */

@@ -619,3 +619,39 @@ NOTES     Codex, re 021: removing Anthropic references from app code and tests
           Prefixes stay named explicitly: a generic "sk-..." match flags words
           ending in "sk", and a scanner people learn to --no-verify past is
           worse than a narrower one they trust.
+
+
+### 2026-09-19 · 023 · Letter rendered upside down on Shade's machine — mechanism removed, trigger not reproduced
+AGENT     claude-opus-5 (session c78670a9)
+STATE     done — AWAITING CONFIRMATION on Shade's browser
+TOUCHED   web/lib/pdf.ts, web/components/PdfCanvas.tsx
+VERIFY    Rewrite verified in Chromium (dpr 1/1.5/2, throttled resize jitter,
+          single mid-render resize at 20-80x CPU throttle, next dev Strict
+          Mode), WebKit (dpr 1/2) and Firefox (dpr 1/2). Regression audit: 0
+          network requests on selection, widths 900-1366 OK, print 2/2 pages.
+SUMMARY   Shade's screenshot showed page 1 upside down, at one device pixel per
+          PDF point, on a transparent background. Measured against the PDF, the
+          letterhead sat at x=72, y=712 device px — raw PDF coordinates. In
+          pdf.js the white background fill, the y-flip and the scale are all set
+          in one step at the start of a render, and the only thing that undoes
+          all three at once is the canvas being resized after that step.
+          The old code could do exactly that: renders were never cancelled, and
+          a re-render began by setting canvas.width on the canvas already on
+          screen. Each render now draws into a brand-new canvas that is swapped
+          in only when complete; superseded renders are cancelled and
+          discarded. The DPR is folded into the viewport scale and only
+          { canvas, viewport } is passed, instead of canvas + canvasContext +
+          the separate `transform` option.
+ACTIVE    none
+NEXT      Shade: retest on the machine that showed it. If it recurs, the
+          browser + version and whether it was Vercel or localhost are what's
+          needed — see NOTES.
+NOTES     HONEST STATUS: the OLD code rendered correctly in every condition I
+          could construct, in all three engines. So the trigger on Shade's
+          machine is unidentified; the rewrite removes the mechanism the
+          screenshot proves, not a reproduced trigger. Candidates not testable
+          here: a specific browser version, a canvas-touching extension (dark
+          mode / privacy), GPU canvas acceleration.
+          Testing gotcha: `next dev` in Next 16 rejects dev connections from
+          127.0.0.1 when served as localhost — use http://localhost:PORT, or
+          the page never hydrates and shows "No offer loaded".
