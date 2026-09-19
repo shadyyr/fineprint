@@ -196,6 +196,10 @@ function Analysis({
           onSelectCategory={selectCategory}
           listsCosts={listsCosts}
           unverifiedCount={doc.unverified_claims.length}
+          loans={levers.loans}
+          workStudy={levers.workStudy}
+          assumptions={assumptions}
+          onAssumptions={onAssumptions}
         />
 
         <XRay doc={doc} pdf={pdf} groups={groups} selectedId={selectedId} onSelect={onSelect} />

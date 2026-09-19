@@ -13,9 +13,16 @@
 import { AidBreakdown } from "@/components/AidBreakdown";
 import { AmbiguityPrompt, type OptionImpact } from "@/components/AmbiguityPrompt";
 import { Icon } from "@/components/Icon";
-import { formatUSD, type DerivedModel, type Exclusion, type Money } from "@/lib/engine";
+import {
+  formatUSD,
+  type Assumptions,
+  type DerivedModel,
+  type Exclusion,
+  type Money,
+  type YearOne,
+} from "@/lib/engine";
 import type { Ambiguity } from "@/lib/schema";
-import type { Breakdown, CategoryKey } from "@/lib/view";
+import type { Breakdown, CategoryKey, LoanLever } from "@/lib/view";
 
 export interface AmbiguityView {
   ambiguity: Ambiguity;
@@ -119,6 +126,10 @@ export function Overview({
   onSelectCategory,
   listsCosts,
   unverifiedCount,
+  loans,
+  workStudy,
+  assumptions,
+  onAssumptions,
 }: {
   model: DerivedModel;
   breakdown: Breakdown;
@@ -131,6 +142,11 @@ export function Overview({
   listsCosts: boolean;
   /** Figures the reader reported that failed the evidence check -- never counted. */
   unverifiedCount: number;
+  /** Loans the letter offers, and work-study -- the same levers the What-If uses. */
+  loans: LoanLever[];
+  workStudy: number;
+  assumptions: Assumptions;
+  onAssumptions: (patch: Partial<Assumptions>) => void;
 }) {
   const { yearOne } = model;
   const headline = yearOne.headlineAidTotal?.value ?? null;
@@ -260,31 +276,175 @@ export function Overview({
           </div>
         )}
 
-        {/* How it might be covered -- supplementary, so not part of the figure list. */}
-        <div className="grid gap-4 border-t border-rule px-5 py-4 sm:grid-cols-2">
-          <p className="flex gap-3 text-sm text-ink-2">
-            <Icon name="loan" size={20} className="mt-0.5 shrink-0 text-loan" />
-            <span>
-              <span className="block font-medium text-ink">
-                Loans offered: <span className="figures">{formatUSD(yearOne.loansOffered.value)}</span>
+        {/* How it might be paid for. With no costs there is nothing to split, so
+            just say what is offered. */}
+        {listsCosts ? (
+          <CoverIt
+            yearOne={yearOne}
+            loans={loans}
+            workStudy={workStudy}
+            assumptions={assumptions}
+            onAssumptions={onAssumptions}
+          />
+        ) : (
+          <div className="grid gap-4 border-t border-rule px-5 py-4 sm:grid-cols-2">
+            <p className="flex gap-3 text-sm text-ink-2">
+              <Icon name="loan" size={20} className="mt-0.5 shrink-0 text-loan" />
+              <span>
+                <span className="block font-medium text-ink">
+                  Loans offered: <span className="figures">{formatUSD(yearOne.loansOffered.value)}</span>
+                </span>
+                Could cover part of this, but you repay it with interest. You don&rsquo;t have
+                to accept it.
               </span>
-              Could cover part of this, but you repay it with interest. You don&rsquo;t have
-              to accept it.
-            </span>
-          </p>
-          <p className="flex gap-3 text-sm text-ink-2">
-            <Icon name="work" size={20} className="mt-0.5 shrink-0 text-work" />
-            <span>
-              <span className="block font-medium text-ink">
-                Work-study offered:{" "}
-                <span className="figures">{formatUSD(yearOne.workStudyOffered.value)}</span>
+            </p>
+            <p className="flex gap-3 text-sm text-ink-2">
+              <Icon name="work" size={20} className="mt-0.5 shrink-0 text-work" />
+              <span>
+                <span className="block font-medium text-ink">
+                  Work-study offered:{" "}
+                  <span className="figures">{formatUSD(yearOne.workStudyOffered.value)}</span>
+                </span>
+                Paid as wages for hours you work during the year &mdash; not taken off your bill
+                up front.
               </span>
-              Paid as wages for hours you work during the year &mdash; not taken off your bill
-              up front.
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+const focusRing =
+  "outline-offset-2 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ink";
+
+/**
+ * How the amount to cover might be paid for: financing, never cost.
+ *
+ * Accepting a loan or counting work-study moves money into "still to cover
+ * from other sources" -- it never touches "Estimated amount to cover" above,
+ * because borrowing does not make college cheaper. The toggles write the same
+ * assumptions the What-If panel does, so the two can never disagree, and every
+ * figure here is read from the engine's year-one result.
+ */
+function CoverIt({
+  yearOne,
+  loans,
+  workStudy,
+  assumptions,
+  onAssumptions,
+}: {
+  yearOne: YearOne;
+  loans: LoanLever[];
+  workStudy: number;
+  assumptions: Assumptions;
+  onAssumptions: (patch: Partial<Assumptions>) => void;
+}) {
+  if (!loans.length && workStudy <= 0) return null;
+
+  const borrowed = yearOne.loansAccepted.value;
+  const stillToCover = Math.max(0, yearOne.outOfPocket.value);
+  const beyondNeed = yearOne.outOfPocket.value < 0;
+
+  return (
+    <div className="border-t border-rule px-5 py-4">
+      <fieldset>
+        <legend className="text-sm font-semibold text-ink">How will you cover it?</legend>
+        <div className="mt-2 space-y-2 text-sm">
+          {loans.map((l) => {
+            const on = assumptions.loansAccepted[l.id] === true;
+            return (
+              <label
+                key={l.id}
+                className={`flex cursor-pointer items-start justify-between gap-4 rounded ${focusRing}`}
+              >
+                <span className="flex items-start gap-2.5 text-ink">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 size-4 shrink-0 accent-ink"
+                    checked={on}
+                    onChange={(e) =>
+                      onAssumptions({
+                        loansAccepted: { ...assumptions.loansAccepted, [l.id]: e.target.checked },
+                      })
+                    }
+                  />
+                  <span>
+                    <Icon name="loan" size={14} className="mr-1 inline text-loan" />
+                    {l.label}
+                  </span>
+                </span>
+                <span className={`figures shrink-0 ${on ? "font-medium text-ink" : "text-ink-3"}`}>
+                  {on ? "−" : ""}
+                  {formatUSD(l.amount)}
+                </span>
+              </label>
+            );
+          })}
+          {workStudy > 0 ? (
+            <label className={`flex cursor-pointer items-start justify-between gap-4 rounded ${focusRing}`}>
+              <span className="flex items-start gap-2.5 text-ink">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 size-4 shrink-0 accent-ink"
+                  checked={assumptions.countWorkStudyTowardCosts}
+                  onChange={(e) => onAssumptions({ countWorkStudyTowardCosts: e.target.checked })}
+                />
+                <span>
+                  <Icon name="work" size={14} className="mr-1 inline text-work" />
+                  Count expected work-study earnings
+                  <span className="block text-xs text-ink-2">
+                    {formatUSD(workStudy)} offered &middot; earned through work, not paid upfront
+                  </span>
+                </span>
+              </span>
+              <span
+                className={`figures shrink-0 ${
+                  assumptions.countWorkStudyTowardCosts ? "font-medium text-ink" : "text-ink-3"
+                }`}
+              >
+                {assumptions.countWorkStudyTowardCosts ? "−" : ""}
+                {formatUSD(workStudy)}
+              </span>
+            </label>
+          ) : null}
+        </div>
+      </fieldset>
+
+      <div className="mt-3 flex items-baseline justify-between gap-4 border-t border-rule pt-3">
+        <span className="font-medium text-ink">Still to cover from other sources</span>
+        <span className="figures text-xl font-semibold text-ink">{formatUSD(stillToCover)}</span>
+      </div>
+      <p aria-live="polite" className="sr-only">
+        Still to cover from other sources: {formatUSD(stillToCover)}.
+      </p>
+      {beyondNeed ? (
+        <p className="mt-1 text-sm text-ink-2">
+          What you&rsquo;ve selected is more than you need to cover. You don&rsquo;t have to
+          borrow the full amount offered.
+        </p>
+      ) : null}
+
+      {borrowed > 0 ? (
+        <div className="mt-3 flex gap-3 text-sm text-ink-2">
+          <Icon name="loan" size={20} className="mt-0.5 shrink-0 text-loan" />
+          <p>
+            <span className="block font-semibold text-ink">{formatUSD(borrowed)} borrowed</span>
+            You&rsquo;ll still owe this loan principal, plus interest.
+            <span className="mt-1 block text-xs">
+              Federal repayment terms depend on your total loan balance and repayment plan.{" "}
+              {/* Listed in studentaid.gov/sitemap.xml, checked 2026-09-19. */}
+              <a
+                href="https://studentaid.gov/manage-loans/repayment"
+                className="rounded font-medium text-ink underline decoration-rule-2 underline-offset-4 outline-offset-2 hover:decoration-ink focus-visible:outline-2 focus-visible:outline-ink"
+              >
+                Learn about federal repayment
+              </a>
             </span>
           </p>
         </div>
-      </div>
-    </section>
+      ) : null}
+    </div>
   );
 }
