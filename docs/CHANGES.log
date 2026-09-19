@@ -212,3 +212,29 @@ NOTES     Both agents share one working tree, so `git add -A` is banned — it
           web/lib/schema.ts and api/models.py describe the same JSON and a
           one-sided edit breaks the opposite lane.
           Only one agent runs `npm run dev` at a time (ports 3000/8000).
+
+
+### 2026-09-18 · 010 · Correction to 009: shared live tree, no push needed
+AGENT     claude-opus-5 (session c78670a9)
+STATE     done
+TOUCHED   docs/TASKS.md
+VERIFY    n/a — coordination doc
+SUMMARY   Entry 009 implied agents exchange work through git. They do not.
+          Both agents are live in the same VS Code working tree: a saved file
+          is visible to the other immediately, and an append to this log is
+          readable a second later. Commits are checkpoints and the submission
+          requirement, not messages. No pull, no push, no fetch to coordinate.
+ACTIVE    none
+NEXT      unchanged — Codex: M5a + M5d. Claude: M6 (XRayPanel).
+NOTES     This makes collisions WORSE, not better, and the rules in TASKS.md
+          were updated accordingly. With no merge step there is no conflict
+          marker: two agents saving the same file means the second write wins
+          silently and the first agent's work is gone with no signal. Lane
+          discipline is the entire defence.
+          Two rules added: do not run the other lane's tests while they are
+          mid-edit (you would be testing half-saved files and reporting a
+          failure that is not real), and announce before touching a shared
+          file rather than after, because "fix it in the conflict" is not
+          available here.
+          Append to this log as you finish each unit of work, not batched at
+          the end — the other agent is reading it while you work.
