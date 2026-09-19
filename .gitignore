@@ -37,11 +37,15 @@ out/
 web/next-env.d.ts
 
 # ── Generated artifacts ──────────────────────────────────────────────────
-# Sources of truth are committed at fixtures/. These are copies emitted by
-# scripts/make_fixture.py and the sync:pdfworker npm script.
-web/public/sample_offer.pdf
-web/public/sample_offer.json
+# The pdf.js worker is 1.2 MB and is recreated by the sync:pdfworker script on
+# every npm install, including on the deployment host, so it is not committed.
 web/public/pdf.worker.min.mjs
+
+# web/public/sample_offer.{pdf,json} ARE committed, even though
+# scripts/make_fixture.py generates them. They are produced by a Python script
+# that does not run on a JS-only deployment host, so ignoring them ships a
+# build where the sample offer 404s. Small, deterministic, and regenerated in
+# place by make_fixture.py -- do not hand-edit them.
 
 # ── Logs and caches ──────────────────────────────────────────────────────
 # Server logs can contain extracted document text, so they never get committed.
