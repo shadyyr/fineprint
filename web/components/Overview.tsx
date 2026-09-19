@@ -117,6 +117,8 @@ export function Overview({
   onClear,
   onShowItem,
   onSelectCategory,
+  listsCosts,
+  unverifiedCount,
 }: {
   model: DerivedModel;
   breakdown: Breakdown;
@@ -125,6 +127,10 @@ export function Overview({
   onClear: (ambiguityId: string) => void;
   onShowItem: (itemId: string) => void;
   onSelectCategory: (key: CategoryKey) => void;
+  /** False when the letter prices no costs at all -- common for award-only letters. */
+  listsCosts: boolean;
+  /** Figures the reader reported that failed the evidence check -- never counted. */
+  unverifiedCount: number;
 }) {
   const { yearOne } = model;
   const headline = yearOne.headlineAidTotal?.value ?? null;
@@ -172,6 +178,13 @@ export function Overview({
                 confirmed so far &middot; {formatUSD(pendingGift)} more depends on one
                 answer below
               </>
+            ) : gift.value === 0 && unverifiedCount > 0 ? (
+              // $0 here can mean "none confirmed", not "none offered". Say which.
+              <>
+                none confirmed &middot; {unverifiedCount} reported{" "}
+                {unverifiedCount === 1 ? "figure" : "figures"} couldn&rsquo;t be checked against
+                the letter and {unverifiedCount === 1 ? "is" : "are"} listed at the end
+              </>
             ) : (
               <>grants and scholarships &middot; loans and work-study are not counted</>
             )}
@@ -198,27 +211,54 @@ export function Overview({
         <h3 className="border-b border-rule px-5 py-3 text-sm font-semibold text-ink">
           Your first year
         </h3>
-        <dl className="divide-y divide-rule">
-          <FigureRow
-            label="Cost of attendance"
-            description="Tuition, housing, meals and other costs the letter lists for the year."
-            amount={formatUSD(yearOne.costOfAttendance.value)}
-            money={yearOne.costOfAttendance}
-          />
-          <FigureRow
-            label="Minus gift aid"
-            icon={<Icon name="gift" size={18} className="text-gift" />}
-            description="Only money you don't repay. Loans and work-study are not subtracted."
-            amount={`−${formatUSD(gift.value)}`}
-          />
-          <FigureRow
-            label="Estimated amount to cover"
-            description="What's left to pay from savings, earnings or loans."
-            amount={formatUSD(yearOne.amountToCover.value)}
-            money={yearOne.amountToCover}
-            emphasis
-          />
-        </dl>
+        {listsCosts ? (
+          <dl className="divide-y divide-rule">
+            <FigureRow
+              label="Cost of attendance"
+              description="Tuition, housing, meals and other costs the letter lists for the year."
+              amount={formatUSD(yearOne.costOfAttendance.value)}
+              money={yearOne.costOfAttendance}
+            />
+            <FigureRow
+              label="Minus gift aid"
+              icon={<Icon name="gift" size={18} className="text-gift" />}
+              description="Only money you don't repay. Loans and work-study are not subtracted."
+              amount={`${gift.value > 0 ? "−" : ""}${formatUSD(gift.value)}`}
+            />
+            <FigureRow
+              label="Estimated amount to cover"
+              description={
+                yearOne.amountToCover.value < 0 ? (
+                  // Nobody owes a negative amount; the surplus is not spending money.
+                  <>
+                    Gift aid is {formatUSD(-yearOne.amountToCover.value)} more than these costs.
+                    Don&rsquo;t count on the difference: ask the aid office before planning
+                    around it.
+                  </>
+                ) : (
+                  "What's left to pay from savings, earnings or loans."
+                )
+              }
+              amount={formatUSD(Math.max(0, yearOne.amountToCover.value))}
+              money={yearOne.amountToCover}
+              emphasis
+            />
+          </dl>
+        ) : (
+          // Missing costs are never treated as $0 -- that would show a debt-free
+          // year for a letter that simply didn't print the bill.
+          <div className="flex gap-3 px-5 py-4 text-sm text-ink-2">
+            <Icon name="missing" size={20} className="mt-0.5 shrink-0 text-ink-3" />
+            <p>
+              <span className="block font-semibold text-ink">
+                This letter doesn&rsquo;t list what college costs.
+              </span>
+              So FinePrint can&rsquo;t work out what&rsquo;s left to cover, and won&rsquo;t
+              guess. Schools publish their cost of attendance on their financial-aid website;
+              the aid above is still exactly what this letter offers.
+            </p>
+          </div>
+        )}
 
         {/* How it might be covered -- supplementary, so not part of the figure list. */}
         <div className="grid gap-4 border-t border-rule px-5 py-4 sm:grid-cols-2">

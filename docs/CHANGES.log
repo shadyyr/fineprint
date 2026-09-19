@@ -867,3 +867,50 @@ NOTES     Document highlights are tabindex=-1 buttons on purpose — each
           duplicates an X-Ray row that is in the tab order.
           headed.mjs NOT rerun: nothing here touches PdfCanvas or the render
           path (XRay change is one class on the row button).
+
+
+### 2026-09-19 · 032 · M10 done: error, empty and edge states reviewed and fixed
+AGENT     claude-opus-5 (session after 027)
+STATE     done — uncommitted (029–031 committed as 9c51570, not pushed)
+TOUCHED   web/store/session.ts, web/lib/api.ts, web/app/analyze/AnalyzeView.tsx,
+          web/components/{Overview,FourYear,XRay,PdfCanvas}.tsx,
+          web/e2e/states.mjs (new), web/e2e/README.md, docs/TASKS.md (M10 ticked)
+VERIFY    web/e2e/states.mjs, 16 states via request interception: every page
+          has an h1, no raw JSON / "Failed to fetch" / negative money. Real
+          server paths too: FINEPRINT_API_URL at a dead port → 503 "letter
+          reader isn't responding"; at a socket that never answers → 504
+          after 90.03s. Regression: npm test 31/31, fouryear.mjs 7/7, audit
+          0 requests + figures unchanged, tabwalk 0 problems at 4 widths,
+          keyboard.mjs 0 requests/0 errors.
+SUMMARY   Honesty bugs (matter for live uploads of real letters):
+          - Award-only letter (no costs listed — common): showed "Cost of
+            attendance $0", "Estimated amount to cover -$16,900", "Gift aid
+            is $67,600 more than these costs", four $0 bars, and "-$36,900"
+            per answer in the question card. Now: first-year card and
+            four-year section say the letter doesn't list costs and FinePrint
+            won't guess; per-answer impacts hidden. Test is doc.costs.length
+            (view layer; engine untouched).
+          - Year-one "amount to cover" could go negative (full ride). Now
+            floored at $0 with the surplus caution the four-year view uses.
+          - Nothing verified: hero said "$0 grants and scholarships" while a
+            $20,000 claim sat unverified. Caption now says "none confirmed · 1
+            reported figure couldn't be checked…"; X-Ray panel explains
+            instead of rendering an empty column.
+          - "−$0" no longer shown with a minus sign.
+          Error pages: schema mismatch dumped zod JSON; network drop said
+          "couldn't read that letter: Failed to fetch"; unreachable said "Is
+          it running on port 8000?"; a 90s timeout said "couldn't reach";
+          a failed SAMPLE was titled "couldn't read that letter" with a
+          "Try the sample offer" button that retried the same failure. All
+          reworded; sample failure now "The sample offer didn't load" / "Try
+          again". Failure, empty and reading pages get h1s; focus moves to the
+          failure heading. Letter-render failure uses design tokens (was raw
+          red-50/red-900) and says the figures are still listed.
+ACTIVE    none
+NEXT      Claude: UI-S1 when Codex lands S1; meanwhile support Shade's M11.
+NOTES     Codex: api/main.py's 503 "Add OPENAI_API_KEY to api/.env" reaches
+          the student verbatim if the key is ever missing on a live deploy
+          (P1). Upload is disabled unless /health reports live, so it's
+          unlikely — but worth a student-facing wording when you do P1.
+          ExtractionFailed/Exception → f"Extraction failed: {exc}" can also
+          surface internal text; same note.

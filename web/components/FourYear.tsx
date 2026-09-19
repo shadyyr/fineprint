@@ -85,6 +85,7 @@ export function FourYear({
   onChange,
   onReset,
   onShowQuestion,
+  listsCosts,
 }: {
   model: DerivedModel;
   /** The same letter and answers, with every scenario lever at its default. */
@@ -99,6 +100,8 @@ export function FourYear({
   onChange: (patch: Partial<Assumptions>) => void;
   onReset: () => void;
   onShowQuestion: () => void;
+  /** False when the letter prices no costs -- there is nothing to project. */
+  listsCosts: boolean;
 }) {
   const fy = model.fourYear;
   const years = segmentsFor(model);
@@ -132,143 +135,156 @@ export function FourYear({
         </p>
       </div>
 
-      {pendingLabel ? (
-        <div className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-rule bg-card px-4 py-3 shadow-[inset_4px_0_0_var(--color-unclear)]">
-          <Icon name="unclear" size={20} className="shrink-0 text-unclear" />
-          <p className="min-w-0 flex-1 text-sm text-ink">
-            These totals leave out the <strong className="font-semibold">{pendingLabel}</strong>{" "}
-            until you answer whether it&rsquo;s per year or in total.
-          </p>
-          <button
-            type="button"
-            onClick={onShowQuestion}
-            className="rounded text-sm font-medium text-ink underline decoration-rule-2 underline-offset-4 outline-offset-2 hover:decoration-ink focus-visible:outline-2 focus-visible:outline-ink"
-          >
-            Answer it
-          </button>
-        </div>
-      ) : null}
-
-      <div className="grid items-start gap-8 lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
-        <WhatIf
-          assumptions={assumptions}
-          renewals={renewals}
-          loans={loans}
-          workStudy={workStudy}
-          residential={residential}
-          asWritten={asWritten}
-          onChange={onChange}
-          onReset={onReset}
-        />
-
-        {/* Phones stack the controls above the results, so a change's effect
-            would be a scroll away. Sticky to the bottom of the screen, this
-            stays in view while the controls do, then settles in place above
-            the results. Wider screens show both side by side and skip it. */}
-        <div className="sticky bottom-3 z-20 lg:hidden print:hidden">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 rounded-lg border border-ink bg-card px-4 py-2.5 shadow-[0_4px_16px_-4px_rgb(27_31_42/0.35)]">
-            <span className="text-sm font-medium text-ink-2">Left to cover, 4 years</span>
-            <span className="figures text-right text-ink">
-              <span className="text-lg font-semibold">
-                {formatUSD(leftToCover.value)}
-                {!leftToCover.complete ? <span className="text-sm font-normal text-ink-3">*</span> : null}
-              </span>
-              {asWritten ? null : (
-                <span className="ml-2 text-sm text-ink-2">
-                  {Math.round(deltas.cover) === 0
-                    ? "no change"
-                    : `${signed(deltas.cover)} ${deltas.cover > 0 ? "more" : "less"}`}
-                </span>
-              )}
-            </span>
-            {pendingLabel ? (
-              <span className="w-full text-xs text-ink-2">
-                Leaves out the {pendingLabel} until you answer
-              </span>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="min-w-0 space-y-6">
-          {/* The equation, stated in full. */}
-          <dl className="grid gap-px overflow-hidden rounded-lg border border-rule bg-rule sm:grid-cols-3">
-            <Figure label="Four-year cost" money={fy.grossCost} note="What the letter's costs add up to" />
-            <Figure
-              label="Minus gift aid"
-              money={fy.giftAid}
-              note="Money you don't repay"
-              sign="minus"
-              swatch={CATEGORY.gift.color}
-            />
-            <Figure
-              label="Left to cover"
-              money={leftToCover}
-              note="From loans, savings, earnings or family"
-              emphasis
-            />
-          </dl>
-
-          {unpriced.length ? (
-            <p className="-mt-3 text-xs text-ink-2">
-              * Leaves out {unpriced.join(", ")} &mdash; the letter names these costs but gives
-              no amount, so the real figures are higher.
-            </p>
-          ) : null}
-
-          {surplus > 0 ? (
-            <p className="flex gap-3 rounded-lg border border-rule bg-card px-4 py-3 text-sm text-ink-2">
-              <Icon name="gift" size={20} className="mt-0.5 shrink-0 text-gift" />
-              <span>
-                <span className="font-semibold text-ink">
-                  Gift aid is {formatUSD(surplus)} more than these costs.
-                </span>{" "}
-                Don&rsquo;t count on the difference: schools usually reduce aid when your costs
-                go down. Ask the aid office before planning around it.
-              </span>
-            </p>
-          ) : null}
-
-          {fy.principalBorrowed.value > 0 ? (
-            <p className="flex gap-3 rounded-lg border border-rule bg-card px-4 py-3 text-sm text-ink-2">
-              <Icon name="loan" size={20} className="mt-0.5 shrink-0 text-loan" />
-              <span>
-                <span className="font-semibold text-ink">
-                  You&rsquo;d borrow {formatUSD(fy.principalBorrowed.value)}
-                </span>{" "}
-                of that, and repay it with interest after you leave school. Loans don&rsquo;t
-                lower the cost &mdash; they move part of it into your future. Interest
-                isn&rsquo;t included here because the letter doesn&rsquo;t state rates.
-              </span>
-            </p>
-          ) : null}
-
-          {/* Before and after, announced as it changes. */}
-          <div aria-live="polite" aria-atomic="true">
-            {asWritten ? (
-              <p className="text-sm text-ink-2">
-                Showing the letter as written. Change an assumption to see what moves.
+      {!listsCosts ? (
+        <p className="flex max-w-2xl gap-3 rounded-lg border border-rule bg-card px-4 py-3 text-sm text-ink-2">
+          <Icon name="missing" size={20} className="mt-0.5 shrink-0 text-ink-3" />
+          <span>
+            <span className="font-semibold text-ink">Nothing to project yet.</span> A four-year
+            picture starts from what college costs, and this letter doesn&rsquo;t say. FinePrint
+            won&rsquo;t fill that in with a guess.
+          </span>
+        </p>
+      ) : (
+        <>
+          {pendingLabel ? (
+            <div className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-rule bg-card px-4 py-3 shadow-[inset_4px_0_0_var(--color-unclear)]">
+              <Icon name="unclear" size={20} className="shrink-0 text-unclear" />
+              <p className="min-w-0 flex-1 text-sm text-ink">
+                These totals leave out the <strong className="font-semibold">{pendingLabel}</strong>{" "}
+                until you answer whether it&rsquo;s per year or in total.
               </p>
-            ) : (
-              <div className="rounded-lg border border-ink bg-card px-4 py-3">
-                <p className="text-sm font-semibold text-ink">
-                  Compared with the letter as written
-                </p>
-                <ul className="mt-1.5 space-y-1 text-sm text-ink">
-                  <DeltaLine label="Left to cover over four years" value={deltas.cover} />
-                  {Math.round(deltas.borrowed) !== 0 ? (
-                    <DeltaLine label="Borrowed" value={deltas.borrowed} />
-                  ) : null}
-                  {Math.round(deltas.you - deltas.cover) !== 0 ? (
-                    <DeltaLine label="From savings, earnings or family" value={deltas.you} />
-                  ) : null}
-                </ul>
-              </div>
-            )}
-          </div>
+              <button
+                type="button"
+                onClick={onShowQuestion}
+                className="rounded text-sm font-medium text-ink underline decoration-rule-2 underline-offset-4 outline-offset-2 hover:decoration-ink focus-visible:outline-2 focus-visible:outline-ink"
+              >
+                Answer it
+              </button>
+            </div>
+          ) : null}
 
-          <YearChart years={years} max={max} />
-        </div>
-      </div>
+          <div className="grid items-start gap-8 lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
+            <WhatIf
+              assumptions={assumptions}
+              renewals={renewals}
+              loans={loans}
+              workStudy={workStudy}
+              residential={residential}
+              asWritten={asWritten}
+              onChange={onChange}
+              onReset={onReset}
+            />
+
+            {/* Phones stack the controls above the results, so a change's effect
+                would be a scroll away. Sticky to the bottom of the screen, this
+                stays in view while the controls do, then settles in place above
+                the results. Wider screens show both side by side and skip it. */}
+            <div className="sticky bottom-3 z-20 lg:hidden print:hidden">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 rounded-lg border border-ink bg-card px-4 py-2.5 shadow-[0_4px_16px_-4px_rgb(27_31_42/0.35)]">
+                <span className="text-sm font-medium text-ink-2">Left to cover, 4 years</span>
+                <span className="figures text-right text-ink">
+                  <span className="text-lg font-semibold">
+                    {formatUSD(leftToCover.value)}
+                    {!leftToCover.complete ? <span className="text-sm font-normal text-ink-3">*</span> : null}
+                  </span>
+                  {asWritten ? null : (
+                    <span className="ml-2 text-sm text-ink-2">
+                      {Math.round(deltas.cover) === 0
+                        ? "no change"
+                        : `${signed(deltas.cover)} ${deltas.cover > 0 ? "more" : "less"}`}
+                    </span>
+                  )}
+                </span>
+                {pendingLabel ? (
+                  <span className="w-full text-xs text-ink-2">
+                    Leaves out the {pendingLabel} until you answer
+                  </span>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="min-w-0 space-y-6">
+              {/* The equation, stated in full. */}
+              <dl className="grid gap-px overflow-hidden rounded-lg border border-rule bg-rule sm:grid-cols-3">
+                <Figure label="Four-year cost" money={fy.grossCost} note="What the letter's costs add up to" />
+                <Figure
+                  label="Minus gift aid"
+                  money={fy.giftAid}
+                  note="Money you don't repay"
+                  sign="minus"
+                  swatch={CATEGORY.gift.color}
+                />
+                <Figure
+                  label="Left to cover"
+                  money={leftToCover}
+                  note="From loans, savings, earnings or family"
+                  emphasis
+                />
+              </dl>
+
+              {unpriced.length ? (
+                <p className="-mt-3 text-xs text-ink-2">
+                  * Leaves out {unpriced.join(", ")} &mdash; the letter names these costs but gives
+                  no amount, so the real figures are higher.
+                </p>
+              ) : null}
+
+              {surplus > 0 ? (
+                <p className="flex gap-3 rounded-lg border border-rule bg-card px-4 py-3 text-sm text-ink-2">
+                  <Icon name="gift" size={20} className="mt-0.5 shrink-0 text-gift" />
+                  <span>
+                    <span className="font-semibold text-ink">
+                      Gift aid is {formatUSD(surplus)} more than these costs.
+                    </span>{" "}
+                    Don&rsquo;t count on the difference: schools usually reduce aid when your costs
+                    go down. Ask the aid office before planning around it.
+                  </span>
+                </p>
+              ) : null}
+
+              {fy.principalBorrowed.value > 0 ? (
+                <p className="flex gap-3 rounded-lg border border-rule bg-card px-4 py-3 text-sm text-ink-2">
+                  <Icon name="loan" size={20} className="mt-0.5 shrink-0 text-loan" />
+                  <span>
+                    <span className="font-semibold text-ink">
+                      You&rsquo;d borrow {formatUSD(fy.principalBorrowed.value)}
+                    </span>{" "}
+                    of that, and repay it with interest after you leave school. Loans don&rsquo;t
+                    lower the cost &mdash; they move part of it into your future. Interest
+                    isn&rsquo;t included here because the letter doesn&rsquo;t state rates.
+                  </span>
+                </p>
+              ) : null}
+
+              {/* Before and after, announced as it changes. */}
+              <div aria-live="polite" aria-atomic="true">
+                {asWritten ? (
+                  <p className="text-sm text-ink-2">
+                    Showing the letter as written. Change an assumption to see what moves.
+                  </p>
+                ) : (
+                  <div className="rounded-lg border border-ink bg-card px-4 py-3">
+                    <p className="text-sm font-semibold text-ink">
+                      Compared with the letter as written
+                    </p>
+                    <ul className="mt-1.5 space-y-1 text-sm text-ink">
+                      <DeltaLine label="Left to cover over four years" value={deltas.cover} />
+                      {Math.round(deltas.borrowed) !== 0 ? (
+                        <DeltaLine label="Borrowed" value={deltas.borrowed} />
+                      ) : null}
+                      {Math.round(deltas.you - deltas.cover) !== 0 ? (
+                        <DeltaLine label="From savings, earnings or family" value={deltas.you} />
+                      ) : null}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              <YearChart years={years} max={max} />
+            </div>
+          </div>
+        </>
+      )}
     </section>
   );
 }
@@ -297,7 +313,7 @@ function Figure({
         {label}
       </dt>
       <dd className={`mt-1 font-semibold tracking-tight text-ink ${emphasis ? "text-3xl" : "text-2xl"}`}>
-        {sign === "minus" ? "−" : ""}
+        {sign === "minus" && money.value > 0 ? "−" : ""}
         {formatUSD(money.value)}
         {!money.complete ? (
           <span className="ml-1 align-top text-sm font-normal text-ink-3" title="Leaves something out — see the note above">

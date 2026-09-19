@@ -313,6 +313,17 @@ function Panel({
   evidenceById: Map<string, Evidence>;
   onJump: (evidenceId: string) => void;
 }) {
+  if (!groups.some((g) => g.rows.length)) {
+    return (
+      <p className="rounded-lg border border-rule bg-card px-4 py-3 text-sm text-ink-2">
+        <span className="block font-semibold text-ink">Nothing here passed the check yet.</span>
+        FinePrint only shows a figure once it finds the exact words in the letter. Anything the
+        reader reported but FinePrint couldn&rsquo;t match is listed under &ldquo;Things we
+        couldn&rsquo;t confirm&rdquo; below.
+      </p>
+    );
+  }
+
   return (
     <div className="space-y-5">
       {groups.map((group) => (

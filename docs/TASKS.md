@@ -159,8 +159,8 @@ institution-name casing and replay-only deliberately rejected claims.
 - [x] **M8 · Four-year projection** with a stacked-bar money flow.
 - [x] **M9 · What-if simulator** with before/after deltas in an `aria-live`
       region.
-- [ ] **M10 · Uncertainty UI, accessibility, `SourceBadge`,** error and empty
-      states.
+- [x] **M10 · Uncertainty UI, accessibility, `SourceBadge`,** error and empty
+      states. (CHANGES.log 029–032.)
 - [ ] **UI-S1 · Sample picker** reading `web/public/samples/index.json`.
       Blocked on Codex's S1; falls back to the single Meridian sample until the
       manifest exists.

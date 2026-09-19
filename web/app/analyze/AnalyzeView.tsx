@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { Icon } from "@/components/Icon";
 import { FourYear } from "@/components/FourYear";
@@ -15,7 +15,7 @@ import { aidBreakdown, scenarioLevers, xrayGroups, type CategoryKey } from "@/li
 import { useSession } from "@/store/session";
 
 export function AnalyzeView({ autoloadSample }: { autoloadSample: boolean }) {
-  const { status, error, doc, pdf, overrides, assumptions, selectedItemId } = useSession();
+  const { status, error, failed, doc, pdf, overrides, assumptions, selectedItemId } = useSession();
   const { loadSample, answer, clearAnswer, select, reset, setAssumptions } = useSession.getState();
 
   useEffect(() => {
@@ -23,7 +23,9 @@ export function AnalyzeView({ autoloadSample }: { autoloadSample: boolean }) {
   }, [autoloadSample, loadSample]);
 
   if (status === "loading") return <Reading />;
-  if (status === "error") return <Failure message={error} onRetry={() => void loadSample()} />;
+  if (status === "error") {
+    return <Failure message={error} sample={failed === "sample"} onSample={() => void loadSample()} />;
+  }
   if (!doc || !pdf) return <Empty onSample={() => void loadSample()} />;
 
   return (
@@ -74,25 +76,30 @@ function Analysis({
 
   // For each open question, what each answer would do -- computed by running
   // the engine once per hypothetical answer.
+  // An award-only letter prices no costs. That is "unknown", never "$0".
+  const listsCosts = doc.costs.length > 0;
+
   const ambiguities: AmbiguityView[] = useMemo(
     () =>
       doc.ambiguities.map((ambiguity) => ({
         ambiguity,
         answer: overrides.ambiguityAnswers[ambiguity.id],
         itemId: ambiguity.target.split(".")[0] || null,
-        impacts: ambiguity.options.map((option) => ({
+        // Without costs there is nothing to cover, so no per-answer figure.
+        impacts: !listsCosts ? [] : ambiguity.options.map((option) => ({
           value: option.value,
-          amountToCover: derive(
+          // Floored like every other "to cover" figure: nobody owes a negative amount.
+          amountToCover: Math.max(0, derive(
             doc,
             {
               ...overrides,
               ambiguityAnswers: { ...overrides.ambiguityAnswers, [ambiguity.id]: option.value },
             },
             assumptions,
-          ).yearOne.amountToCover.value,
+          ).yearOne.amountToCover.value),
         })),
       })),
-    [doc, overrides, assumptions],
+    [doc, overrides, assumptions, listsCosts],
   );
 
   // "The letter as written": the same document and the same answers, with
@@ -186,6 +193,8 @@ function Analysis({
           onClear={onClear}
           onShowItem={showItem}
           onSelectCategory={selectCategory}
+          listsCosts={listsCosts}
+          unverifiedCount={doc.unverified_claims.length}
         />
 
         <XRay doc={doc} pdf={pdf} groups={groups} selectedId={selectedId} onSelect={onSelect} />
@@ -201,6 +210,7 @@ function Analysis({
           pendingLabel={pendingItem ? `${formatUSD(pendingItem.amount)} ${pendingItem.label}` : null}
           onChange={onAssumptions}
           onReset={() => onAssumptions(defaultAssumptions())}
+          listsCosts={listsCosts}
           onShowQuestion={() =>
             pending &&
             document
@@ -253,7 +263,7 @@ function Reading() {
             aria-hidden="true"
             className="size-5 animate-spin rounded-full border-2 border-rule-2 border-t-ink"
           />
-          <p className="text-lg font-semibold text-ink">Reading your letter…</p>
+          <h1 className="text-lg font-semibold text-ink">Reading your letter…</h1>
         </div>
         {/* A description of the process, not fake per-step progress: the
             server does not report which stage it is on, so ticking steps off
@@ -270,28 +280,47 @@ function Reading() {
   );
 }
 
-function Failure({ message, onRetry }: { message: string | null; onRetry: () => void }) {
+function Failure({
+  message,
+  sample,
+  onSample,
+}: {
+  message: string | null;
+  /** The bundled sample failed, not an upload -- so "try the sample" is a retry. */
+  sample: boolean;
+  onSample: () => void;
+}) {
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  // Whoever was waiting on the reading lands here; start them at the problem.
+  useEffect(() => headingRef.current?.focus(), []);
+
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center px-4 py-16">
-      <div role="alert" className="rounded-lg border border-rule bg-card p-6">
-        <p className="flex items-center gap-2 font-semibold text-ink">
-          <Icon name="unverified" size={20} className="text-ink-2" />
-          FinePrint couldn&rsquo;t read that letter
-        </p>
-        {message ? <p className="mt-2 text-ink-2">{message}</p> : null}
+      <div className="rounded-lg border border-rule bg-card p-6">
+        <div role="alert">
+          <h1
+            ref={headingRef}
+            tabIndex={-1}
+            className="flex items-center gap-2 font-semibold text-ink outline-none"
+          >
+            <Icon name="unverified" size={20} className="shrink-0 text-ink-2" />
+            {sample ? "The sample offer didn’t load" : "FinePrint couldn’t read that letter"}
+          </h1>
+          {message ? <p className="mt-2 text-ink-2">{message}</p> : null}
+        </div>
         <div className="mt-5 flex flex-wrap gap-3">
           <button
             type="button"
-            onClick={onRetry}
+            onClick={onSample}
             className="rounded-md bg-ink px-4 py-2 font-medium text-card hover:bg-ink-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
-            Try the sample offer
+            {sample ? "Try again" : "Try the sample offer"}
           </button>
           <Link
             href="/"
             className="rounded-md border border-rule-2 px-4 py-2 font-medium text-ink hover:border-ink-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
-            Upload a different file
+            {sample ? "Back to the start" : "Upload a different file"}
           </Link>
         </div>
       </div>
@@ -302,7 +331,7 @@ function Failure({ message, onRetry }: { message: string | null; onRetry: () => 
 function Empty({ onSample }: { onSample: () => void }) {
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center px-4 py-16 text-center">
-      <p className="text-lg font-semibold text-ink">No offer loaded</p>
+      <h1 className="text-lg font-semibold text-ink">No offer loaded</h1>
       <p className="mt-2 text-ink-2">Upload your letter, or explore a sample to see how it works.</p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <button

@@ -30,8 +30,8 @@ export class ApiError extends Error {
 /**
  * POST a file to the extraction service.
  *
- * Network failure is surfaced as a 503 rather than thrown raw, so the caller
- * can fall back to the committed fixture and label it honestly.
+ * Network failure is surfaced as a 503 (a timeout as a 504) rather than thrown
+ * raw, so the student sees a sentence instead of a fetch error.
  */
 export async function postFile(path: string, file: File | Blob, filename: string) {
   const body = new FormData();
@@ -44,10 +44,18 @@ export async function postFile(path: string, file: File | Blob, filename: string
       body,
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-  } catch {
+  } catch (cause) {
+    if (cause instanceof DOMException && cause.name === "TimeoutError") {
+      throw new ApiError(
+        504,
+        `Reading the letter took longer than ${TIMEOUT_MS / 1000} seconds, so FinePrint stopped waiting. Try again, or explore the sample offer.`,
+      );
+    }
+    // Shown to students, so no ports or service names. Developers: the
+    // service is expected at FINEPRINT_API_URL (default http://127.0.0.1:8000).
     throw new ApiError(
       503,
-      "FinePrint could not reach the extraction service. Is it running on port 8000?",
+      "FinePrint's letter reader isn't responding right now. Try again in a minute, or explore the sample offer.",
     );
   }
 

@@ -77,14 +77,20 @@ export function PdfCanvas({
 
   if (error) {
     return (
-      <p role="alert" className="rounded border border-red-300 bg-red-50 p-4 text-red-900">
-        {error}
-      </p>
+      <div role="alert" className="rounded-md border border-rule bg-card p-4 text-sm">
+        <p className="font-semibold text-ink">The letter couldn&rsquo;t be displayed.</p>
+        <p className="mt-1 text-ink-2">
+          Every figure and the words it came from are still listed; only the highlights on the
+          page are unavailable.
+        </p>
+        {/* pdf.js's own message, for whoever debugs it -- not the headline. */}
+        <p className="mt-2 text-xs text-ink-3">{error}</p>
+      </div>
     );
   }
 
   if (!doc) {
-    return <p className="p-4 text-slate-500">Loading document…</p>;
+    return <p className="p-4 text-ink-2">Loading the letter…</p>;
   }
 
   return (

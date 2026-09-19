@@ -10,6 +10,7 @@
  */
 
 import { create } from "zustand";
+import { ZodError } from "zod";
 
 import {
   defaultAssumptions,
@@ -24,6 +25,8 @@ export type Status = "idle" | "loading" | "ready" | "error";
 interface SessionState {
   status: Status;
   error: string | null;
+  /** Which path failed, so the error page can offer the right way forward. */
+  failed: "upload" | "sample" | null;
   doc: Doc | null;
   /** PDF bytes for an upload, or a URL for the bundled sample. */
   pdf: ArrayBuffer | string | null;
@@ -43,6 +46,7 @@ interface SessionState {
 const fresh = () => ({
   status: "idle" as Status,
   error: null,
+  failed: null as "upload" | "sample" | null,
   doc: null,
   pdf: null,
   overrides: emptyOverrides(),
@@ -57,7 +61,21 @@ async function readError(response: Response): Promise<string> {
   } catch {
     // Fall through.
   }
-  return `Something went wrong (${response.status}). Try the sample offer instead.`;
+  return `Something went wrong on FinePrint's side (error ${response.status}). Try again, or explore the sample offer.`;
+}
+
+/** A thrown error, in words a student can act on. Never a stack of JSON. */
+function describe(cause: unknown): string {
+  if (cause instanceof ZodError) {
+    // The reader's result is checked against the schema before anything is
+    // shown. When it doesn't fit, nothing from it is trustworthy enough to show.
+    return "The result didn't match the format FinePrint checks every reading against, so none of it is shown. Try again, or explore the sample offer.";
+  }
+  if (cause instanceof TypeError) {
+    // fetch() rejects with a TypeError when the request never completes.
+    return "FinePrint couldn't reach its server. Check your internet connection and try again.";
+  }
+  return cause instanceof Error ? cause.message : "Something unexpected went wrong.";
 }
 
 export const useSession = create<SessionState>((set) => ({
@@ -67,16 +85,15 @@ export const useSession = create<SessionState>((set) => ({
     set({ ...fresh(), status: "loading" });
     try {
       const response = await fetch("/sample_offer.json");
-      if (!response.ok) throw new Error(`Sample unavailable (${response.status}).`);
+      if (!response.ok) {
+        throw new Error(`The sample offer couldn't be loaded (error ${response.status}). Try again in a moment.`);
+      }
       // Parsed at the boundary, so a fixture that drifts from the schema fails
       // here with a clear error instead of halfway through a projection.
       const doc = CanonicalDocument.parse(await response.json());
       set({ status: "ready", doc, pdf: "/sample_offer.pdf" });
     } catch (cause) {
-      set({
-        status: "error",
-        error: cause instanceof Error ? cause.message : "Could not load the sample.",
-      });
+      set({ status: "error", failed: "sample", error: describe(cause) });
     }
   },
 
@@ -91,7 +108,7 @@ export const useSession = create<SessionState>((set) => ({
         // No fixture fallback here, deliberately: the fixture describes a
         // different, made-up letter. Showing it for someone's own upload would
         // present another school's numbers as theirs.
-        set({ status: "error", error: await readError(response) });
+        set({ status: "error", failed: "upload", error: await readError(response) });
         return false;
       }
 
@@ -99,13 +116,7 @@ export const useSession = create<SessionState>((set) => ({
       set({ status: "ready", doc, pdf: await file.arrayBuffer() });
       return true;
     } catch (cause) {
-      set({
-        status: "error",
-        error:
-          cause instanceof Error
-            ? `FinePrint couldn't read that letter: ${cause.message}`
-            : "FinePrint couldn't read that letter.",
-      });
+      set({ status: "error", failed: "upload", error: describe(cause) });
       return false;
     }
   },
