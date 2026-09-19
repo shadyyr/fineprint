@@ -88,17 +88,82 @@ The offline corpus passes 3/3, and the live corpus has reached OpenAI with every
 returned fact passing the evidence gate. Optional comparator polish remains for
 institution-name casing and replay-only deliberately rejected claims.
 
+#### Codex — next, queued 2026-09-19 (in priority order)
+
+- [ ] **S1 · A second demo sample, in a different layout.** Judges can only try
+      the sample on the public site (no Python service there), and one letter
+      shaped exactly like our own generator's output undersells what the
+      pipeline does. Pick the corpus letter that shows a *different* capability
+      best — likely `per_term_offer.pdf` (per-term columns → period
+      normalization) or `college_financing_plan.pdf` (standardized federal
+      form) — and say in the log why you chose it.
+      **Contract with Claude's lane (read before starting):**
+      - Produce it with the real pipeline (live extraction, then the evidence
+        gate), not by hand, so the sample is honest evidence the pipeline works.
+      - Set `extraction_meta.source` to **`"cached"`** — it is a stored result
+        of a live run, and the UI's source badge must not call a stored result
+        "Read live". `document.synthetic: true`.
+      - Must parse under BOTH `api/models.py` and `web/lib/schema.ts`. Schema
+        stays frozen (TASKS rule 2).
+      - Write `fixtures/samples/<slug>.{pdf,json}`, and have a script in
+        `scripts/` mirror them to `web/public/samples/` plus a manifest
+        `web/public/samples/index.json`:
+        `[{"slug","title","layout","note","pdf":"/samples/<slug>.pdf","json":"/samples/<slug>.json"}]`.
+        Include the existing Meridian sample as the first entry, pointing at
+        `/sample_offer.pdf` and `/sample_offer.json`. `web/public/samples/` is
+        generated output of your script — Claude will not hand-edit it.
+      - The pre-commit scanner blocks PDFs under `web/public/` except the one
+        named file. Widen it narrowly: `^web/public/samples/[a-z0-9_-]+\.pdf$`.
+      - Claude builds the sample picker against the manifest (task UI-S1).
+- [ ] **D1 · Devpost write-up + a "for judges" README section.** Draft
+      `docs/DEVPOST.md` on master context §25's skeleton (Inspiration, What it
+      does, How we built it, Challenges, Accomplishments, What we learned,
+      What's next). Judges read this closely. Requirements:
+      - **Re-verify every statistic** from §5 against its live source before
+        using it; drop any you can't confirm. No unsourced numbers.
+      - Answer "is this an LLM wrapper?" with the measured facts (CHANGES.log
+        019): one model call site (`api/extract.py`), ~6% of application code;
+        zero network requests when a student answers questions or explores
+        scenarios; every model claim checked against the letter's text.
+      - Public link is **https://fineprint-aid.vercel.app** — never
+        `fineprint.vercel.app`, which is someone else's product (log 018).
+      - Be honest about limits: text PDFs only (no OCR); live upload needs the
+        Python service (see P1).
+      - Tracks: Best Finance Hack; Education/Accessibility/Social Impact framed
+        around first-generation students and families (CLAUDE.md), not ARIA.
+      - List the screenshots worth capturing. Shade finalizes and submits.
+- [ ] **V1 · One real, publicly published sample letter.** Many schools publish
+      an example award letter with a fictional student. Find one, confirm it is
+      a published sample (never a real student's letter — §6.11), run it through
+      the live pipeline, and report what verified, what was flagged, and what
+      broke. Commit it to `corpus/letters/` only if its terms allow, with the
+      source URL in `corpus/README.md`. Evidence that FinePrint works on a real
+      school's format is worth more than another synthetic layout.
+- [ ] **P1 · Public API deployment — prepare, but Shade decides.** Live upload
+      on the public site needs the FastAPI service at a public HTTPS URL plus
+      `FINEPRINT_API_URL` set in Vercel's settings and a redeploy. Deploying it
+      spends Shade's OpenAI credits on anyone who visits and puts a PII-handling
+      endpoint on the internet, so **do not turn it on without Shade's
+      explicit go-ahead.** Prepare the config (Render/Railway/Fly), per-IP rate
+      limiting, a daily request cap, no logging of document contents, and a
+      one-paragraph cost/risk note for Shade.
+- [ ] **M5c-polish** (optional): semantic comparator for institution casing and
+      replay-only rejected claims.
+
 ### Claude — product
 
 - [x] **M6 · Financial X-Ray.** `XRayPanel` + bidirectional selection between
       analysis rows and document highlights. Highlights are real `<button>`s.
 - [x] **M7 · Overview.** One contrast: headline "financial aid" vs. what the
       student actually does not repay. No dashboard clutter.
-- [ ] **M8 · Four-year projection** with a stacked-bar money flow.
-- [ ] **M9 · What-if simulator** with before/after deltas in an `aria-live`
+- [x] **M8 · Four-year projection** with a stacked-bar money flow.
+- [x] **M9 · What-if simulator** with before/after deltas in an `aria-live`
       region.
 - [ ] **M10 · Uncertainty UI, accessibility, `SourceBadge`,** error and empty
       states.
+- [ ] **UI-S1 · Sample picker** reading `web/public/samples/index.json`.
+      Blocked on Codex's S1; falls back to the single Meridian sample until the
+      manifest exists.
 
 ### Shade — human
 

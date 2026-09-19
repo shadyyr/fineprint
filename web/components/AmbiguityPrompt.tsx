@@ -47,8 +47,9 @@ export function AmbiguityPrompt({
 
   return (
     <section
+      id={`question-${ambiguity.id}`}
       aria-labelledby={headingId}
-      className="rounded-lg border border-rule bg-card p-5 shadow-[inset_4px_0_0_var(--color-unclear)]"
+      className="scroll-mt-6 rounded-lg border border-rule bg-card p-5 shadow-[inset_4px_0_0_var(--color-unclear)]"
     >
       <div className="flex items-start gap-3">
         <Icon name="unclear" size={22} className="mt-0.5 shrink-0 text-unclear" />

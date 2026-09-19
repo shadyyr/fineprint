@@ -4,17 +4,18 @@ import Link from "next/link";
 import { useEffect, useMemo } from "react";
 
 import { Icon } from "@/components/Icon";
+import { FourYear } from "@/components/FourYear";
 import { Overview, type AmbiguityView } from "@/components/Overview";
 import { SourceBadge } from "@/components/SourceBadge";
 import { XRay, type PanelGroup } from "@/components/XRay";
-import { derive, formatUSD } from "@/lib/engine";
+import { defaultAssumptions, derive, formatUSD, type Assumptions } from "@/lib/engine";
 import type { CanonicalDocument } from "@/lib/schema";
-import { aidBreakdown, xrayGroups, type CategoryKey } from "@/lib/view";
+import { aidBreakdown, scenarioLevers, xrayGroups, type CategoryKey } from "@/lib/view";
 import { useSession } from "@/store/session";
 
 export function AnalyzeView({ autoloadSample }: { autoloadSample: boolean }) {
   const { status, error, doc, pdf, overrides, assumptions, selectedItemId } = useSession();
-  const { loadSample, answer, clearAnswer, select, reset } = useSession.getState();
+  const { loadSample, answer, clearAnswer, select, reset, setAssumptions } = useSession.getState();
 
   useEffect(() => {
     if (autoloadSample && !useSession.getState().doc) void loadSample();
@@ -35,6 +36,7 @@ export function AnalyzeView({ autoloadSample }: { autoloadSample: boolean }) {
       onClear={clearAnswer}
       onSelect={select}
       onReset={reset}
+      onAssumptions={setAssumptions}
     />
   );
 }
@@ -49,6 +51,7 @@ function Analysis({
   onClear,
   onSelect,
   onReset,
+  onAssumptions,
 }: {
   doc: CanonicalDocument;
   pdf: ArrayBuffer | string;
@@ -59,6 +62,7 @@ function Analysis({
   onClear: (id: string) => void;
   onSelect: (id: string | null) => void;
   onReset: () => void;
+  onAssumptions: (patch: Partial<Assumptions>) => void;
 }) {
   // The engine is pure, so recomputing on every answer is cheap and exact.
   const model = useMemo(() => derive(doc, overrides, assumptions), [doc, overrides, assumptions]);
@@ -89,6 +93,17 @@ function Analysis({
       })),
     [doc, overrides, assumptions],
   );
+
+  // "The letter as written": the same document and the same answers, with
+  // every scenario lever at its default. What-if deltas are measured from here.
+  const baseline = useMemo(() => derive(doc, overrides, defaultAssumptions()), [doc, overrides]);
+  const levers = useMemo(() => scenarioLevers(doc, overrides), [doc, overrides]);
+  const pending = doc.ambiguities.find(
+    (a) => a.blocks_headline && !overrides.ambiguityAnswers[a.id],
+  );
+  const pendingItem = pending
+    ? doc.aid.find((a) => `${a.id}.period` === pending.target) ?? null
+    : null;
 
   const groups: PanelGroup[] = useMemo(() => {
     const base: PanelGroup[] = xrayGroups(doc, overrides);
@@ -172,6 +187,25 @@ function Analysis({
         />
 
         <XRay doc={doc} pdf={pdf} groups={groups} selectedId={selectedId} onSelect={onSelect} />
+
+        <FourYear
+          model={model}
+          baseline={baseline}
+          assumptions={assumptions}
+          renewals={levers.renewals}
+          loans={levers.loans}
+          workStudy={levers.workStudy}
+          residential={levers.residential}
+          pendingLabel={pendingItem ? `${formatUSD(pendingItem.amount)} ${pendingItem.label}` : null}
+          onChange={onAssumptions}
+          onReset={() => onAssumptions(defaultAssumptions())}
+          onShowQuestion={() =>
+            pending &&
+            document
+              .getElementById(`question-${pending.id}`)
+              ?.scrollIntoView({ behavior: "smooth", block: "start" })
+          }
+        />
 
         {doc.unverified_claims.length ? (
           <section aria-labelledby="unverified-heading" className="rounded-lg border border-rule bg-card p-5">

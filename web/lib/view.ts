@@ -284,3 +284,79 @@ export function evidenceCategories(
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// Four years and what-if
+// ---------------------------------------------------------------------------
+
+export interface RenewalLever {
+  id: string;
+  label: string;
+  conditions: string[];
+  /** False while the letter's period for this award is still an open question. */
+  available: boolean;
+}
+
+export interface LoanLever {
+  id: string;
+  label: string;
+  amount: number;
+  subsidized: boolean;
+}
+
+/**
+ * The scenario controls this particular letter supports.
+ *
+ * Derived from the document, so a letter with no loans shows no loan toggles
+ * and a letter with no renewable award shows no renewal switch. Only awards the
+ * letter marks renewable or conditional get a renewal switch: those are the
+ * ones whose continuation is actually in question.
+ */
+export function scenarioLevers(doc: CanonicalDocument, overrides: Overrides) {
+  const aid = summableAid(doc);
+  const type = (a: AidItem) => overrides.itemOverrides[a.id]?.aidType ?? a.aid_type;
+
+  const renewals: RenewalLever[] = aid
+    .filter((a) => type(a) === "gift" && (a.renewable || (a.conditions?.length ?? 0) > 0))
+    .map((a) => ({
+      id: a.id,
+      label: a.label,
+      conditions: a.conditions ?? [],
+      available: !blockingAmbiguity(a.id, overrides, doc.ambiguities),
+    }));
+
+  const loans: LoanLever[] = aid
+    .filter((a) => type(a) === "loan")
+    .map((a) => ({
+      id: a.id,
+      label: a.label,
+      amount: overrides.itemOverrides[a.id]?.amount ?? a.amount,
+      subsidized: a.category === "subsidized_loan",
+    }));
+
+  const workStudy = aid
+    .filter((a) => type(a) === "work_study")
+    .reduce((acc, a) => acc + (overrides.itemOverrides[a.id]?.amount ?? a.amount), 0);
+
+  const residential = doc.costs
+    .filter((c) => c.role === "item" && (c.category === "housing" || c.category === "meals"))
+    .reduce((acc, c) => acc + (overrides.itemOverrides[c.id]?.amount ?? c.amount), 0);
+
+  return { renewals, loans, workStudy, residential };
+}
+
+/**
+ * True when a scenario changes nothing the letter says.
+ *
+ * Renewal and loan maps are compared by meaning, not shape: an award absent from
+ * `renewals` and one explicitly set to true are both "renewed".
+ */
+export function isLetterAsWritten(a: Assumptions): boolean {
+  return (
+    a.costGrowthRate === 0 &&
+    a.housing === "as_offered" &&
+    !a.countWorkStudyTowardCosts &&
+    !Object.values(a.renewals).some((v) => v === false) &&
+    !Object.values(a.loansAccepted).some((v) => v === true)
+  );
+}

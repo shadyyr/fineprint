@@ -684,3 +684,62 @@ NOTES     Anyone on a Mac with a mouse attached, or with "Show scroll bars:
           build broke for a large share of real visitors, likely including
           judges. Headless testing cannot see this class of bug; the headed
           repro lives at scratchpad/driver/headed.mjs for this session only.
+
+
+### 2026-09-19 · 025 · Work queued for Codex; Claude starts M8 + M9
+AGENT     claude-opus-5 (session c78670a9), per Shade's direction
+STATE     in-progress
+TOUCHED   docs/TASKS.md
+VERIFY    n/a — planning
+SUMMARY   Shade asked for next steps and for Codex to have work waiting. Queued
+          in TASKS.md, in priority order: S1 a second demo sample in a different
+          layout (produced by the live pipeline, stored as source "cached");
+          D1 a Devpost draft with re-verified statistics; V1 one real,
+          publicly published sample letter through the live pipeline; P1
+          public API deployment prepared but NOT switched on without Shade;
+          M5c-polish optional. Full contracts are in TASKS.md.
+ACTIVE    web/components/ (new FourYear + WhatIf components), web/app/analyze/,
+          web/lib/view.ts
+NEXT      Codex: start with S1 when back — read the contract in TASKS.md first,
+          it touches the boundary with Claude's lane in three places (the
+          "cached" source label, web/public/samples/ as generated output, and
+          the scanner's PDF allowlist).
+NOTES     S1 is first because judges can only try the SAMPLE on the public site
+          — Vercel has no Python service — so a second, differently shaped
+          sample is the cheapest way to show them the pipeline generalizes.
+          P1 is gated because a public extraction endpoint spends Shade's
+          credits on every visitor and handles uploaded student letters.
+
+
+### 2026-09-19 · 026 · Four-year projection and what-if simulator (M8 + M9)
+AGENT     claude-opus-5 (session c78670a9)
+STATE     done — committed locally, NOT pushed
+TOUCHED   web/components/{FourYear,WhatIf,AmbiguityPrompt}.tsx, web/lib/view.ts,
+          web/app/analyze/AnalyzeView.tsx, docs/TASKS.md,
+          web/package-lock.json (npm metadata only: hasInstallScript)
+VERIFY    Every lever driven in headless Chrome against the production build;
+          each figure matches the engine tests to the dollar: $57,600 to cover
+          (answered per-year), +$60,000 if the scholarship isn't renewed,
+          $217,844 / $70,244 at 4% growth, $22,000 borrowed with both loans.
+          0 network requests across all changes, 0 console errors, no
+          overflow at 400px. Regression: X-Ray, widths 900-1366, print 2/2.
+SUMMARY   One horizontal bar per year on a common scale, filled in order:
+          gift aid, loans (if accepted), work-study (if counted), then "you
+          cover". Levers appear only where the letter supports them: cost
+          growth, renewal of conditional awards, housing, each loan, work-
+          study. A before/after readout (aria-live) compares against "the
+          letter as written" — same letter, same answers, default levers.
+ACTIVE    none
+NEXT      M10 polish, then UI-S1 sample picker once Codex lands S1.
+NOTES     "You cover" is a deliberate neutral (#4a5163): it's the remainder,
+          not a kind of aid. The palette validator fails it on chroma for
+          exactly that reason and passes it on colorblind separation (worst
+          dE 10.6) and contrast.
+          Caught in testing: living at home made "left to cover" negative
+          (gift aid > reduced costs). Now $0 plus a note that schools usually
+          reduce aid when costs drop — showing a surplus would mislead.
+          Conditions are quoted in the letter's own words; an earlier
+          "Only if you: renewable for up to four years..." paraphrase garbled
+          a renewal term into a student requirement.
+          Known gap: on phones the controls sit above the results, so the
+          effect of a change is a scroll away. A pinned summary would fix it.
