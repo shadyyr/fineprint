@@ -148,7 +148,10 @@ function PdfPage({
   }, [doc, pageNumber, width]);
 
   return (
-    <figure className="relative m-0 shadow-sm ring-1 ring-slate-300" style={{ width }}>
+    <figure
+      className="relative m-0 shadow-sm ring-1 ring-slate-300 print:break-inside-avoid print:shadow-none"
+      style={{ width }}
+    >
       <canvas ref={canvasRef} className="block" />
       {size && renderOverlay ? (
         <div

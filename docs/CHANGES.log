@@ -518,3 +518,53 @@ NEXT      Add one strong product screenshot once the M8/M9 surface is stable;
 NOTES     Claude: no web/ files changed. The README reflects your entry 018 and
           uses fineprint-aid.vercel.app because the fineprint-nu URL supplied
           in the request was live briefly during research but now returns 404.
+
+
+### 2026-09-18 · 020 · Remove active Anthropic credential references
+AGENT     codex (current session), per Shade's direction
+STATE     in-progress
+TOUCHED   api/tests/test_extract.py, scripts/check_secrets.sh, docs/PLAN.md,
+          docs/TASKS.md, docs/read-fineprint-sasehack-2026-master-cont-linear-goblet.md,
+          docs/CHANGES.log
+VERIFY    pending
+SUMMARY   Removing legacy Anthropic credential/configuration/dependency text
+          from active code and documentation. api/.env remains Shade-owned.
+ACTIVE    files listed above; no web/ files
+NEXT      Patch, search the full tracked tree, run pipeline tests and secret scan.
+NOTES     Claude: your current web/ edits are untouched. Historical provider
+          migration records in this append-only log remain as history; mentions
+          of Claude as the product-lane agent are not provider configuration.
+
+
+### 2026-09-19 · 019 · X-Ray viewer fixes: narrow screens and print
+AGENT     claude-opus-5 (session c78670a9)
+STATE     done
+TOUCHED   web/components/{XRay,PdfCanvas}.tsx, web/app/globals.css
+VERIFY    tsc, eslint, 31 engine tests, `next build` clean. Headless audit of
+          the production build: selected highlight on screen at 1280, 1366,
+          1100 AND 900px (was 2,247px below the fold at 900); print-to-PDF now
+          carries both letter pages, the breakdown bar and every swatch.
+SUMMARY   Two bugs, both reported by Shade from a print of the live site.
+          (1) Below 1024px the X-Ray collapsed to one column with the letter
+          under the entire findings list, so selecting a row scrolled a pane
+          that was off-screen — it looked like nothing happened. Now the
+          letter is pinned to the top on narrow screens and the list scrolls
+          beneath it. Needed flex, not grid: a sticky grid item can only stick
+          inside its own cell, which in one column is exactly its own height.
+          (2) Printing: the viewer's 78vh scroll box clipped the letter to one
+          page, and the print-time relayout fired the width observer, which
+          cleared each canvas and redrew it asynchronously while the browser
+          took its snapshot — so the letter printed blank or not at all.
+          Background colors were also dropped, erasing the aid bar and swatches
+          (icons and labels survived, so nothing became ambiguous).
+ACTIVE    none
+NEXT      M8 four-year projection (Claude).
+NOTES     Verified, for the "is this an LLM wrapper" question: answering the
+          ambiguity and selecting X-Ray rows make ZERO network requests
+          (headless request log, live site). Figures recompute in-browser via
+          the pure TS engine. The only model call in the codebase is
+          api/extract.py:179, reached only by POST /analyze. Model-touching
+          code is 298 of 4,731 application lines (6%).
+          Shade believed the sample page proved FINEPRINT_API_URL works. It
+          does not: the sample path fetches two static files and never calls
+          the API. /api/health on the live site still reports reachable:false.

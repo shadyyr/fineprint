@@ -62,6 +62,25 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * Print. A student printing this to take to a counselor or a parent should get
+ * the same picture they saw on screen. Browsers drop background colors when
+ * printing by default, which erased the aid breakdown bar and every category
+ * swatch -- the category icons and labels survived, so nothing became
+ * ambiguous, but the visual explanation vanished. Opting back in is safe here
+ * because the page background itself is made white for print.
+ */
+@media print {
+  body {
+    background: #fff;
+  }
+
+  * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

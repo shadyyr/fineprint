@@ -46,7 +46,13 @@ function useElementWidth<T extends HTMLElement>() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const printing = window.matchMedia("print");
     const observer = new ResizeObserver(([entry]) => {
+      // Printing re-lays the page out at paper width, which fires this
+      // observer. Re-rendering then clears each canvas and redraws it
+      // asynchronously, and the browser takes its print snapshot in between:
+      // the letter prints blank or not at all. Keep the screen render instead.
+      if (printing.matches) return;
       // Snap to 16px steps so a window drag doesn't re-rasterize every frame.
       const next = Math.floor(entry.contentRect.width / 16) * 16;
       setWidth((prev) => (prev === next ? prev : next));
@@ -156,7 +162,7 @@ export function XRay({
       ));
 
   return (
-    <section aria-labelledby="xray-heading" id="xray" className="scroll-mt-6">
+    <section aria-labelledby="xray-heading" id="xray" className="scroll-mt-6 print:break-before-page">
       <div className="mb-5 max-w-2xl">
         <h2 id="xray-heading" className="text-2xl font-semibold tracking-tight text-ink">
           Financial X-Ray
@@ -167,17 +173,28 @@ export function XRay({
         </p>
       </div>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(360px,420px)]">
-        {/* Findings: first in the DOM for keyboard and screen-reader users. */}
-        <div className="lg:order-2">
+      {/*
+        Narrow screens: a flex column with the letter pinned to the top while
+        the findings scroll beneath it. It must be flex, not a one-column grid:
+        a sticky grid item can only stick within its own grid cell, which here
+        would be exactly its own height -- so it would never stick, and the
+        letter would sit below the whole list where selecting a row visibly
+        does nothing.
+
+        Wide screens: a grid, letter left, findings right. The findings stay
+        first in the DOM either way, so keyboard and screen-reader users reach
+        them before the evidence.
+      */}
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(360px,420px)] lg:items-start print:block">
+        <div className="order-2">
           <Panel groups={groups} selectedId={selectedId} onSelect={onSelect} evidenceById={evidenceById} onJump={scrollToEvidence} />
         </div>
 
         {/* The letter. */}
-        <div className="lg:order-1 lg:sticky lg:top-4">
+        <div className="sticky top-0 z-10 order-1 bg-paper pb-1 lg:top-4 lg:pb-0 print:static print:mt-8 print:bg-transparent">
           <div
             ref={paneRef}
-            className="max-h-[78vh] overflow-auto rounded-lg border border-rule bg-well p-3 sm:p-4"
+            className="h-[44vh] overflow-auto rounded-lg border border-rule bg-well p-3 shadow-[0_6px_12px_-8px_rgb(27_31_42/0.35)] sm:p-4 lg:h-auto lg:max-h-[78vh] lg:shadow-none print:h-auto print:max-h-none print:overflow-visible print:shadow-none"
           >
             <div ref={measureRef} className="w-full">
               {paneWidth > 0 ? (
@@ -324,7 +341,7 @@ function Panel({
                 <li
                   key={row.id}
                   id={`row-${row.id}`}
-                  className={`scroll-mt-24 border-t border-rule first:border-t-0 ${
+                  className={`scroll-mt-[48vh] border-t border-rule first:border-t-0 lg:scroll-mt-24 ${
                     isSelected ? "bg-well" : ""
                   }`}
                   style={isSelected ? { boxShadow: `inset 3px 0 0 ${group.color}` } : undefined}
