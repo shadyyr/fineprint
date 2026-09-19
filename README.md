@@ -11,8 +11,32 @@ trace every figure back to the exact words in the source PDF.
 **[Jump straight to the synthetic sample](https://fineprint-aid.vercel.app/analyze?sample)**
 
 Built for [SASEhack 2026](https://sase-hack.notion.site/SASEhack-2026-Hacker-Guide-38b9bed74f8e8093aba7fd8132b70a16),
-with Best Finance Hack as the primary track and Education, Accessibility, or
-Social Impact as the secondary track.
+entering Best Finance Hack and Best Education, Accessibility, or Social Impact.
+
+## For judges
+
+Start with the [live demo](https://fineprint-aid.vercel.app/) and choose a
+sample offer. The quickest path through the project is:
+
+1. Compare the letter's advertised aid with confirmed gift aid.
+2. Open one X-Ray row and follow it to the exact words in the PDF.
+3. Answer the unresolved scholarship-period question both ways.
+4. Change a four-year assumption, then accept a loan and confirm that financing
+   changes without pretending the college costs less.
+
+FinePrint uses a model for one narrow job: extracting typed claims from an
+unstandardized letter. There is one model call site in `api/extract.py`, and an
+architecture audit measured model-touching code at 298 of 4,731 application
+lines, about 6%. Every claim then has to pass a deterministic quote-and-amount
+check against the PDF. Evidence selection, ambiguity answers, projections, and
+financing choices all recompute in the browser with zero model or network
+requests.
+
+The public site uses cached analyses of synthetic letters. Live upload needs
+the Python service and is available locally; it is not enabled on Vercel yet.
+FinePrint currently accepts text-based PDFs only, with no OCR, because it will
+not use a number it cannot trace back to an authoritative text layer. The full
+submission draft and screenshot list are in [docs/DEVPOST.md](docs/DEVPOST.md).
 
 ## The problem
 

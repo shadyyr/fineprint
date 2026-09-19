@@ -13,11 +13,12 @@ Run:  ../.venv/bin/uvicorn main:app --reload --port 8000
 
 from __future__ import annotations
 
-import json
+import logging
+import sqlite3
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -25,6 +26,14 @@ API_DIR = Path(__file__).resolve().parent
 load_dotenv(API_DIR / ".env")
 
 import extract as extraction  # noqa: E402 - .env config must load first
+from guardrails import (  # noqa: E402
+    GuardrailConfigurationError,
+    QuotaExceeded,
+    public_api_enabled,
+    public_mode,
+    quota_store,
+    trust_proxy_headers,
+)
 from ingest import IngestResult, ingest  # noqa: E402
 from models import CanonicalDocument  # noqa: E402
 from pipeline import analyze_document  # noqa: E402
@@ -33,6 +42,7 @@ ROOT = API_DIR.parent
 FIXTURE = ROOT / "fixtures" / "sample_offer.json"
 
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
+logger = logging.getLogger("fineprint.api")
 
 app = FastAPI(title="FinePrint extraction service", version="0.1.0")
 
@@ -57,13 +67,17 @@ def load_fixture() -> CanonicalDocument:
 
 @app.get("/health")
 def health() -> dict[str, object]:
+    extraction_enabled = extraction.available() and (
+        not public_mode() or public_api_enabled()
+    )
     return {
         "ok": True,
         "fixture_available": FIXTURE.exists(),
-        "live_extraction": extraction.available(),
-        "model": extraction.DEFAULT_MODEL if extraction.available() else None,
+        "live_extraction": extraction_enabled,
+        "public_mode": public_mode(),
+        "model": extraction.DEFAULT_MODEL if extraction_enabled else None,
         "fallback_model": (
-            extraction.FALLBACK_MODEL if extraction.available() else None
+            extraction.FALLBACK_MODEL if extraction_enabled else None
         ),
         "reasoning_effort": extraction.DEFAULT_REASONING_EFFORT,
     }
@@ -142,6 +156,11 @@ async def debug_ingest(file: UploadFile = File(...)) -> DebugIngest:
     the boxes do not sit on their text, evidence highlighting is broken and
     nothing downstream can be trusted.
     """
+    if public_mode():
+        # This route returns a document's raw text and exists only for local
+        # coordinate debugging. It must never be part of the public surface.
+        raise HTTPException(status_code=404, detail="Not found")
+
     payload = await _read_pdf(file)
     result = ingest(payload, render_images=False)
     return DebugIngest(
@@ -163,8 +182,40 @@ async def debug_ingest(file: UploadFile = File(...)) -> DebugIngest:
     )
 
 
+def _client_address(request: Request) -> str:
+    """Get the address to hash for rate limiting, without logging it."""
+    if trust_proxy_headers():
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            return forwarded.split(",", maxsplit=1)[0].strip()
+    if request.client:
+        return request.client.host
+    return "unknown"
+
+
+def _quota_error(exc: QuotaExceeded) -> HTTPException:
+    if exc.scope == "daily":
+        detail = (
+            "FinePrint has reached today's live-reading limit. "
+            "Please try the sample offer or come back tomorrow."
+        )
+    else:
+        detail = (
+            "Too many live-reading attempts from this connection. "
+            "Please wait before trying again."
+        )
+    return HTTPException(
+        status_code=429,
+        detail=detail,
+        headers={"Retry-After": str(exc.retry_after_seconds)},
+    )
+
+
 @app.post("/analyze")
-async def analyze(file: UploadFile = File(...)) -> CanonicalDocument:
+async def analyze(
+    request: Request,
+    file: UploadFile = File(...),
+) -> CanonicalDocument:
     """Analyze an uploaded aid letter: ingest -> extract -> verify -> normalize.
 
     There is deliberately no fixture fallback on this path. The fixture
@@ -174,6 +225,40 @@ async def analyze(file: UploadFile = File(...)) -> CanonicalDocument:
     the only place the fixture is legitimate, because there it really is the
     same document.
     """
+    limiter = None
+    if public_mode():
+        if not public_api_enabled():
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "Live reading is not available yet. Please try a sample offer."
+                ),
+            )
+        try:
+            limiter = quota_store()
+            limiter.check_ip(_client_address(request))
+        except GuardrailConfigurationError:
+            logger.error("analysis_unavailable category=guardrail_configuration")
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "Live reading is temporarily unavailable. "
+                    "Please try a sample offer."
+                ),
+            ) from None
+        except (OSError, sqlite3.Error):
+            logger.error("analysis_unavailable category=guardrail_storage")
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "Live reading is temporarily unavailable. "
+                    "Please try a sample offer."
+                ),
+            ) from None
+        except QuotaExceeded as exc:
+            logger.info("analysis_rejected category=per_ip_quota")
+            raise _quota_error(exc) from None
+
     payload = await _read_pdf(file)
     result = ingest(payload)
     _require_text_layer(result)
@@ -182,24 +267,59 @@ async def analyze(file: UploadFile = File(...)) -> CanonicalDocument:
         raise HTTPException(
             status_code=503,
             detail=(
-                "Live extraction is not configured on the server. Add "
-                "OPENAI_API_KEY to api/.env, or try the sample offer."
+                "Live reading is temporarily unavailable. "
+                "Please try a sample offer."
             ),
         )
+
+    if limiter is not None:
+        try:
+            # Count attempts that reach the provider, including failed calls.
+            limiter.reserve_analysis()
+        except QuotaExceeded as exc:
+            logger.info("analysis_rejected category=daily_quota")
+            raise _quota_error(exc) from None
+        except (OSError, sqlite3.Error):
+            logger.error("analysis_unavailable category=guardrail_storage")
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "Live reading is temporarily unavailable. "
+                    "Please try a sample offer."
+                ),
+            ) from None
 
     try:
         routed = analyze_document(
             result,
             source_file_name=file.filename or "upload.pdf",
         )
-    except extraction.ExtractionRefused as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except extraction.ExtractionFailed as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
-    except Exception as exc:  # noqa: BLE001 - surface the cause, do not fake a result
+    except extraction.ExtractionRefused:
+        logger.info("analysis_failed category=provider_refusal")
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "FinePrint couldn't read this letter safely. Try a text-based "
+                "PDF or a sample offer."
+            ),
+        ) from None
+    except extraction.ExtractionFailed:
+        logger.warning("analysis_failed category=provider_response")
         raise HTTPException(
             status_code=502,
-            detail=f"Extraction failed: {exc}",
-        ) from exc
+            detail=(
+                "FinePrint couldn't finish reading this letter. "
+                "Please try again later."
+            ),
+        ) from None
+    except Exception:  # noqa: BLE001 - fail closed without exposing internals
+        logger.error("analysis_failed category=unexpected")
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "FinePrint couldn't finish reading this letter. "
+                "Please try again later."
+            ),
+        ) from None
 
     return routed.document

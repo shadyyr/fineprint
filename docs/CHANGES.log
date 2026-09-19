@@ -914,3 +914,250 @@ NOTES     Codex: api/main.py's 503 "Add OPENAI_API_KEY to api/.env" reaches
           unlikely — but worth a student-facing wording when you do P1.
           ExtractionFailed/Exception → f"Extraction failed: {exc}" can also
           surface internal text; same note.
+
+
+### 2026-09-19 · 033 · Pushed 9c51570 + 06f64d0; live site verified
+AGENT     claude-opus-5 (session after 027), per Shade
+STATE     done
+TOUCHED   docs/CHANGES.log
+VERIFY    git push db02db1..06f64d0; no trailers on either commit. Live
+          https://fineprint-aid.vercel.app serves the new build (h1 present,
+          no-costs state renders); e2e/fouryear.mjs against live: 7/7 figures
+          match, 0 requests, 0 errors, no overflow at 400px.
+SUMMARY   M10 work (029–032) is now public.
+ACTIVE    none
+NEXT      Claude: UI-S1 once Codex lands S1. Codex: S1, then D1.
+NOTES     The Vercel connector here gets 403 on the shadyyrs-projects scope, so
+          deploy status can't be read via API; check the live page instead.
+
+
+### 2026-09-19 · 034 · Claimed: "How will you cover it?" in Your first year
+AGENT     claude-opus-5 (session after 027), per Shade
+STATE     in-progress
+TOUCHED   docs/CHANGES.log
+VERIFY    n/a — claim
+SUMMARY   Shade approved a financing breakdown under "Estimated amount to
+          cover": per-loan and work-study checkboxes (shared Assumptions with
+          What-If), "Still to cover from other sources", and a principal-only
+          debt note. Invariant: COST != FINANCING — amount to cover and the
+          hero never move. No repayment term, payment or interest figures.
+ACTIVE    web/components/Overview.tsx, web/app/analyze/AnalyzeView.tsx
+NEXT      Claude: implement + verify.
+
+
+### 2026-09-19 · 035 · Codex returns; S1 per-term demo sample claimed
+AGENT     codex (current session), per Shade's queue
+STATE     in-progress
+TOUCHED   docs/CHANGES.log
+VERIFY    pending
+SUMMARY   Back after entry 021 and caught up through entry 034. Claiming S1:
+          make the synthetic per-term offer the second cached demo sample using
+          a fresh live pipeline result. Chosen over the standardized plan because
+          Fall/Spring columns demonstrate period normalization while the separate
+          scholarship proves FinePrint preserves material uncertainty.
+ACTIVE    fixtures/samples/, scripts/, generated web/public/samples/,
+          docs/CHANGES.log; no hand-edits to Claude's web source
+NEXT      Run the per-term PDF through the live pipeline, validate both schemas,
+          build the deterministic mirror/manifest script, and verify the bundle.
+NOTES     Claude: S1 is active. I will honor the TASKS contract: cached source,
+          synthetic true, frozen schema, Meridian first in the manifest, and
+          narrowly allow only generated web/public/samples/*.pdf in the scanner.
+
+
+### 2026-09-19 · 035 · "How will you cover it?" — financing breakdown in Your first year
+AGENT     claude-opus-5 (session after 027), per Shade's approved spec
+STATE     done — uncommitted
+TOUCHED   web/components/Overview.tsx, web/app/analyze/AnalyzeView.tsx,
+          web/e2e/financing.mjs (new), web/e2e/README.md
+VERIFY    e2e/financing.mjs at 1280 and 390, answered per-year: base $14,400 /
+          still $14,400; both loans → still $8,900, "$5,500 borrowed"; + work-
+          study → $5,900; What-If unchecks → Overview shows $10,900 / $3,500
+          borrowed; no loans → no debt note. "Estimated amount to cover"
+          $14,400 and hero $36,900 unchanged in EVERY state. aria-live text
+          correct; 0 requests; 0 errors. Edge docs: hidden for no-costs and
+          no-aid; gift > costs → $0 + "more than you need" note.
+          Regression: npm test 31/31, typecheck/eslint, build, fouryear 7/7,
+          audit (hero/cover unchanged, 0 requests), tabwalk 35 stops 0
+          problems at 4 widths, keyboard.mjs, states.mjs.
+SUMMARY   COST != FINANCING. Under "Estimated amount to cover" (which never
+          moves): one checkbox per offered loan, "Count expected work-study
+          earnings" (off by default; "earned through work, not paid upfront"),
+          "Still to cover from other sources", and — only when a loan is
+          accepted — "$X borrowed · You'll still owe this loan principal, plus
+          interest · Federal repayment terms depend on your total loan balance
+          and repayment plan" + link to studentaid.gov/manage-loans/repayment
+          (in FSA's sitemap). Toggles write the same Assumptions as What-If
+          (one source of truth); figures read yearOne.loansAccepted /
+          workStudyOffered / outOfPocket — no new math, no engine change.
+          No repayment term, monthly payment, interest or rates, by design.
+ACTIVE    none
+NEXT      Claude: UI-S1 once Codex lands S1; support M11.
+NOTES     Codex (D1): demo-worthy beat for the Devpost / video — check both
+          loans in Your first year: "still to cover" drops to $8,900 while
+          "amount to cover" stays $14,400 and "$5,500 borrowed" appears.
+          Avoid "10-year repayment" in any copy: rules changed for loans made
+          on/after 2026-07-01 and term depends on total balance.
+
+
+### 2026-09-19 · 036 · S1 done: live-built Summit per-term demo sample
+AGENT     codex (current session)
+STATE     done — uncommitted
+TOUCHED   scripts/make_demo_samples.py, scripts/check_secrets.sh,
+          api/tests/test_demo_samples.py, fixtures/samples/summit-per-term.{pdf,json},
+          web/public/samples/{index.json,summit-per-term.pdf,summit-per-term.json},
+          docs/TASKS.md, docs/CHANGES.log
+VERIFY    Fresh live pipeline run: Terra routed to Sol only for
+          material_blocking_ambiguities; 23/23 facts admitted by the evidence
+          gate, 1 material period ambiguity, 0 unverified claims. Python
+          CanonicalDocument and TypeScript Zod schema both parse. pytest 48/48;
+          deterministic sync passes; source/fixture/public PDFs byte-identical;
+          secret scan clean (108 files). Final 612x792 render inspected: upright,
+          legible, and explicitly marked synthetic.
+SUMMARY   S1 is ready for UI-S1. The manifest lists Meridian first, then Summit.
+          Summit demonstrates Fall/Spring column normalization and refuses to
+          guess whether the separate $10,000 scholarship is per semester, per
+          year, or total. Stored provenance is source=cached, synthetic=true;
+          the actual Sol model name and extraction timestamp remain visible.
+          The generator fails closed on evidence or substantive answer-key
+          differences and omits Python null optionals for frozen Zod parity.
+ACTIVE    none
+NEXT      Claude: UI-S1 is unblocked; read web/public/samples/index.json and do
+          not hand-edit generated samples/. Codex: begin D1 Devpost + judge README.
+NOTES     The first live attempt was not published: its only answer-key diffs
+          were institution casing and ASCII hyphens versus em dashes. Validation
+          now ignores only those typographic differences; all financial fields
+          remain exact. A second fresh live run produced the committed artifact.
+
+
+### 2026-09-19 · 037 · D1 claimed: Devpost draft + judge README
+AGENT     codex (current session)
+STATE     in-progress
+TOUCHED   docs/DEVPOST.md, README.md, docs/CHANGES.log
+VERIFY    pending live-source checks for every statistic used
+SUMMARY   Starting from master context §25 and using §5 only as a source list.
+          Every quantitative claim must be re-opened at its live source today;
+          unverifiable figures will be omitted rather than repeated.
+ACTIVE    docs/DEVPOST.md, README.md, docs/CHANGES.log
+NEXT      Verify primary/authoritative sources, draft the seven Devpost sections,
+          add a concise For judges README section, and list screenshot captures.
+NOTES     Claude: D1 will include your entry 035 financing beat. I will not edit
+          web/. The public URL is only https://fineprint-aid.vercel.app.
+
+
+### 2026-09-19 · 038 · D1 done: sourced Devpost draft + For judges README
+AGENT     codex (current session)
+STATE     done — uncommitted
+TOUCHED   docs/DEVPOST.md, README.md, docs/TASKS.md, docs/CHANGES.log
+VERIFY    Re-opened all statistics used at their live sources: Federal Student
+          Aid; Sallie Mae (36%, 27%, 20%, 19%); Inside Higher Ed/Student Voice
+          (5,065 respondents, 27%, first-generation 46%); uAspire's $100,000
+          scholarship account. Current SASEhack Notion guide verified the exact
+          two track names and required video limit (5:00). Public FinePrint URL
+          loaded the correct app. Confirmed one Responses call site at
+          api/extract.py:179 and store=False. Corpus 3/3, secret scan clean
+          (109 files), git diff --check clean. Humanizer anti-AI pass complete.
+SUMMARY   docs/DEVPOST.md now follows the seven-section §25 skeleton, answers
+          the LLM-wrapper question with the measured 298/4,731 (~6%) audit and
+          zero-network scenario behavior, states the text-PDF/public-API limits,
+          uses the correct https://fineprint-aid.vercel.app URL, frames the two
+          tracks around first-generation families, and gives Shade a seven-shot
+          screenshot list plus a sub-five-minute demo sequence. README has a
+          concise For judges path and links the full draft.
+ACTIVE    none
+NEXT      Codex: V1, one real publicly published fictional sample letter.
+NOTES     Claude: the write-up includes entry 035's financing beat: accepting
+          $5,500 of loans changes sources, not cost. It also calls out the new
+          Summit sample for the final screenshot/demo sequence.
+
+
+### 2026-09-19 · 039 · V1 claimed: real institution's public sample offer
+AGENT     codex (current session)
+STATE     in-progress
+TOUCHED   corpus/README.md, docs/CHANGES.log (no external PDF will be committed)
+VERIFY    pending live pipeline run
+SUMMARY   Selected St. Thomas Aquinas College's two-page 2024-25 "SAMPLE AWARD
+          LETTER." It is hosted on the college's own domain, addresses only
+          "Dear Spartan," and contains no student name or ID. The college's
+          copyright policy does not grant public redistribution, so the PDF
+          will be tested from a temporary download and not copied into the repo.
+ACTIVE    corpus/README.md, docs/CHANGES.log; temporary PDF outside the repo
+NEXT      Inspect the PDF/text layer, run it through the unchanged live pipeline,
+          record verified facts, rejected claims, ambiguity, and limitations.
+NOTES     Source: https://stac.edu/wp-content/uploads/2024/02/Sample-letter-1-24.25.pdf
+
+
+### 2026-09-19 · 040 · V1 done: institutional sample exposes semantic double count
+AGENT     codex (current session)
+STATE     done — uncommitted
+TOUCHED   corpus/README.md, docs/TASKS.md, docs/CHANGES.log
+VERIFY    Official two-page PDF inspected: explicit SAMPLE label, no student
+          identity, 4,281-character usable text layer, SHA-256 recorded. Live
+          route used gpt-5.6-terra with no fallback: 7 admitted facts, 20
+          verified evidence records, 2 ambiguities, 6 missing-cost records,
+          0 rejected claims, 0 structural invariant violations. Frozen Zod
+          schema parsed the result. The actual TypeScript engine derived the
+          failure figures below. College copyright policy checked; external
+          PDF and live JSON remain temporary and are not in the repo.
+SUMMARY   Good: Terra extracted the stated tuition, room/board, total cost, and
+          $12,500 award; ignored explanatory text saying freshmen may borrow
+          $5,500/year; flagged the blank federal-loan amount and conditional
+          $44,030 financing line. Bad: it admitted the $22,015 Fall payment
+          estimate as a semester cost on top of annual costs. The engine then
+          correctly annualized it, producing provisional COA $100,560 instead
+          of stated $56,530 and amount-to-cover $88,060 instead of $44,030.
+          Evidence verification could not catch a semantically wrong role when
+          both quote and amount were real. Combined room/board was also called
+          housing while separate housing and meals were both marked missing.
+ACTIVE    none
+NEXT      Codex: P1 preparation only; do not activate a public API. Later M5c
+          should add relationship guards for after-aid balances and term/payment
+          views before they can become summable cost items.
+NOTES     The sample is not approved for the demo. Full source, copyright
+          decision, pass/fail detail, checksum, and hardening target are now in
+          corpus/README.md.
+
+
+### 2026-09-19 · 041 · P1 claimed: public API preparation, activation prohibited
+AGENT     codex (current session)
+STATE     in-progress
+TOUCHED   api/, deployment config/docs, docs/CHANGES.log
+VERIFY    pending
+SUMMARY   Preparing a host-ready FastAPI service with per-IP throttling, a hard
+          daily analysis cap, and privacy-safe logging. This task stops at code,
+          tests, and operator instructions.
+ACTIVE    api/, deployment config/docs, docs/CHANGES.log
+NEXT      Audit the current request path and logging, implement safeguards with
+          tests, add one conservative hosting configuration, and write the
+          cost/privacy/activation checklist for Shade.
+NOTES     No provider account, cloud service, public URL, Vercel environment
+          variable, deployment, or redeploy is authorized by this task.
+
+
+### 2026-09-19 · 042 · P1 done: inert public API package with durable quotas
+AGENT     codex (current session)
+STATE     done — prepared and uncommitted; not deployed or activated
+TOUCHED   api/guardrails.py, api/main.py, api/tests/test_guardrails.py,
+          api/tests/test_main.py, .env.example, render.yaml,
+          docs/DEPLOY_API.md, docs/TASKS.md, docs/CHANGES.log
+VERIFY    pytest 58/58; Python compileall; Render YAML parses and its fields were
+          checked against current Blueprint/disk docs; secret scan clean (114
+          files); git diff --check clean. Endpoint tests prove public analysis
+          starts disabled, debug ingest is hidden, provider details are neither
+          returned nor logged, and 429 responses carry Retry-After.
+SUMMARY   P1 stops safely at preparation. Public mode now has an atomic SQLite
+          fixed-window limit (3 attempts/IP/hour) and persistent UTC daily cap
+          (25 provider-backed analyses). Only HMAC-SHA256 address digests are
+          stored. Uvicorn access logging is off; application logs contain event
+          categories only. Provider and unexpected errors return generic copy.
+          render.yaml defines one paid, disk-backed instance with auto-deploys
+          off and FINEPRINT_PUBLIC_API_ENABLED=false. The operator guide covers
+          cost, PII flow, OpenAI hard spend limits, activation, smoke tests, and
+          a disable-first rollback.
+ACTIVE    none
+NEXT      Shade decides whether public upload should exist. If yes, follow
+          docs/DEPLOY_API.md only after adding the UI privacy disclosure; if no,
+          the deployed sample experience remains complete without this service.
+NOTES     No Render account/service was created; no key or cloud environment was
+          changed; Vercel was untouched; no deployment, commit, or push occurred.
+          Optional M5c-polish remains, and V1 found a higher-value semantic guard
+          for payment/after-aid balances before any real-letter demo is approved.

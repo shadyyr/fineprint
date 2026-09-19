@@ -90,7 +90,7 @@ institution-name casing and replay-only deliberately rejected claims.
 
 #### Codex — next, queued 2026-09-19 (in priority order)
 
-- [ ] **S1 · A second demo sample, in a different layout.** Judges can only try
+- [x] **S1 · A second demo sample, in a different layout.** Judges can only try
       the sample on the public site (no Python service there), and one letter
       shaped exactly like our own generator's output undersells what the
       pipeline does. Pick the corpus letter that shows a *different* capability
@@ -115,7 +115,7 @@ institution-name casing and replay-only deliberately rejected claims.
       - The pre-commit scanner blocks PDFs under `web/public/` except the one
         named file. Widen it narrowly: `^web/public/samples/[a-z0-9_-]+\.pdf$`.
       - Claude builds the sample picker against the manifest (task UI-S1).
-- [ ] **D1 · Devpost write-up + a "for judges" README section.** Draft
+- [x] **D1 · Devpost write-up + a "for judges" README section.** Draft
       `docs/DEVPOST.md` on master context §25's skeleton (Inspiration, What it
       does, How we built it, Challenges, Accomplishments, What we learned,
       What's next). Judges read this closely. Requirements:
@@ -132,14 +132,14 @@ institution-name casing and replay-only deliberately rejected claims.
       - Tracks: Best Finance Hack; Education/Accessibility/Social Impact framed
         around first-generation students and families (CLAUDE.md), not ARIA.
       - List the screenshots worth capturing. Shade finalizes and submits.
-- [ ] **V1 · One real, publicly published sample letter.** Many schools publish
+- [x] **V1 · One real, publicly published sample letter.** Many schools publish
       an example award letter with a fictional student. Find one, confirm it is
       a published sample (never a real student's letter — §6.11), run it through
       the live pipeline, and report what verified, what was flagged, and what
       broke. Commit it to `corpus/letters/` only if its terms allow, with the
       source URL in `corpus/README.md`. Evidence that FinePrint works on a real
       school's format is worth more than another synthetic layout.
-- [ ] **P1 · Public API deployment — prepare, but Shade decides.** Live upload
+- [x] **P1 · Public API deployment — prepare, but Shade decides.** Live upload
       on the public site needs the FastAPI service at a public HTTPS URL plus
       `FINEPRINT_API_URL` set in Vercel's settings and a redeploy. Deploying it
       spends Shade's OpenAI credits on anyone who visits and puts a PII-handling

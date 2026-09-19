@@ -1,0 +1,1968 @@
+{
+  "schema_version": "1.0",
+  "document": {
+    "institution_name": "Summit Technical College",
+    "academic_year": "2026-2027",
+    "currency": "USD",
+    "source_file_name": "summit-per-term.pdf",
+    "synthetic": true,
+    "pages": [
+      {
+        "page": 1,
+        "width_pt": 612.0,
+        "height_pt": 792.0,
+        "rotation": 0
+      }
+    ]
+  },
+  "extraction_meta": {
+    "source": "cached",
+    "model": "gpt-5.6-sol",
+    "extracted_at": "2026-09-19T05:49:44.555033+00:00",
+    "text_layer": {
+      "sufficient": true,
+      "char_count": 1409
+    },
+    "counts": {
+      "verified": 76,
+      "unverified": 0,
+      "costs": 10,
+      "aid": 13
+    }
+  },
+  "costs": [
+    {
+      "id": "cost_tuition_fall_2026",
+      "label": "Tuition — Fall 2026",
+      "amount": 14000.0,
+      "period": "semester",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_cost_1",
+        "ev_cost_2",
+        "ev_cost_3"
+      ],
+      "category": "tuition",
+      "direct_cost": true
+    },
+    {
+      "id": "cost_tuition_spring_2027",
+      "label": "Tuition — Spring 2027",
+      "amount": 14400.0,
+      "period": "semester",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_cost_4",
+        "ev_cost_5",
+        "ev_cost_6"
+      ],
+      "category": "tuition",
+      "direct_cost": true
+    },
+    {
+      "id": "cost_required_fees_fall_2026",
+      "label": "Required fees — Fall 2026",
+      "amount": 650.0,
+      "period": "semester",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_cost_7",
+        "ev_cost_8",
+        "ev_cost_9"
+      ],
+      "category": "fees",
+      "direct_cost": true
+    },
+    {
+      "id": "cost_required_fees_spring_2027",
+      "label": "Required fees — Spring 2027",
+      "amount": 675.0,
+      "period": "semester",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_cost_10",
+        "ev_cost_11",
+        "ev_cost_12"
+      ],
+      "category": "fees",
+      "direct_cost": true
+    },
+    {
+      "id": "cost_campus_housing_fall_2026",
+      "label": "Campus housing — Fall 2026",
+      "amount": 4800.0,
+      "period": "semester",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_cost_13",
+        "ev_cost_14",
+        "ev_cost_15"
+      ],
+      "category": "housing",
+      "direct_cost": true
+    },
+    {
+      "id": "cost_campus_housing_spring_2027",
+      "label": "Campus housing — Spring 2027",
+      "amount": 4900.0,
+      "period": "semester",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_cost_16",
+        "ev_cost_17",
+        "ev_cost_18"
+      ],
+      "category": "housing",
+      "direct_cost": true
+    },
+    {
+      "id": "cost_meal_plan_fall_2026",
+      "label": "Meal plan — Fall 2026",
+      "amount": 2900.0,
+      "period": "semester",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_cost_19",
+        "ev_cost_20",
+        "ev_cost_21"
+      ],
+      "category": "meals",
+      "direct_cost": true
+    },
+    {
+      "id": "cost_meal_plan_spring_2027",
+      "label": "Meal plan — Spring 2027",
+      "amount": 2950.0,
+      "period": "semester",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_cost_22",
+        "ev_cost_23",
+        "ev_cost_24"
+      ],
+      "category": "meals",
+      "direct_cost": true
+    },
+    {
+      "id": "cost_term_charges_fall_2026",
+      "label": "Term Charges — Fall 2026",
+      "amount": 22350.0,
+      "period": "semester",
+      "role": "rollup",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_cost_25",
+        "ev_cost_26",
+        "ev_cost_27"
+      ],
+      "components": [
+        "cost_tuition_fall_2026",
+        "cost_required_fees_fall_2026",
+        "cost_campus_housing_fall_2026",
+        "cost_meal_plan_fall_2026"
+      ],
+      "category": "subtotal",
+      "direct_cost": true
+    },
+    {
+      "id": "cost_term_charges_spring_2027",
+      "label": "Term Charges — Spring 2027",
+      "amount": 22925.0,
+      "period": "semester",
+      "role": "rollup",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_cost_28",
+        "ev_cost_29",
+        "ev_cost_30"
+      ],
+      "components": [
+        "cost_tuition_spring_2027",
+        "cost_required_fees_spring_2027",
+        "cost_campus_housing_spring_2027",
+        "cost_meal_plan_spring_2027"
+      ],
+      "category": "subtotal",
+      "direct_cost": true
+    }
+  ],
+  "aid": [
+    {
+      "id": "aid_federal_pell_grant_fall_2026",
+      "label": "Federal Pell Grant — Fall 2026",
+      "amount": 3200.0,
+      "period": "semester",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_aid_31",
+        "ev_aid_32",
+        "ev_aid_33"
+      ],
+      "category": "grant",
+      "aid_type": "gift"
+    },
+    {
+      "id": "aid_federal_pell_grant_spring_2027",
+      "label": "Federal Pell Grant — Spring 2027",
+      "amount": 3300.0,
+      "period": "semester",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_aid_34",
+        "ev_aid_35",
+        "ev_aid_36"
+      ],
+      "category": "grant",
+      "aid_type": "gift"
+    },
+    {
+      "id": "aid_summit_stem_grant_fall_2026",
+      "label": "Summit STEM Grant — Fall 2026",
+      "amount": 4900.0,
+      "period": "semester",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_aid_37",
+        "ev_aid_38",
+        "ev_aid_39"
+      ],
+      "category": "grant",
+      "aid_type": "gift"
+    },
+    {
+      "id": "aid_summit_stem_grant_spring_2027",
+      "label": "Summit STEM Grant — Spring 2027",
+      "amount": 5100.0,
+      "period": "semester",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_aid_40",
+        "ev_aid_41",
+        "ev_aid_42"
+      ],
+      "category": "grant",
+      "aid_type": "gift"
+    },
+    {
+      "id": "aid_direct_subsidized_loan_fall_2026",
+      "label": "Direct Subsidized Loan — Fall 2026",
+      "amount": 1700.0,
+      "period": "semester",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_aid_43",
+        "ev_aid_44",
+        "ev_aid_45"
+      ],
+      "category": "subsidized_loan",
+      "aid_type": "loan"
+    },
+    {
+      "id": "aid_direct_subsidized_loan_spring_2027",
+      "label": "Direct Subsidized Loan — Spring 2027",
+      "amount": 1800.0,
+      "period": "semester",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_aid_46",
+        "ev_aid_47",
+        "ev_aid_48"
+      ],
+      "category": "subsidized_loan",
+      "aid_type": "loan"
+    },
+    {
+      "id": "aid_direct_unsubsidized_loan_fall_2026",
+      "label": "Direct Unsubsidized Loan — Fall 2026",
+      "amount": 950.0,
+      "period": "semester",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_aid_49",
+        "ev_aid_50",
+        "ev_aid_51"
+      ],
+      "category": "unsubsidized_loan",
+      "aid_type": "loan"
+    },
+    {
+      "id": "aid_direct_unsubsidized_loan_spring_2027",
+      "label": "Direct Unsubsidized Loan — Spring 2027",
+      "amount": 1050.0,
+      "period": "semester",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_aid_52",
+        "ev_aid_53",
+        "ev_aid_54"
+      ],
+      "category": "unsubsidized_loan",
+      "aid_type": "loan"
+    },
+    {
+      "id": "aid_federal_work_study_fall_2026",
+      "label": "Federal Work-Study — Fall 2026",
+      "amount": 1100.0,
+      "period": "semester",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_aid_55",
+        "ev_aid_56",
+        "ev_aid_57",
+        "ev_aid_58"
+      ],
+      "category": "work_study",
+      "aid_type": "work_study",
+      "conditions": [
+        "Earned as wages for hours worked.",
+        "Does not reduce the bill automatically."
+      ]
+    },
+    {
+      "id": "aid_federal_work_study_spring_2027",
+      "label": "Federal Work-Study — Spring 2027",
+      "amount": 1300.0,
+      "period": "semester",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_aid_59",
+        "ev_aid_60",
+        "ev_aid_61",
+        "ev_aid_62"
+      ],
+      "category": "work_study",
+      "aid_type": "work_study",
+      "conditions": [
+        "Earned as wages for hours worked.",
+        "Does not reduce the bill automatically."
+      ]
+    },
+    {
+      "id": "aid_term_aid_package_fall_2026",
+      "label": "Term Aid Package — Fall 2026",
+      "amount": 11850.0,
+      "period": "semester",
+      "role": "rollup",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_aid_63",
+        "ev_aid_64",
+        "ev_aid_65"
+      ],
+      "components": [
+        "aid_federal_pell_grant_fall_2026",
+        "aid_summit_stem_grant_fall_2026",
+        "aid_direct_subsidized_loan_fall_2026",
+        "aid_direct_unsubsidized_loan_fall_2026",
+        "aid_federal_work_study_fall_2026"
+      ],
+      "category": "subtotal",
+      "aid_type": "unknown"
+    },
+    {
+      "id": "aid_term_aid_package_spring_2027",
+      "label": "Term Aid Package — Spring 2027",
+      "amount": 12550.0,
+      "period": "semester",
+      "role": "rollup",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_aid_66",
+        "ev_aid_67",
+        "ev_aid_68"
+      ],
+      "components": [
+        "aid_federal_pell_grant_fall_2026",
+        "aid_federal_pell_grant_spring_2027",
+        "aid_summit_stem_grant_spring_2027",
+        "aid_direct_unsubsidized_loan_fall_2026"
+      ],
+      "category": "subtotal",
+      "aid_type": "unknown"
+    },
+    {
+      "id": "aid_technology_achievement_scholarship",
+      "label": "Technology Achievement Scholarship",
+      "amount": 10000.0,
+      "period": "unknown",
+      "role": "item",
+      "provenance": "source",
+      "confidence": 1.0,
+      "evidence_ids": [
+        "ev_aid_69",
+        "ev_aid_70"
+      ],
+      "ambiguity_ids": [
+        "amb_technology_achievement_scholarship"
+      ],
+      "category": "scholarship",
+      "aid_type": "gift"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev_cost_1",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_2",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_3",
+      "line_id": "p1_l6",
+      "page": 1,
+      "quote": "Tuition                                 $14,000            $14,400",
+      "bbox": [
+        0.09803921568627451,
+        0.2290727249299637,
+        0.6933328965130974,
+        0.24358130946303858
+      ],
+      "amount_bbox": [
+        0.4588235593309589,
+        0.2290727249299637,
+        0.5219606885723039,
+        0.24358130946303858
+      ],
+      "amount_text": "$14,000",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_cost_4",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_5",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_6",
+      "line_id": "p1_l6",
+      "page": 1,
+      "quote": "Tuition                                 $14,000            $14,400",
+      "bbox": [
+        0.09803921568627451,
+        0.2290727249299637,
+        0.6933328965130974,
+        0.24358130946303858
+      ],
+      "amount_bbox": [
+        0.6301957672717524,
+        0.2290727249299637,
+        0.6933328965130974,
+        0.24358130946303858
+      ],
+      "amount_text": "$14,400",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_cost_7",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_8",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_9",
+      "line_id": "p1_l7",
+      "page": 1,
+      "quote": "Required fees                              $650               $675",
+      "bbox": [
+        0.09803921568627451,
+        0.25811312897036776,
+        0.6933328965130974,
+        0.2726217135034426
+      ],
+      "amount_bbox": [
+        0.48588232900582107,
+        0.25811312897036776,
+        0.5219606885723039,
+        0.2726217135034426
+      ],
+      "amount_text": "$650",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_cost_10",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_11",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_12",
+      "line_id": "p1_l7",
+      "page": 1,
+      "quote": "Required fees                              $650               $675",
+      "bbox": [
+        0.09803921568627451,
+        0.25811312897036776,
+        0.6933328965130974,
+        0.2726217135034426
+      ],
+      "amount_bbox": [
+        0.6572545369466146,
+        0.25811312897036776,
+        0.6933328965130974,
+        0.2726217135034426
+      ],
+      "amount_text": "$675",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_cost_13",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_14",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_15",
+      "line_id": "p1_l8",
+      "page": 1,
+      "quote": "Campus housing                           $4,800             $4,900",
+      "bbox": [
+        0.09803921568627451,
+        0.2871535330107718,
+        0.6933328965130974,
+        0.3016621175438467
+      ],
+      "amount_bbox": [
+        0.46784314922257964,
+        0.2871535330107718,
+        0.5219606885723039,
+        0.3016621175438467
+      ],
+      "amount_text": "$4,800",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_cost_16",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_17",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_18",
+      "line_id": "p1_l8",
+      "page": 1,
+      "quote": "Campus housing                           $4,800             $4,900",
+      "bbox": [
+        0.09803921568627451,
+        0.2871535330107718,
+        0.6933328965130974,
+        0.3016621175438467
+      ],
+      "amount_bbox": [
+        0.6392153571633732,
+        0.2871535330107718,
+        0.6933328965130974,
+        0.3016621175438467
+      ],
+      "amount_text": "$4,900",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_cost_19",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_20",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_21",
+      "line_id": "p1_l9",
+      "page": 1,
+      "quote": "Meal plan                                $2,900             $2,950",
+      "bbox": [
+        0.09803921568627451,
+        0.3161939370511758,
+        0.6933328965130974,
+        0.3307025408503985
+      ],
+      "amount_bbox": [
+        0.46784314922257964,
+        0.3161939370511758,
+        0.5219606885723039,
+        0.3307025408503985
+      ],
+      "amount_text": "$2,900",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_cost_22",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_23",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_24",
+      "line_id": "p1_l9",
+      "page": 1,
+      "quote": "Meal plan                                $2,900             $2,950",
+      "bbox": [
+        0.09803921568627451,
+        0.3161939370511758,
+        0.6933328965130974,
+        0.3307025408503985
+      ],
+      "amount_bbox": [
+        0.6392153571633732,
+        0.3161939370511758,
+        0.6933328965130974,
+        0.3307025408503985
+      ],
+      "amount_text": "$2,950",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_cost_25",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_26",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_27",
+      "line_id": "p1_l10",
+      "page": 1,
+      "quote": "Term Charges                            $22,350            $22,925",
+      "bbox": [
+        0.09803921568627451,
+        0.3443631258877841,
+        0.6933328965130974,
+        0.36062575831557764
+      ],
+      "amount_bbox": [
+        0.4588235593309589,
+        0.3443631258877841,
+        0.5219606885723039,
+        0.36062575831557764
+      ],
+      "amount_text": "$22,350",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_cost_28",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_29",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_cost_30",
+      "line_id": "p1_l10",
+      "page": 1,
+      "quote": "Term Charges                            $22,350            $22,925",
+      "bbox": [
+        0.09803921568627451,
+        0.3443631258877841,
+        0.6933328965130974,
+        0.36062575831557764
+      ],
+      "amount_bbox": [
+        0.6301957672717524,
+        0.3443631258877841,
+        0.6933328965130974,
+        0.36062575831557764
+      ],
+      "amount_text": "$22,925",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_aid_31",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_32",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_33",
+      "line_id": "p1_l12",
+      "page": 1,
+      "quote": "Federal Pell Grant                       $3,200             $3,300",
+      "bbox": [
+        0.09803921568627451,
+        0.40584040169764046,
+        0.6933328965130974,
+        0.42034900549686316
+      ],
+      "amount_bbox": [
+        0.46784314922257964,
+        0.40584040169764046,
+        0.5219606885723039,
+        0.42034900549686316
+      ],
+      "amount_text": "$3,200",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_aid_34",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_35",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_36",
+      "line_id": "p1_l12",
+      "page": 1,
+      "quote": "Federal Pell Grant                       $3,200             $3,300",
+      "bbox": [
+        0.09803921568627451,
+        0.40584040169764046,
+        0.6933328965130974,
+        0.42034900549686316
+      ],
+      "amount_bbox": [
+        0.6392153571633732,
+        0.40584040169764046,
+        0.6933328965130974,
+        0.42034900549686316
+      ],
+      "amount_text": "$3,300",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_aid_37",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_38",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_39",
+      "line_id": "p1_l13",
+      "page": 1,
+      "quote": "Summit STEM Grant                        $4,900             $5,100",
+      "bbox": [
+        0.09803921568627451,
+        0.4348808057380445,
+        0.6933328965130974,
+        0.4493894095372672
+      ],
+      "amount_bbox": [
+        0.46784314922257964,
+        0.4348808057380445,
+        0.5219606885723039,
+        0.4493894095372672
+      ],
+      "amount_text": "$4,900",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_aid_40",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_41",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_42",
+      "line_id": "p1_l13",
+      "page": 1,
+      "quote": "Summit STEM Grant                        $4,900             $5,100",
+      "bbox": [
+        0.09803921568627451,
+        0.4348808057380445,
+        0.6933328965130974,
+        0.4493894095372672
+      ],
+      "amount_bbox": [
+        0.6392153571633732,
+        0.4348808057380445,
+        0.6933328965130974,
+        0.4493894095372672
+      ],
+      "amount_text": "$5,100",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_aid_43",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_44",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_45",
+      "line_id": "p1_l14",
+      "page": 1,
+      "quote": "Direct Subsidized Loan                   $1,700             $1,800",
+      "bbox": [
+        0.09803921568627451,
+        0.46392120977844853,
+        0.6933328965130974,
+        0.4784298135776712
+      ],
+      "amount_bbox": [
+        0.46784314922257964,
+        0.46392120977844853,
+        0.5219606885723039,
+        0.4784298135776712
+      ],
+      "amount_text": "$1,700",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_aid_46",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_47",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_48",
+      "line_id": "p1_l14",
+      "page": 1,
+      "quote": "Direct Subsidized Loan                   $1,700             $1,800",
+      "bbox": [
+        0.09803921568627451,
+        0.46392120977844853,
+        0.6933328965130974,
+        0.4784298135776712
+      ],
+      "amount_bbox": [
+        0.6392153571633732,
+        0.46392120977844853,
+        0.6933328965130974,
+        0.4784298135776712
+      ],
+      "amount_text": "$1,800",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_aid_49",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_50",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_51",
+      "line_id": "p1_l15",
+      "page": 1,
+      "quote": "Direct Unsubsidized Loan                   $950             $1,050",
+      "bbox": [
+        0.09803921568627451,
+        0.49296161381885256,
+        0.6933328965130974,
+        0.5074702176180753
+      ],
+      "amount_bbox": [
+        0.48588232900582107,
+        0.49296161381885256,
+        0.5219606885723039,
+        0.5074702176180753
+      ],
+      "amount_text": "$950",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_aid_52",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_53",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_54",
+      "line_id": "p1_l15",
+      "page": 1,
+      "quote": "Direct Unsubsidized Loan                   $950             $1,050",
+      "bbox": [
+        0.09803921568627451,
+        0.49296161381885256,
+        0.6933328965130974,
+        0.5074702176180753
+      ],
+      "amount_bbox": [
+        0.6392153571633732,
+        0.49296161381885256,
+        0.6933328965130974,
+        0.5074702176180753
+      ],
+      "amount_text": "$1,050",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_aid_55",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_56",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_57",
+      "line_id": "p1_l16",
+      "page": 1,
+      "quote": "Federal Work-Study                       $1,100             $1,300",
+      "bbox": [
+        0.09803921568627451,
+        0.5220020178592566,
+        0.6933328965130974,
+        0.5365106216584793
+      ],
+      "amount_bbox": [
+        0.46784314922257964,
+        0.5220020178592566,
+        0.5219606885723039,
+        0.5365106216584793
+      ],
+      "amount_text": "$1,100",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_aid_58",
+      "line_id": "p1_l22",
+      "page": 1,
+      "quote": "Work-study is earned as wages for hours worked and does not reduce the bill automatically.",
+      "bbox": [
+        0.08823529411764706,
+        0.770612389150292,
+        0.6857058955173866,
+        0.7862259835907908
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_59",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_60",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_61",
+      "line_id": "p1_l16",
+      "page": 1,
+      "quote": "Federal Work-Study                       $1,100             $1,300",
+      "bbox": [
+        0.09803921568627451,
+        0.5220020178592566,
+        0.6933328965130974,
+        0.5365106216584793
+      ],
+      "amount_bbox": [
+        0.6392153571633732,
+        0.5220020178592566,
+        0.6933328965130974,
+        0.5365106216584793
+      ],
+      "amount_text": "$1,300",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_aid_62",
+      "line_id": "p1_l22",
+      "page": 1,
+      "quote": "Work-study is earned as wages for hours worked and does not reduce the bill automatically.",
+      "bbox": [
+        0.08823529411764706,
+        0.770612389150292,
+        0.6857058955173866,
+        0.7862259835907908
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_63",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_64",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_65",
+      "line_id": "p1_l17",
+      "page": 1,
+      "quote": "Term Aid Package                        $11,850            $12,550",
+      "bbox": [
+        0.09803921568627451,
+        0.550171206695865,
+        0.6933328965130974,
+        0.5664338391236584
+      ],
+      "amount_bbox": [
+        0.4588235593309589,
+        0.550171206695865,
+        0.5219606885723039,
+        0.5664338391236584
+      ],
+      "amount_text": "$11,850",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_aid_66",
+      "line_id": "p1_l3",
+      "page": 1,
+      "quote": "Each amount in the Fall and Spring columns applies to that semester only",
+      "bbox": [
+        0.08823529411764706,
+        0.10899620826798256,
+        0.568029466018178,
+        0.12460985087385082
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_67",
+      "line_id": "p1_l4",
+      "page": 1,
+      "quote": "CHARGE OR AWARD                         FALL 2026        SPRING 2027",
+      "bbox": [
+        0.08823529411764706,
+        0.15244394360166608,
+        0.7015681547277114,
+        0.16870656639638573
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_aid_68",
+      "line_id": "p1_l17",
+      "page": 1,
+      "quote": "Term Aid Package                        $11,850            $12,550",
+      "bbox": [
+        0.09803921568627451,
+        0.550171206695865,
+        0.6933328965130974,
+        0.5664338391236584
+      ],
+      "amount_bbox": [
+        0.6301957672717524,
+        0.550171206695865,
+        0.6933328965130974,
+        0.5664338391236584
+      ],
+      "amount_text": "$12,550",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_aid_69",
+      "line_id": "p1_l18",
+      "page": 1,
+      "quote": "Separate notice: Technology Achievement Scholarship $10,000.",
+      "bbox": [
+        0.08823529411764706,
+        0.6412057972917653,
+        0.5592615962807649,
+        0.6577228584674873
+      ],
+      "amount_bbox": [
+        0.49884646546606926,
+        0.6412057972917653,
+        0.554946251164854,
+        0.6577228584674873
+      ],
+      "amount_text": "$10,000",
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": true
+      }
+    },
+    {
+      "id": "ev_aid_70",
+      "line_id": "p1_l19",
+      "page": 1,
+      "quote": "The separate notice does not say whether this scholarship is per semester, per year, or total.",
+      "bbox": [
+        0.08823529411764706,
+        0.6670770356149385,
+        0.6914413551879085,
+        0.6826906300554372
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_amb_71",
+      "line_id": "p1_l18",
+      "page": 1,
+      "quote": "Separate notice: Technology Achievement Scholarship $10,000.",
+      "bbox": [
+        0.08823529411764706,
+        0.6412057972917653,
+        0.5592615962807649,
+        0.6577228584674873
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_amb_72",
+      "line_id": "p1_l19",
+      "page": 1,
+      "quote": "The separate notice does not say whether this scholarship is per semester, per year, or total.",
+      "bbox": [
+        0.08823529411764706,
+        0.6670770356149385,
+        0.6914413551879085,
+        0.6826906300554372
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_missing_73",
+      "line_id": "p1_l20",
+      "page": 1,
+      "quote": "Books are required, but this worksheet provides no books estimate.",
+      "bbox": [
+        0.08823529411764706,
+        0.7049558234937263,
+        0.5263382157469108,
+        0.720569417934225
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_missing_74",
+      "line_id": "p1_l21",
+      "page": 1,
+      "quote": "Transportation, personal expenses, and health insurance are not included.",
+      "bbox": [
+        0.08823529411764706,
+        0.7302083487462516,
+        0.5721470452601614,
+        0.7458219431867503
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_missing_75",
+      "line_id": "p1_l21",
+      "page": 1,
+      "quote": "Transportation, personal expenses, and health insurance are not included.",
+      "bbox": [
+        0.08823529411764706,
+        0.7302083487462516,
+        0.5721470452601614,
+        0.7458219431867503
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    },
+    {
+      "id": "ev_missing_76",
+      "line_id": "p1_l21",
+      "page": 1,
+      "quote": "Transportation, personal expenses, and health insurance are not included.",
+      "bbox": [
+        0.08823529411764706,
+        0.7302083487462516,
+        0.5721470452601614,
+        0.7458219431867503
+      ],
+      "status": "verified",
+      "verification": {
+        "quote_found": true,
+        "amount_matched": false
+      }
+    }
+  ],
+  "ambiguities": [
+    {
+      "id": "amb_technology_achievement_scholarship",
+      "kind": "period_unknown",
+      "target": "aid_technology_achievement_scholarship.period",
+      "severity": "material",
+      "question": "What period does the $10,000 Technology Achievement Scholarship cover?",
+      "why": "The separate notice expressly states that the scholarship period is not specified.",
+      "options": [
+        {
+          "value": "semester",
+          "label": "Per semester",
+          "detail": "Treat $10,000 as applying to one semester."
+        },
+        {
+          "value": "annual",
+          "label": "Per year",
+          "detail": "Treat $10,000 as applying to the 2026-2027 academic year."
+        },
+        {
+          "value": "total",
+          "label": "Total award",
+          "detail": "Treat $10,000 as the total scholarship amount without assigning a semester or annual period."
+        }
+      ],
+      "blocks_headline": true,
+      "evidence_ids": [
+        "ev_amb_71",
+        "ev_amb_72"
+      ]
+    }
+  ],
+  "missing_costs": [
+    {
+      "id": "missing_books",
+      "category": "books",
+      "label": "Books",
+      "reason": "Books are required, but no amount is provided.",
+      "evidence_ids": [
+        "ev_missing_73"
+      ]
+    },
+    {
+      "id": "missing_transportation",
+      "category": "transportation",
+      "label": "Transportation",
+      "reason": "Transportation is not included and no amount is provided.",
+      "evidence_ids": [
+        "ev_missing_74"
+      ]
+    },
+    {
+      "id": "missing_personal_expenses",
+      "category": "personal",
+      "label": "Personal expenses",
+      "reason": "Personal expenses are not included and no amount is provided.",
+      "evidence_ids": [
+        "ev_missing_75"
+      ]
+    },
+    {
+      "id": "missing_health_insurance",
+      "category": "health_insurance",
+      "label": "Health insurance",
+      "reason": "Health insurance is not included and no amount is provided.",
+      "evidence_ids": [
+        "ev_missing_76"
+      ]
+    }
+  ],
+  "unverified_claims": []
+}

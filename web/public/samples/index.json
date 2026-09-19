@@ -1,0 +1,18 @@
+[
+  {
+    "slug": "meridian",
+    "title": "Meridian State University",
+    "layout": "Two-page award letter",
+    "note": "A conventional offer whose merit scholarship has an unresolved period.",
+    "pdf": "/sample_offer.pdf",
+    "json": "/sample_offer.json"
+  },
+  {
+    "slug": "summit-per-term",
+    "title": "Summit Technical College",
+    "layout": "Fall/Spring term worksheet",
+    "note": "Tests two-column period normalization and a separate scholarship with no stated period.",
+    "pdf": "/samples/summit-per-term.pdf",
+    "json": "/samples/summit-per-term.json"
+  }
+]

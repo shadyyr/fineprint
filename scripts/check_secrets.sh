@@ -35,11 +35,11 @@ BINARY_RE='\.(pdf|png|jpe?g|gif|ico|woff2?|ttf|otf|eot|zip|gz|tgz|mp4|webm|map)$
 # Only synthetic letters and publicly published institutional samples belong
 # in the repository, and only in these locations.
 #
-# web/public/sample_offer.pdf is a byte-identical copy of the synthetic letter
-# in fixtures/, committed because the deployment host cannot run the Python
-# script that generates it. Named exactly rather than allowing web/public/
-# wholesale, so an unrelated PDF dropped in there is still caught.
-PDF_ALLOWED_RE='^(fixtures/|corpus/letters/|web/public/sample_offer\.pdf$)'
+# The PDFs under web/public are byte-identical generated copies of synthetic
+# fixture letters, committed because the deployment host cannot run the Python
+# scripts that publish them. Keep these exceptions exact rather than allowing
+# web/public/ wholesale, so an unrelated PDF dropped there is still caught.
+PDF_ALLOWED_RE='^(fixtures/|corpus/letters/|web/public/sample_offer\.pdf$|web/public/samples/[a-z0-9_-]+\.pdf$)'
 
 MAX_BYTES=$((10 * 1024 * 1024))
 
@@ -122,7 +122,7 @@ for f in "${files[@]}"; do
   # 2. PDFs outside the two approved directories.
   if [[ "$f" =~ \.pdf$ ]] && ! [[ "$f" =~ $PDF_ALLOWED_RE ]]; then
     fail "$f"
-    note "${DIM}PDFs may only live in fixtures/ or corpus/letters/. If this is a real${OFF}"
+    note "${DIM}PDFs may only live in approved fixture, corpus, or generated sample paths.${OFF}"
     note "${DIM}student's aid letter it must not be committed at all (see 6.11).${OFF}"
     continue
   fi
