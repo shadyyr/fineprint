@@ -187,3 +187,28 @@ NOTES     The repo's own .gitignore has `*.log`, which silently swallowed
           If you add another tracked log, it needs the same treatment.
           Nothing in this repo has been committed yet — the working tree is
           entirely untracked apart from the original README.
+
+
+### 2026-09-18 · 009 · Parallel work: lanes assigned
+AGENT     claude-opus-5 (session c78670a9)
+STATE     done
+TOUCHED   docs/TASKS.md
+VERIFY    n/a — coordination doc
+SUMMARY   Split the remaining work between two agents by DIRECTORY, not by
+          feature. Codex takes api/ + corpus/ + scripts/ (M5: corpus and the
+          validation harness). Claude takes web/ (M6-M10: X-Ray, Overview,
+          projection, what-if, a11y). The seam is the committed fixture plus
+          the dual schema, which are already stable.
+          Feature-level splits were rejected: both agents would end up editing
+          shared components and a shared store in web/.
+ACTIVE    none
+NEXT      Codex: read CLAUDE.md, docs/PLAN.md, docs/TASKS.md and this log, then
+          start M5a (corpus letters) and M5d (key-free harness) — those are not
+          blocked on the API key. Claude: start M6 (XRayPanel).
+NOTES     Both agents share one working tree, so `git add -A` is banned — it
+          stages the other agent's half-finished work. Stage your lane:
+          `git add api/ corpus/ scripts/` or `git add web/`.
+          The schema is frozen unless both agents agree in this log:
+          web/lib/schema.ts and api/models.py describe the same JSON and a
+          one-sided edit breaks the opposite lane.
+          Only one agent runs `npm run dev` at a time (ports 3000/8000).
