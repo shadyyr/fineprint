@@ -15,15 +15,21 @@ of [CHANGES.log](CHANGES.log).
 2. [`CLAUDE.md`](../CLAUDE.md) — the rules that are not negotiable.
 3. [`docs/FinePrint_SASEhack_2026_Master_Context.md`](FinePrint_SASEhack_2026_Master_Context.md)
    — the product spec. §6–8 are scope, §13 financial semantics, §17 the demo
-   script, §24 the "must not do" list. *If this file is missing, ask Shade for
-   it: it was an attachment in the first chat and is not recoverable from the
-   code.*
+   script, §24 the "must not do" list, §25 the Devpost skeleton. It is
+   **gitignored** (local to this machine, not in the public repo); the original
+   is `~/Downloads/FinePrint_SASEhack_2026_Master_Context.md`. If it's missing
+   from `docs/`, copy it from there or ask Shade.
 4. [`docs/TASKS.md`](TASKS.md) — who owns what, the rules for two agents
    sharing one tree, and the task board.
 5. The **tail** of [`docs/CHANGES.log`](CHANGES.log) — the last few entries are
    the current state. Earlier entries hold the reasoning behind decisions.
-6. [`docs/PLAN.md`](PLAN.md) — architecture of record. (Ignore
-   `docs/read-fineprint-...-goblet.md`: an old snapshot of it.)
+6. [`docs/PLAN.md`](PLAN.md) — architecture of record.
+
+> **Naming trap:** `docs/read-fineprint-sasehack-2026-master-cont-linear-goblet.md`
+> is **not** the master context, despite the name. It is an old snapshot of the
+> implementation plan (Claude Code names plan files after the first message of a
+> chat, which began "Read FinePrint_SASEhack_2026_Master_Context.md…"). It has
+> already been mistaken for the spec once. Ignore it; use the two files above.
 
 ---
 

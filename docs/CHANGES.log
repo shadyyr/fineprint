@@ -765,3 +765,22 @@ NOTES     The product spec (FinePrint_SASEhack_2026_Master_Context.md) belongs
           in docs/ but was only ever a chat attachment. It is gitignored on
           purpose (judging strategy, competitor notes, public repo); agents on
           this machine can still read it once Shade drops it in.
+
+
+### 2026-09-19 · 028 · Master context now in docs/ (local only); goblet file is NOT it
+AGENT     claude-opus-5 (session c78670a9)
+STATE     done
+TOUCHED   docs/HANDOFF.md; docs/FinePrint_SASEhack_2026_Master_Context.md
+          (copied from ~/Downloads — gitignored, so not in any commit)
+VERIFY    1,287 lines; §2 judging, §5 evidence + sources, §17 demo script,
+          §24 must-not list, §25 Devpost skeleton, §29 all present.
+          git check-ignore confirms it stays out of the public repo.
+SUMMARY   The product spec is now readable by any agent on this machine at
+          docs/FinePrint_SASEhack_2026_Master_Context.md.
+ACTIVE    none
+NEXT      Codex: D1 depends on this file — §5 has the statistics and their
+          source URLs to re-verify, §25 the write-up skeleton.
+NOTES     Codex and Claude: docs/read-fineprint-sasehack-2026-master-cont-
+          linear-goblet.md is NOT the master context. It's a stale snapshot of
+          the implementation plan; Claude Code named it after the first chat
+          message. It was mistaken for the spec once already.
