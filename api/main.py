@@ -21,14 +21,15 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-import extract as extraction
-from ingest import IngestResult, ingest
-from models import CanonicalDocument
-from normalize import normalize
+API_DIR = Path(__file__).resolve().parent
+load_dotenv(API_DIR / ".env")
 
-load_dotenv(Path(__file__).resolve().parent / ".env")
+import extract as extraction  # noqa: E402 - .env config must load first
+from ingest import IngestResult, ingest  # noqa: E402
+from models import CanonicalDocument  # noqa: E402
+from pipeline import analyze_document  # noqa: E402
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = API_DIR.parent
 FIXTURE = ROOT / "fixtures" / "sample_offer.json"
 
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
@@ -61,6 +62,10 @@ def health() -> dict[str, object]:
         "fixture_available": FIXTURE.exists(),
         "live_extraction": extraction.available(),
         "model": extraction.DEFAULT_MODEL if extraction.available() else None,
+        "fallback_model": (
+            extraction.FALLBACK_MODEL if extraction.available() else None
+        ),
+        "reasoning_effort": extraction.DEFAULT_REASONING_EFFORT,
     }
 
 
@@ -178,12 +183,15 @@ async def analyze(file: UploadFile = File(...)) -> CanonicalDocument:
             status_code=503,
             detail=(
                 "Live extraction is not configured on the server. Add "
-                "ANTHROPIC_API_KEY to api/.env, or try the sample offer."
+                "OPENAI_API_KEY to api/.env, or try the sample offer."
             ),
         )
 
     try:
-        claims = extraction.ClaudeExtractor().extract(result)
+        routed = analyze_document(
+            result,
+            source_file_name=file.filename or "upload.pdf",
+        )
     except extraction.ExtractionRefused as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except extraction.ExtractionFailed as exc:
@@ -194,10 +202,4 @@ async def analyze(file: UploadFile = File(...)) -> CanonicalDocument:
             detail=f"Extraction failed: {exc}",
         ) from exc
 
-    return normalize(
-        claims,
-        result,
-        source_file_name=file.filename or "upload.pdf",
-        source="live",
-        model=extraction.DEFAULT_MODEL,
-    )
+    return routed.document

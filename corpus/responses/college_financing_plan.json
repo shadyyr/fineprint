@@ -1,0 +1,183 @@
+{
+  "institution_name": "Harbor City College",
+  "academic_year": "2026-2027",
+  "items": [
+    {
+      "kind": "cost",
+      "label": "Tuition and fees",
+      "amount": 31200,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l5", "quote": "Tuition and fees"},
+        {"line_id": "p1_l6", "quote": "$31,200"}
+      ],
+      "confidence": 0.99,
+      "cost_category": "tuition",
+      "direct_cost": true
+    },
+    {
+      "kind": "cost",
+      "label": "Housing and meals",
+      "amount": 12800,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l7", "quote": "Housing and meals"},
+        {"line_id": "p1_l8", "quote": "$12,800"}
+      ],
+      "confidence": 0.99,
+      "cost_category": "housing",
+      "direct_cost": true
+    },
+    {
+      "kind": "cost",
+      "label": "Books and supplies",
+      "amount": 1100,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l9", "quote": "Books and supplies"},
+        {"line_id": "p1_l10", "quote": "$1,100"}
+      ],
+      "confidence": 0.99,
+      "cost_category": "books",
+      "direct_cost": false
+    },
+    {
+      "kind": "cost",
+      "label": "Transportation",
+      "amount": 900,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l11", "quote": "Transportation"},
+        {"line_id": "p1_l12", "quote": "$900"}
+      ],
+      "confidence": 0.99,
+      "cost_category": "transportation",
+      "direct_cost": false
+    },
+    {
+      "kind": "cost",
+      "label": "Other education costs",
+      "amount": 700,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l13", "quote": "Other education costs"},
+        {"line_id": "p1_l14", "quote": "$700"}
+      ],
+      "confidence": 0.98,
+      "cost_category": "other",
+      "direct_cost": false
+    },
+    {
+      "kind": "cost",
+      "label": "Estimated Cost of Attendance",
+      "amount": 46700,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l15", "quote": "Estimated Cost of Attendance"},
+        {"line_id": "p1_l16", "quote": "$46,700"}
+      ],
+      "confidence": 0.99,
+      "cost_category": "subtotal",
+      "direct_cost": false,
+      "is_stated_total": true
+    },
+    {
+      "kind": "aid",
+      "label": "Federal Pell Grant",
+      "amount": 6000,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l18", "quote": "Federal Pell Grant"},
+        {"line_id": "p1_l19", "quote": "$6,000"}
+      ],
+      "confidence": 0.99,
+      "aid_category": "grant",
+      "aid_type": "gift"
+    },
+    {
+      "kind": "aid",
+      "label": "State Opportunity Grant",
+      "amount": 2500,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l20", "quote": "State Opportunity Grant"},
+        {"line_id": "p1_l21", "quote": "$2,500"}
+      ],
+      "confidence": 0.99,
+      "aid_category": "grant",
+      "aid_type": "gift"
+    },
+    {
+      "kind": "aid",
+      "label": "Harbor Need-Based Scholarship",
+      "amount": 8000,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l22", "quote": "Harbor Need-Based Scholarship"},
+        {"line_id": "p1_l23", "quote": "$8,000"}
+      ],
+      "confidence": 0.99,
+      "aid_category": "scholarship",
+      "aid_type": "gift"
+    },
+    {
+      "kind": "aid",
+      "label": "Federal Direct Subsidized Loan",
+      "amount": 3500,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l25", "quote": "Federal Direct Subsidized Loan"},
+        {"line_id": "p1_l26", "quote": "$3,500"}
+      ],
+      "confidence": 0.99,
+      "aid_category": "subsidized_loan",
+      "aid_type": "loan"
+    },
+    {
+      "kind": "aid",
+      "label": "Federal Direct Unsubsidized Loan",
+      "amount": 2000,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l27", "quote": "Federal Direct Unsubsidized Loan"},
+        {"line_id": "p1_l28", "quote": "$2,000"}
+      ],
+      "confidence": 0.99,
+      "aid_category": "unsubsidized_loan",
+      "aid_type": "loan"
+    },
+    {
+      "kind": "aid",
+      "label": "Federal Work-Study",
+      "amount": 2400,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l29", "quote": "Federal Work-Study"},
+        {"line_id": "p1_l30", "quote": "$2,400"}
+      ],
+      "confidence": 0.99,
+      "aid_category": "work_study",
+      "aid_type": "work_study",
+      "conditions": ["Earned through eligible employment and not credited to the student bill"]
+    }
+  ],
+  "ambiguities": [],
+  "missing_costs": [
+    {
+      "category": "personal",
+      "label": "Personal expenses",
+      "reason": "The plan says personal expenses are not included and provides no estimate.",
+      "citations": [
+        {"line_id": "p1_l32", "quote": "Personal expenses and health insurance are not included; no estimates are provided."}
+      ]
+    },
+    {
+      "category": "health_insurance",
+      "label": "Health insurance",
+      "reason": "The plan says health insurance is not included and provides no estimate.",
+      "citations": [
+        {"line_id": "p1_l32", "quote": "Personal expenses and health insurance are not included; no estimates are provided."}
+      ]
+    }
+  ]
+}

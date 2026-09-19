@@ -1,0 +1,283 @@
+{
+  "institution_name": "Summit Technical College",
+  "academic_year": "2026-2027",
+  "items": [
+    {
+      "kind": "cost",
+      "label": "Tuition — Fall 2026",
+      "amount": 14000,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l6", "quote": "Tuition                                 $14,000            $14,400"}],
+      "confidence": 0.99,
+      "cost_category": "tuition",
+      "direct_cost": true
+    },
+    {
+      "kind": "cost",
+      "label": "Tuition — Spring 2027",
+      "amount": 14400,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l6", "quote": "Tuition                                 $14,000            $14,400"}],
+      "confidence": 0.99,
+      "cost_category": "tuition",
+      "direct_cost": true
+    },
+    {
+      "kind": "cost",
+      "label": "Required fees — Fall 2026",
+      "amount": 650,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l7", "quote": "Required fees                              $650               $675"}],
+      "confidence": 0.99,
+      "cost_category": "fees",
+      "direct_cost": true
+    },
+    {
+      "kind": "cost",
+      "label": "Required fees — Spring 2027",
+      "amount": 675,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l7", "quote": "Required fees                              $650               $675"}],
+      "confidence": 0.99,
+      "cost_category": "fees",
+      "direct_cost": true
+    },
+    {
+      "kind": "cost",
+      "label": "Campus housing — Fall 2026",
+      "amount": 4800,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l8", "quote": "Campus housing                           $4,800             $4,900"}],
+      "confidence": 0.99,
+      "cost_category": "housing",
+      "direct_cost": true
+    },
+    {
+      "kind": "cost",
+      "label": "Campus housing — Spring 2027",
+      "amount": 4900,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l8", "quote": "Campus housing                           $4,800             $4,900"}],
+      "confidence": 0.99,
+      "cost_category": "housing",
+      "direct_cost": true
+    },
+    {
+      "kind": "cost",
+      "label": "Meal plan — Fall 2026",
+      "amount": 2900,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l9", "quote": "Meal plan                                $2,900             $2,950"}],
+      "confidence": 0.99,
+      "cost_category": "meals",
+      "direct_cost": true
+    },
+    {
+      "kind": "cost",
+      "label": "Meal plan — Spring 2027",
+      "amount": 2950,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l9", "quote": "Meal plan                                $2,900             $2,950"}],
+      "confidence": 0.99,
+      "cost_category": "meals",
+      "direct_cost": true
+    },
+    {
+      "kind": "cost",
+      "label": "Term Charges — Fall 2026",
+      "amount": 22350,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l10", "quote": "Term Charges                            $22,350            $22,925"}],
+      "confidence": 0.99,
+      "cost_category": "subtotal",
+      "direct_cost": true,
+      "is_stated_total": true
+    },
+    {
+      "kind": "cost",
+      "label": "Term Charges — Spring 2027",
+      "amount": 22925,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l10", "quote": "Term Charges                            $22,350            $22,925"}],
+      "confidence": 0.99,
+      "cost_category": "subtotal",
+      "direct_cost": true,
+      "is_stated_total": true
+    },
+    {
+      "kind": "aid",
+      "label": "Federal Pell Grant — Fall 2026",
+      "amount": 3200,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l12", "quote": "Federal Pell Grant                       $3,200             $3,300"}],
+      "confidence": 0.99,
+      "aid_category": "grant",
+      "aid_type": "gift"
+    },
+    {
+      "kind": "aid",
+      "label": "Federal Pell Grant — Spring 2027",
+      "amount": 3300,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l12", "quote": "Federal Pell Grant                       $3,200             $3,300"}],
+      "confidence": 0.99,
+      "aid_category": "grant",
+      "aid_type": "gift"
+    },
+    {
+      "kind": "aid",
+      "label": "Summit STEM Grant — Fall 2026",
+      "amount": 4900,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l13", "quote": "Summit STEM Grant                        $4,900             $5,100"}],
+      "confidence": 0.99,
+      "aid_category": "grant",
+      "aid_type": "gift"
+    },
+    {
+      "kind": "aid",
+      "label": "Summit STEM Grant — Spring 2027",
+      "amount": 5100,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l13", "quote": "Summit STEM Grant                        $4,900             $5,100"}],
+      "confidence": 0.99,
+      "aid_category": "grant",
+      "aid_type": "gift"
+    },
+    {
+      "kind": "aid",
+      "label": "Direct Subsidized Loan — Fall 2026",
+      "amount": 1700,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l14", "quote": "Direct Subsidized Loan                   $1,700             $1,800"}],
+      "confidence": 0.99,
+      "aid_category": "subsidized_loan",
+      "aid_type": "loan"
+    },
+    {
+      "kind": "aid",
+      "label": "Direct Subsidized Loan — Spring 2027",
+      "amount": 1800,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l14", "quote": "Direct Subsidized Loan                   $1,700             $1,800"}],
+      "confidence": 0.99,
+      "aid_category": "subsidized_loan",
+      "aid_type": "loan"
+    },
+    {
+      "kind": "aid",
+      "label": "Direct Unsubsidized Loan — Fall 2026",
+      "amount": 950,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l15", "quote": "Direct Unsubsidized Loan                   $950             $1,050"}],
+      "confidence": 0.99,
+      "aid_category": "unsubsidized_loan",
+      "aid_type": "loan"
+    },
+    {
+      "kind": "aid",
+      "label": "Direct Unsubsidized Loan — Spring 2027",
+      "amount": 1050,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l15", "quote": "Direct Unsubsidized Loan                   $950             $1,050"}],
+      "confidence": 0.99,
+      "aid_category": "unsubsidized_loan",
+      "aid_type": "loan"
+    },
+    {
+      "kind": "aid",
+      "label": "Federal Work-Study — Fall 2026",
+      "amount": 1100,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l16", "quote": "Federal Work-Study                       $1,100             $1,300"}],
+      "confidence": 0.99,
+      "aid_category": "work_study",
+      "aid_type": "work_study"
+    },
+    {
+      "kind": "aid",
+      "label": "Federal Work-Study — Spring 2027",
+      "amount": 1300,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l16", "quote": "Federal Work-Study                       $1,100             $1,300"}],
+      "confidence": 0.99,
+      "aid_category": "work_study",
+      "aid_type": "work_study"
+    },
+    {
+      "kind": "aid",
+      "label": "Term Aid Package — Fall 2026",
+      "amount": 11850,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l17", "quote": "Term Aid Package                        $11,850            $12,550"}],
+      "confidence": 0.99,
+      "aid_category": "subtotal",
+      "aid_type": "unknown",
+      "is_stated_total": true
+    },
+    {
+      "kind": "aid",
+      "label": "Term Aid Package — Spring 2027",
+      "amount": 12550,
+      "period": "semester",
+      "citations": [{"line_id": "p1_l17", "quote": "Term Aid Package                        $11,850            $12,550"}],
+      "confidence": 0.99,
+      "aid_category": "subtotal",
+      "aid_type": "unknown",
+      "is_stated_total": true
+    },
+    {
+      "kind": "aid",
+      "label": "Technology Achievement Scholarship",
+      "amount": 10000,
+      "period": "unknown",
+      "citations": [{"line_id": "p1_l18", "quote": "Separate notice: Technology Achievement Scholarship $10,000."}],
+      "confidence": 0.88,
+      "aid_category": "scholarship",
+      "aid_type": "gift"
+    }
+  ],
+  "ambiguities": [
+    {
+      "kind": "period_unknown",
+      "target_label": "Technology Achievement Scholarship",
+      "question": "Is the $10,000 scholarship per semester, per year, or the total award?",
+      "why": "The separate notice gives an amount but explicitly provides no period.",
+      "options": [
+        {"value": "semester", "label": "$10,000 per semester"},
+        {"value": "annual", "label": "$10,000 per academic year"},
+        {"value": "total", "label": "$10,000 total"}
+      ],
+      "citations": [
+        {"line_id": "p1_l18", "quote": "Separate notice: Technology Achievement Scholarship $10,000."},
+        {"line_id": "p1_l19", "quote": "The separate notice does not say whether this scholarship is per semester, per year, or total."}
+      ]
+    }
+  ],
+  "missing_costs": [
+    {
+      "category": "books",
+      "label": "Books",
+      "reason": "Books are required but the worksheet gives no estimate.",
+      "citations": [{"line_id": "p1_l20", "quote": "Books are required, but this worksheet provides no books estimate."}]
+    },
+    {
+      "category": "transportation",
+      "label": "Transportation",
+      "reason": "Named as excluded with no amount.",
+      "citations": [{"line_id": "p1_l21", "quote": "Transportation, personal expenses, and health insurance are not included."}]
+    },
+    {
+      "category": "personal",
+      "label": "Personal expenses",
+      "reason": "Named as excluded with no amount.",
+      "citations": [{"line_id": "p1_l21", "quote": "Transportation, personal expenses, and health insurance are not included."}]
+    },
+    {
+      "category": "health_insurance",
+      "label": "Health insurance",
+      "reason": "Named as excluded with no amount.",
+      "citations": [{"line_id": "p1_l21", "quote": "Transportation, personal expenses, and health insurance are not included."}]
+    }
+  ]
+}

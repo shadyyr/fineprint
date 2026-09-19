@@ -1,0 +1,24 @@
+{
+  "institution_name": "Harbor City College",
+  "academic_year": "2026-2027",
+  "facts": [
+    {"kind": "cost", "label": "Tuition and fees", "amount": 31200, "period": "annual", "category": "tuition", "role": "item"},
+    {"kind": "cost", "label": "Housing and meals", "amount": 12800, "period": "annual", "category": "housing", "role": "item"},
+    {"kind": "cost", "label": "Books and supplies", "amount": 1100, "period": "annual", "category": "books", "role": "item"},
+    {"kind": "cost", "label": "Transportation", "amount": 900, "period": "annual", "category": "transportation", "role": "item"},
+    {"kind": "cost", "label": "Other education costs", "amount": 700, "period": "annual", "category": "other", "role": "item"},
+    {"kind": "cost", "label": "Estimated Cost of Attendance", "amount": 46700, "period": "annual", "category": "subtotal", "role": "rollup"},
+    {"kind": "aid", "label": "Federal Pell Grant", "amount": 6000, "period": "annual", "category": "grant", "aid_type": "gift", "role": "item"},
+    {"kind": "aid", "label": "State Opportunity Grant", "amount": 2500, "period": "annual", "category": "grant", "aid_type": "gift", "role": "item"},
+    {"kind": "aid", "label": "Harbor Need-Based Scholarship", "amount": 8000, "period": "annual", "category": "scholarship", "aid_type": "gift", "role": "item"},
+    {"kind": "aid", "label": "Federal Direct Subsidized Loan", "amount": 3500, "period": "annual", "category": "subsidized_loan", "aid_type": "loan", "role": "item"},
+    {"kind": "aid", "label": "Federal Direct Unsubsidized Loan", "amount": 2000, "period": "annual", "category": "unsubsidized_loan", "aid_type": "loan", "role": "item"},
+    {"kind": "aid", "label": "Federal Work-Study", "amount": 2400, "period": "annual", "category": "work_study", "aid_type": "work_study", "role": "item"}
+  ],
+  "ambiguities": [],
+  "missing_costs": [
+    {"category": "personal", "label": "Personal expenses"},
+    {"category": "health_insurance", "label": "Health insurance"}
+  ],
+  "unverified_claims": []
+}

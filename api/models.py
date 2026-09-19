@@ -105,12 +105,22 @@ class ExtractionItem(Strict):
     notes: str | None = None
 
 
+class ExtractionAmbiguityOption(Strict):
+    """One explicit resolution choice in the model's structured output."""
+
+    value: str
+    label: str
+    detail: str | None = None
+
+
 class ExtractionAmbiguity(Strict):
     kind: Literal["period_unknown", "conditional", "category_unclear", "amount_unclear"]
     target_label: str = Field(description="Label of the item this concerns.")
     question: str
     why: str
-    options: list[dict[str, str]] = Field(min_length=2)
+    # A typed object is required here. Free-form dicts generate
+    # ``additionalProperties`` schemas, which strict Structured Outputs reject.
+    options: list[ExtractionAmbiguityOption] = Field(min_length=2)
     citations: list[ExtractionCitation] = Field(default_factory=list)
 
 

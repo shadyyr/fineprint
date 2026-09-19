@@ -1,0 +1,39 @@
+{
+  "institution_name": "Summit Technical College",
+  "academic_year": "2026-2027",
+  "facts": [
+    {"kind": "cost", "label": "Tuition — Fall 2026", "amount": 14000, "period": "semester", "category": "tuition", "role": "item"},
+    {"kind": "cost", "label": "Tuition — Spring 2027", "amount": 14400, "period": "semester", "category": "tuition", "role": "item"},
+    {"kind": "cost", "label": "Required fees — Fall 2026", "amount": 650, "period": "semester", "category": "fees", "role": "item"},
+    {"kind": "cost", "label": "Required fees — Spring 2027", "amount": 675, "period": "semester", "category": "fees", "role": "item"},
+    {"kind": "cost", "label": "Campus housing — Fall 2026", "amount": 4800, "period": "semester", "category": "housing", "role": "item"},
+    {"kind": "cost", "label": "Campus housing — Spring 2027", "amount": 4900, "period": "semester", "category": "housing", "role": "item"},
+    {"kind": "cost", "label": "Meal plan — Fall 2026", "amount": 2900, "period": "semester", "category": "meals", "role": "item"},
+    {"kind": "cost", "label": "Meal plan — Spring 2027", "amount": 2950, "period": "semester", "category": "meals", "role": "item"},
+    {"kind": "cost", "label": "Term Charges — Fall 2026", "amount": 22350, "period": "semester", "category": "subtotal", "role": "rollup"},
+    {"kind": "cost", "label": "Term Charges — Spring 2027", "amount": 22925, "period": "semester", "category": "subtotal", "role": "rollup"},
+    {"kind": "aid", "label": "Federal Pell Grant — Fall 2026", "amount": 3200, "period": "semester", "category": "grant", "aid_type": "gift", "role": "item"},
+    {"kind": "aid", "label": "Federal Pell Grant — Spring 2027", "amount": 3300, "period": "semester", "category": "grant", "aid_type": "gift", "role": "item"},
+    {"kind": "aid", "label": "Summit STEM Grant — Fall 2026", "amount": 4900, "period": "semester", "category": "grant", "aid_type": "gift", "role": "item"},
+    {"kind": "aid", "label": "Summit STEM Grant — Spring 2027", "amount": 5100, "period": "semester", "category": "grant", "aid_type": "gift", "role": "item"},
+    {"kind": "aid", "label": "Direct Subsidized Loan — Fall 2026", "amount": 1700, "period": "semester", "category": "subsidized_loan", "aid_type": "loan", "role": "item"},
+    {"kind": "aid", "label": "Direct Subsidized Loan — Spring 2027", "amount": 1800, "period": "semester", "category": "subsidized_loan", "aid_type": "loan", "role": "item"},
+    {"kind": "aid", "label": "Direct Unsubsidized Loan — Fall 2026", "amount": 950, "period": "semester", "category": "unsubsidized_loan", "aid_type": "loan", "role": "item"},
+    {"kind": "aid", "label": "Direct Unsubsidized Loan — Spring 2027", "amount": 1050, "period": "semester", "category": "unsubsidized_loan", "aid_type": "loan", "role": "item"},
+    {"kind": "aid", "label": "Federal Work-Study — Fall 2026", "amount": 1100, "period": "semester", "category": "work_study", "aid_type": "work_study", "role": "item"},
+    {"kind": "aid", "label": "Federal Work-Study — Spring 2027", "amount": 1300, "period": "semester", "category": "work_study", "aid_type": "work_study", "role": "item"},
+    {"kind": "aid", "label": "Term Aid Package — Fall 2026", "amount": 11850, "period": "semester", "category": "subtotal", "aid_type": "unknown", "role": "rollup"},
+    {"kind": "aid", "label": "Term Aid Package — Spring 2027", "amount": 12550, "period": "semester", "category": "subtotal", "aid_type": "unknown", "role": "rollup"},
+    {"kind": "aid", "label": "Technology Achievement Scholarship", "amount": 10000, "period": "unknown", "category": "scholarship", "aid_type": "gift", "role": "item"}
+  ],
+  "ambiguities": [
+    {"kind": "period_unknown", "target_label": "Technology Achievement Scholarship", "blocks_headline": true}
+  ],
+  "missing_costs": [
+    {"category": "books", "label": "Books"},
+    {"category": "transportation", "label": "Transportation"},
+    {"category": "personal", "label": "Personal expenses"},
+    {"category": "health_insurance", "label": "Health insurance"}
+  ],
+  "unverified_claims": []
+}

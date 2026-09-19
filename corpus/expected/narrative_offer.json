@@ -1,0 +1,25 @@
+{
+  "institution_name": "Riverbend Liberal Arts College",
+  "academic_year": "2026-2027",
+  "facts": [
+    {"kind": "cost", "label": "Tuition and mandatory fees", "amount": 29750, "period": "annual", "category": "tuition", "role": "item"},
+    {"kind": "cost", "label": "Campus housing and meals", "amount": 13600, "period": "annual", "category": "housing", "role": "item"},
+    {"kind": "cost", "label": "Books and course materials", "amount": 950, "period": "annual", "category": "books", "role": "item"},
+    {"kind": "aid", "label": "Riverbend Access Grant", "amount": 11250, "period": "annual", "category": "grant", "aid_type": "gift", "role": "item"},
+    {"kind": "aid", "label": "Founders Scholarship", "amount": 18000, "period": "unknown", "category": "scholarship", "aid_type": "gift", "role": "item"},
+    {"kind": "aid", "label": "Federal Direct Subsidized Loan", "amount": 3500, "period": "annual", "category": "subsidized_loan", "aid_type": "loan", "role": "item"},
+    {"kind": "aid", "label": "Federal Work-Study", "amount": 2000, "period": "annual", "category": "work_study", "aid_type": "work_study", "role": "item"}
+  ],
+  "ambiguities": [
+    {"kind": "period_unknown", "target_label": "Founders Scholarship", "blocks_headline": true}
+  ],
+  "missing_costs": [
+    {"category": "transportation", "label": "Transportation"},
+    {"category": "personal", "label": "Personal expenses"},
+    {"category": "health_insurance", "label": "Health insurance"}
+  ],
+  "unverified_claims": [
+    {"claimed_label": "Technology Grant", "claimed_amount": 1500, "reason": "amount_mismatch"},
+    {"claimed_label": "Emergency Grant", "claimed_amount": 800, "reason": "amount_mismatch"}
+  ]
+}

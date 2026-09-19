@@ -40,6 +40,20 @@ from models import (
 _MAX_COMPONENTS = 6
 _CENTS = 0.005
 
+# Arithmetic equality alone cannot prove that a row is a rollup. In real aid
+# tables, a $6,000 Pell Grant can coincidentally equal a $2,500 state grant plus
+# a $3,500 loan. Only use the deterministic fallback when the row's own label
+# signals aggregation. Explicit model-flagged totals still get component
+# analysis even if their wording is unusual.
+_ROLLUP_LABEL_MARKERS = (
+    "total",
+    "subtotal",
+    "cost of attendance",
+    "direct billed costs",
+    "aid package",
+    "term charges",
+)
+
 
 def _slug(text: str, fallback: str) -> str:
     cleaned = "".join(c.lower() if c.isalnum() else "_" for c in text).strip("_")
@@ -70,6 +84,11 @@ def _find_components(
             if abs(sum(a for _, a in combo) - total) < _CENTS:
                 return [ident for ident, _ in combo]
     return []
+
+
+def _looks_like_rollup(label: str) -> bool:
+    normalized = " ".join(label.lower().replace("—", " ").split())
+    return any(marker in normalized for marker in _ROLLUP_LABEL_MARKERS)
 
 
 def normalize(
@@ -172,7 +191,11 @@ def normalize(
             components = _find_components(candidate.amount, siblings)
             if candidate.role == "rollup":
                 candidate.components = components or None
-            elif components and len(components) >= 2:
+            elif (
+                components
+                and len(components) >= 2
+                and _looks_like_rollup(candidate.label)
+            ):
                 candidate.role = "rollup"
                 candidate.components = components
 
@@ -184,9 +207,9 @@ def normalize(
         target_item = by_label.get(raw.target_label)
         options = [
             AmbiguityOption(
-                value=o.get("value", f"option_{k}"),
-                label=o.get("label", o.get("value", "")),
-                detail=o.get("detail"),
+                value=o.value or f"option_{k}",
+                label=o.label or o.value,
+                detail=o.detail,
             )
             for k, o in enumerate(raw.options)
         ]

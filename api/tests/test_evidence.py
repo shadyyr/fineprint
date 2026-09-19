@@ -140,6 +140,23 @@ def test_citation_to_a_nonexistent_line_is_rejected(resolver):
     assert result.failure.reason == "line_not_found"
 
 
+def test_multiple_rejected_claims_receive_unique_ids(resolver):
+    first = resolver.resolve(
+        label="Ghost Grant",
+        amount=1000,
+        citations=cite("p9_l98", "Ghost Grant $1,000"),
+    )
+    second = resolver.resolve(
+        label="Ghost Loan",
+        amount=2000,
+        citations=cite("p9_l99", "Ghost Loan $2,000"),
+    )
+
+    assert first.failure is not None
+    assert second.failure is not None
+    assert first.failure.id != second.failure.id
+
+
 def test_amount_borrowed_from_a_different_line_is_rejected(resolver, lines):
     """Cross-column theft: cite one row, report another row's number."""
     pell = find_line(lines, "Federal Pell Grant")          # $4,500

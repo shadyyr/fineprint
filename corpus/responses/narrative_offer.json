@@ -1,0 +1,161 @@
+{
+  "institution_name": "Riverbend Liberal Arts College",
+  "academic_year": "2026-2027",
+  "items": [
+    {
+      "kind": "cost",
+      "label": "Tuition and mandatory fees",
+      "amount": 29750,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l5", "quote": "Your estimated tuition and mandatory fees for the 2026-2027 academic year are $29,750."}
+      ],
+      "confidence": 0.99,
+      "cost_category": "tuition",
+      "direct_cost": true
+    },
+    {
+      "kind": "cost",
+      "label": "Campus housing and meals",
+      "amount": 13600,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l6", "quote": "Campus housing and meals for the same academic year are estimated at $13,600."}
+      ],
+      "confidence": 0.98,
+      "cost_category": "housing",
+      "direct_cost": true
+    },
+    {
+      "kind": "cost",
+      "label": "Books and course materials",
+      "amount": 950,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l7", "quote": "Books and course materials are estimated at $950 for the year."}
+      ],
+      "confidence": 0.99,
+      "cost_category": "books",
+      "direct_cost": false
+    },
+    {
+      "kind": "aid",
+      "label": "Riverbend Access Grant",
+      "amount": 11250,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l8", "quote": "We have awarded you a Riverbend Access Grant of $11,250 for the 2026-2027 academic year."}
+      ],
+      "confidence": 0.99,
+      "aid_category": "grant",
+      "aid_type": "gift"
+    },
+    {
+      "kind": "aid",
+      "label": "Founders Scholarship",
+      "amount": 18000,
+      "period": "unknown",
+      "citations": [
+        {"line_id": "p1_l9", "quote": "You are also eligible for a Founders Scholarship of $18,000."}
+      ],
+      "confidence": 0.9,
+      "aid_category": "scholarship",
+      "aid_type": "gift",
+      "renewable": true,
+      "conditions": ["May be renewed for up to four years if a 3.20 GPA is maintained"]
+    },
+    {
+      "kind": "aid",
+      "label": "Federal Direct Subsidized Loan",
+      "amount": 3500,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l10", "quote": "Your offer includes a Federal Direct Subsidized Loan of $3,500 for the academic year."}
+      ],
+      "confidence": 0.99,
+      "aid_category": "subsidized_loan",
+      "aid_type": "loan"
+    },
+    {
+      "kind": "aid",
+      "label": "Federal Work-Study",
+      "amount": 2000,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l11", "quote": "A Federal Work-Study opportunity of up to $2,000 is available during the 2026-2027 year."}
+      ],
+      "confidence": 0.99,
+      "aid_category": "work_study",
+      "aid_type": "work_study",
+      "conditions": ["Paid as wages only for hours actually worked"]
+    },
+    {
+      "kind": "aid",
+      "label": "Technology Grant",
+      "amount": 1500,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l8", "quote": "We have awarded you a Riverbend Access Grant of $11,250 for the 2026-2027 academic year."}
+      ],
+      "confidence": 0.42,
+      "aid_category": "grant",
+      "aid_type": "gift"
+    },
+    {
+      "kind": "aid",
+      "label": "Emergency Grant",
+      "amount": 800,
+      "period": "annual",
+      "citations": [
+        {"line_id": "p1_l9", "quote": "You are also eligible for a Founders Scholarship of $18,000."}
+      ],
+      "confidence": 0.31,
+      "aid_category": "grant",
+      "aid_type": "gift"
+    }
+  ],
+  "ambiguities": [
+    {
+      "kind": "period_unknown",
+      "target_label": "Founders Scholarship",
+      "question": "Is the $18,000 Founders Scholarship annual, or a total across the program?",
+      "why": "The amount has no period, and the renewal language explicitly does not settle it.",
+      "options": [
+        {"value": "annual", "label": "$18,000 per year"},
+        {"value": "four_year_total", "label": "$18,000 total across four years"}
+      ],
+      "citations": [
+        {"line_id": "p1_l9", "quote": "You are also eligible for a Founders Scholarship of $18,000."},
+        {"line_id": "p1_l12", "quote": "The Founders Scholarship may be renewed for up to four years if you maintain a 3.20 GPA."},
+        {"line_id": "p1_l13", "quote": "The renewal language does not state whether the $18,000 figure is yearly or a program total."}
+      ]
+    }
+  ],
+  "missing_costs": [
+    {
+      "category": "transportation",
+      "label": "Transportation",
+      "reason": "Named as excluded with no estimate.",
+      "citations": [
+        {"line_id": "p1_l15", "quote": "Transportation, personal expenses, and health insurance are not included, and no estimates"},
+        {"line_id": "p1_l16", "quote": "are provided for those costs."}
+      ]
+    },
+    {
+      "category": "personal",
+      "label": "Personal expenses",
+      "reason": "Named as excluded with no estimate.",
+      "citations": [
+        {"line_id": "p1_l15", "quote": "Transportation, personal expenses, and health insurance are not included, and no estimates"}
+      ]
+    },
+    {
+      "category": "health_insurance",
+      "label": "Health insurance",
+      "reason": "Named as excluded with no estimate.",
+      "citations": [
+        {"line_id": "p1_l15", "quote": "Transportation, personal expenses, and health insurance are not included, and no estimates"}
+      ]
+    }
+  ]
+}

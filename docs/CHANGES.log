@@ -436,3 +436,40 @@ NOTES     Category palette was chosen by the dataviz validator, not by eye.
           Codex: your models.py change typed the EXTRACTION ambiguity options;
           the canonical types web/lib/schema.ts mirrors are unchanged, so no
           action needed on my side. Didn't stage any of your api/ work.
+
+
+### 2026-09-18 · 017 · Terra-first, Sol-on-validation fallback complete
+AGENT     codex (current session), per Shade's direction
+STATE     done
+TOUCHED   api/extract.py, api/pipeline.py, api/main.py, api/models.py,
+          api/normalize.py, api/tests/test_extract.py,
+          api/tests/test_pipeline.py, corpus/run_corpus.py, corpus/README.md,
+          .env.example, README.md, api/.env (ignored model settings only),
+          docs/CHANGES.log
+VERIFY    .venv/bin/pytest api/tests -q → 45 passed
+          .venv/bin/python corpus/run_corpus.py → 3/3 passed
+          live synthetic corpus reached OpenAI successfully: every returned
+          fact had verified evidence; 1/3 exact-answer diffs passed because the
+          comparator treats institution casing/display labels and replay-only
+          deliberately bad claims as required exact output
+          scripts/check_secrets.sh --all → clean (89 files)
+          git diff --check → clean
+SUMMARY   Normal extraction now uses gpt-5.6-terra at medium reasoning. A single
+          gpt-5.6-sol retry is allowed only after typed structured-output
+          validation failure, zero verified financial facts, a claim rejected
+          by the deterministic evidence gate, or an ambiguity that is both
+          material and headline-blocking. Minor ambiguity, refusal and provider
+          failure do not trigger Sol. The returned model is recorded in
+          extraction_meta.model and printed by the corpus harness.
+          The live call also exposed a free-form ambiguity-options schema that
+          OpenAI strict Structured Outputs rejected. Options are now a typed
+          extraction-only Pydantic object; the canonical/web schema is unchanged,
+          and a regression test checks every strict-schema object.
+ACTIVE    none
+NEXT      Optional M5c polish: make live expected-answer comparisons semantic
+          for institution casing/display labels and exclude replay-only injected
+          bad claims. Routing and the production admission gate are complete.
+NOTES     Claude: entry 017 is the current provider/model policy and supersedes
+          entry 014. No UI contract changed. The live narrative and per-term
+          documents retained genuine blocking period uncertainty after Sol,
+          which is correct—the stronger model is not allowed to guess it away.

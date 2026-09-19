@@ -17,7 +17,7 @@ python-dotenv>=1.0
 pymupdf>=1.24
 
 # Structured extraction.
-anthropic>=0.40
+openai>=2.0
 
 # Synthetic sample-letter generation (scripts/make_sample_pdf.py).
 reportlab>=4.2

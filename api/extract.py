@@ -18,16 +18,22 @@ The contract with the model, enforced by the prompt and then verified in code:
 from __future__ import annotations
 
 import os
-from typing import Protocol
+from typing import Any, Protocol
 
-import anthropic
+from openai import OpenAI
+from pydantic import ValidationError
 
 from ingest import IngestResult
 from models import ExtractionResult
 
-# The skill's default. Not downgraded for cost: extraction quality is the
-# product, and a misread aid letter is the failure mode that matters.
-DEFAULT_MODEL = os.environ.get("FINEPRINT_MODEL", "claude-opus-5")
+# Terra handles the normal path at balanced cost. Sol is reserved for the
+# post-validation fallback in pipeline.py; OpenAIExtractor itself never changes
+# models implicitly, which keeps routing explicit and testable.
+DEFAULT_MODEL = os.environ.get("FINEPRINT_MODEL", "gpt-5.6-terra")
+FALLBACK_MODEL = os.environ.get("FINEPRINT_FALLBACK_MODEL", "gpt-5.6-sol")
+DEFAULT_REASONING_EFFORT = os.environ.get(
+    "FINEPRINT_REASONING_EFFORT", "medium"
+)
 
 MAX_TOKENS = 16000
 
@@ -50,7 +56,9 @@ exist for your purposes.
 3. Every quote you produce will be checked against the cited line automatically. \
 Any item whose quote or amount cannot be found is discarded, so a careless \
 citation loses the item entirely. Cite the single line that contains both the \
-label and the amount whenever one exists.
+label and the amount whenever one exists. When a visual table's label and amount \
+were extracted as separate text lines, cite BOTH lines; one citation must contain \
+the exact amount.
 
 CLASSIFICATION RULES.
 
@@ -69,15 +77,24 @@ worst error you can make. Raise an ambiguity instead.
 
 6. is_stated_total: set true for rows that total other rows ("Total Cost of \
 Attendance", "Total Financial Aid Package", subtotals). Report them, flagged, so \
-they are not double counted.
+they are not double counted. Never mark an ordinary grant, scholarship, loan, or \
+cost as a total merely because its amount happens to equal a combination of other \
+rows.
+
+TABLE STRUCTURE.
+
+7. When one row has separate term columns (for example Fall and Spring), emit one \
+item for EACH amount and include the term in the label. Use period "semester" or \
+"term" only when the document's headings establish it. A separate award outside \
+that table does not inherit the table's period.
 
 AMBIGUITIES AND GAPS.
 
-7. Raise an ambiguity whenever the document leaves something materially unclear, \
+8. Raise an ambiguity whenever the document leaves something materially unclear, \
 especially an amount whose period is not stated. Give at least two concrete \
 options a student could choose between.
 
-8. missing_costs: list cost categories the letter names but does not price, and \
+9. missing_costs: list cost categories the letter names but does not price, and \
 standard categories absent entirely (transportation, personal expenses, health \
 insurance). Never invent an amount for them.
 
@@ -91,10 +108,10 @@ class Extractor(Protocol):
 
 
 def build_user_content(result: IngestResult) -> list[dict]:
-    """Assemble the request: authoritative text first, images as context."""
+    """Assemble Responses API content: text first, images as context."""
     content: list[dict] = [
         {
-            "type": "text",
+            "type": "input_text",
             "text": (
                 "AUTHORITATIVE TEXT LINES. Cite these by line_id and quote them "
                 "verbatim. Every figure you report must come from here.\n\n"
@@ -108,17 +125,14 @@ def build_user_content(result: IngestResult) -> list[dict]:
             continue
         content.append(
             {
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": "image/png",
-                    "data": page.png_b64,
-                },
+                "type": "input_image",
+                "image_url": f"data:image/png;base64,{page.png_b64}",
+                "detail": "auto",
             }
         )
         content.append(
             {
-                "type": "text",
+                "type": "input_text",
                 "text": (
                     f"Layout context for page {page.page}. Use it to understand "
                     "the structure only. Do not read figures from it."
@@ -128,7 +142,7 @@ def build_user_content(result: IngestResult) -> list[dict]:
 
     content.append(
         {
-            "type": "text",
+            "type": "input_text",
             "text": (
                 "Extract the costs, aid, ambiguities and missing costs from this "
                 "offer. Remember: quote verbatim, cite a line_id for everything, "
@@ -139,44 +153,69 @@ def build_user_content(result: IngestResult) -> list[dict]:
     return content
 
 
-class ClaudeExtractor:
-    """Structured extraction via the Anthropic API.
+class OpenAIExtractor:
+    """Structured extraction through the OpenAI Responses API.
 
-    Uses `messages.parse` with a Pydantic output format, so the response is
-    schema-validated by the SDK before it reaches us. A malformed payload
-    raises here rather than producing a half-populated model.
-
-    Server-side refusal fallbacks are deliberately not enabled: they require
-    the beta namespace, which would mean giving up the `parse` helper's
-    validation, and reading amounts off an award letter has no realistic
-    refusal surface. `stop_reason` is still checked defensively below.
+    ``responses.parse`` validates the output against ``ExtractionResult``
+    before it reaches the admission gate. ``store=False`` is deliberate: aid
+    letters can contain student PII, and FinePrint does not need response
+    retrieval or conversation state for this stateless transformation.
     """
 
-    def __init__(self, *, model: str = DEFAULT_MODEL, api_key: str | None = None):
+    def __init__(
+        self,
+        *,
+        model: str = DEFAULT_MODEL,
+        reasoning_effort: str = DEFAULT_REASONING_EFFORT,
+        api_key: str | None = None,
+        client: Any | None = None,
+    ):
         self.model = model
-        self._client = anthropic.Anthropic(api_key=api_key) if api_key else anthropic.Anthropic()
+        self.reasoning_effort = reasoning_effort
+        self._client = client or OpenAI(api_key=api_key)
 
     def extract(self, result: IngestResult) -> ExtractionResult:
-        response = self._client.messages.parse(
-            model=self.model,
-            max_tokens=MAX_TOKENS,
-            # Reading an arbitrary layout and deciding what is genuinely
-            # ambiguous is exactly the kind of work adaptive thinking helps.
-            thinking={"type": "adaptive"},
-            system=SYSTEM,
-            messages=[{"role": "user", "content": build_user_content(result)}],
-            output_format=ExtractionResult,
-        )
-
-        if response.stop_reason == "refusal":
-            raise ExtractionRefused(
-                "The model declined to analyze this document."
+        try:
+            response = self._client.responses.parse(
+                model=self.model,
+                instructions=SYSTEM,
+                input=[{"role": "user", "content": build_user_content(result)}],
+                text_format=ExtractionResult,
+                max_output_tokens=MAX_TOKENS,
+                reasoning={"effort": self.reasoning_effort},
+                store=False,
             )
+        except ValidationError as exc:
+            raise ExtractionValidationFailed(
+                "The model response did not match the extraction schema."
+            ) from exc
 
-        parsed = response.parsed_output
+        parsed = response.output_parsed
         if parsed is None:
-            raise ExtractionFailed("The model returned no structured output.")
+            refusal = _refusal_text(response)
+            if refusal:
+                raise ExtractionRefused(
+                    f"The model declined to analyze this document: {refusal}"
+                )
+            if getattr(response, "status", None) == "incomplete":
+                reason = getattr(
+                    getattr(response, "incomplete_details", None), "reason", None
+                )
+                suffix = f": {reason}" if reason else "."
+                raise ExtractionFailed(f"The model response was incomplete{suffix}")
+            raise ExtractionValidationFailed(
+                "The model returned no valid structured output."
+            )
         return parsed
+
+
+def _refusal_text(response: Any) -> str | None:
+    """Find a refusal in a Responses API output without assuming item order."""
+    for output in getattr(response, "output", ()):
+        for content in getattr(output, "content", ()):
+            if getattr(content, "type", None) == "refusal":
+                return getattr(content, "refusal", None) or "request refused"
+    return None
 
 
 class ReplayExtractor:
@@ -197,11 +236,10 @@ class ExtractionRefused(ExtractionFailed):
     """The model declined the request."""
 
 
-def available() -> bool:
-    """Whether live extraction is configured.
+class ExtractionValidationFailed(ExtractionFailed):
+    """The response could not satisfy the typed extraction contract."""
 
-    The SDK also resolves credentials from an `ant auth login` profile, so an
-    unset ANTHROPIC_API_KEY does not by itself mean there is no key. Only the
-    env var is checked here because that is what the deployment documents.
-    """
-    return bool(os.environ.get("ANTHROPIC_API_KEY"))
+
+def available() -> bool:
+    """Whether the documented live-extraction credential is configured."""
+    return bool(os.environ.get("OPENAI_API_KEY"))

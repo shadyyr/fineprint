@@ -28,7 +28,21 @@ For live extraction, copy the env template and add a key:
 
 ```bash
 cp .env.example api/.env
+# Then set OPENAI_API_KEY in api/.env.
 ```
+
+The extraction service uses the OpenAI Responses API with typed structured
+output. Normal extraction uses `gpt-5.6-terra` at medium reasoning. It retries
+once with `gpt-5.6-sol` only when Terra fails the typed output contract, the
+deterministic evidence gate rejects a claim, no financial fact verifies, or a
+material ambiguity blocks headline calculations. Minor ambiguities and
+provider failures do not trigger the more expensive model.
+
+Page images are sent only as layout context; the numbered PDF text layer
+remains the authoritative source, and every returned amount still has to pass
+the deterministic evidence gate before entering the financial model. Responses
+are requested with storage disabled because aid letters may contain student
+information.
 
 ## Checks
 

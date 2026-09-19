@@ -130,10 +130,18 @@ class EvidenceResolver:
     def __init__(self, lines: dict[str, LayoutLine]) -> None:
         self._lines = lines
         self._seq = 0
+        self._unverified_seq = 0
 
     def _next_id(self, prefix: str) -> str:
         self._seq += 1
         return f"ev_{prefix}_{self._seq}"
+
+    def _next_unverified_id(self, prefix: str) -> str:
+        # Failure paths can exit before evidence sequencing advances (for
+        # example, two nonexistent line ids). Keep a separate counter so
+        # multiple rejected claims never receive the same canonical id.
+        self._unverified_seq += 1
+        return f"unv_{prefix}_{self._unverified_seq}"
 
     def resolve(
         self,
@@ -148,7 +156,7 @@ class EvidenceResolver:
             return Resolution(
                 evidence=[],
                 failure=UnverifiedClaim(
-                    id=f"unv_{prefix}_{self._seq}",
+                    id=self._next_unverified_id(prefix),
                     claimed_label=label,
                     claimed_amount=amount,
                     cited_line_id=None,
@@ -166,7 +174,7 @@ class EvidenceResolver:
                 return Resolution(
                     evidence=[],
                     failure=UnverifiedClaim(
-                        id=f"unv_{prefix}_{self._seq}",
+                        id=self._next_unverified_id(prefix),
                         claimed_label=label,
                         claimed_amount=amount,
                         cited_line_id=citation.line_id,
@@ -183,7 +191,7 @@ class EvidenceResolver:
                 return Resolution(
                     evidence=[],
                     failure=UnverifiedClaim(
-                        id=f"unv_{prefix}_{self._seq}",
+                        id=self._next_unverified_id(prefix),
                         claimed_label=label,
                         claimed_amount=amount,
                         cited_line_id=citation.line_id,
@@ -221,7 +229,7 @@ class EvidenceResolver:
                 return Resolution(
                     evidence=[],
                     failure=UnverifiedClaim(
-                        id=f"unv_{prefix}_{self._seq}",
+                        id=self._next_unverified_id(prefix),
                         claimed_label=label,
                         claimed_amount=amount,
                         cited_line_id=citation.line_id,
@@ -252,7 +260,7 @@ class EvidenceResolver:
             return Resolution(
                 evidence=[],
                 failure=UnverifiedClaim(
-                    id=f"unv_{prefix}_{self._seq}",
+                    id=self._next_unverified_id(prefix),
                     claimed_label=label,
                     claimed_amount=amount,
                     cited_line_id=citations[0].line_id,
