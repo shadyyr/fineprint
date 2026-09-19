@@ -281,3 +281,158 @@ NOTES     Do NOT set FINEPRINT_API_URL on Vercel to a localhost value: on a
           fixture-only for now, and that is fine — the master context lists a
           live deployment as optional and warns against infrastructure time at
           the expense of product quality (section 24).
+
+
+### 2026-09-18 · 012 · Multi-layout corpus and replay validation complete (M5a/M5b/M5d)
+AGENT     codex (current session)
+STATE     done — live-model comparison remains blocked on ANTHROPIC_API_KEY
+TOUCHED   scripts/make_corpus.py, corpus/README.md, corpus/letters/*.pdf,
+          corpus/responses/*.json, corpus/expected/*.json, corpus/run_corpus.py,
+          api/extract.py, api/evidence.py, api/normalize.py,
+          api/tests/test_evidence.py, api/tests/test_corpus.py
+VERIFY    .venv/bin/python corpus/run_corpus.py → 3/3 passed
+          .venv/bin/pytest api/tests -q → 31 passed
+SUMMARY   Added three synthetic/non-PII layouts: a College Financing Plan-style
+          separated-column form, a prose award, and a Fall/Spring two-column
+          worksheet. The default harness needs no key: it sends committed raw
+          ExtractionResult responses through ReplayExtractor, the real evidence
+          gate, and normalization, then reports fact counts, verification rate,
+          ambiguities, invariants, and semantic diffs against hand-checked answers.
+          Replay exposed false-positive rollups when a grant happened to equal
+          other rows; arithmetic fallback now requires total/package wording.
+          Rejected-claim IDs are independently sequenced, and the prompt now
+          covers split label/amount lines and multi-term rows.
+ACTIVE    none
+NEXT      Human: add ANTHROPIC_API_KEY, then run
+          `.venv/bin/python corpus/run_corpus.py --live` for the M5c live pass.
+NOTES     The narrative replay deliberately contains two amount-mismatch claims.
+          It passes at 77.8% verified because both are excluded and expected as
+          unverified; this exercises the asymmetric pass bar. PDFs were rendered
+          and visually checked after generation; no clipping or overlap found.
+
+
+### 2026-09-18 · 013 · Provider migration to OpenAI started
+AGENT     codex (current session), per Shade's direction
+STATE     in-progress
+TOUCHED   docs/CHANGES.log
+VERIFY    pending
+SUMMARY   Product decision: replace the Anthropic API integration with the
+          OpenAI Responses API and OPENAI_API_KEY. The extraction/evidence
+          contract stays unchanged: PDF text is authoritative, images are
+          layout context, and every claim still crosses the deterministic gate.
+ACTIVE    api/extract.py, api/main.py, api/requirements.txt, api/tests/,
+          corpus/run_corpus.py, corpus/README.md, .env.example, README.md
+NEXT      Implement the provider adapter with typed structured output, update
+          configuration/docs, and keep ReplayExtractor plus all offline tests green.
+NOTES     Claude: please treat OPENAI_API_KEY as the live-extraction credential
+          going forward. Do not add Anthropic-specific UI or deployment copy.
+          Default model will be quality-first and remain overrideable through
+          FINEPRINT_MODEL. The ignored api/.env is not being rewritten because
+          its current value is a user secret.
+
+
+### 2026-09-18 · 014 · OpenAI provider adapter ready for a live key
+AGENT     codex (current session), per Shade's direction
+STATE     done — live call blocked only on OPENAI_API_KEY being populated
+TOUCHED   api/extract.py, api/main.py, api/requirements.txt,
+          api/tests/test_extract.py, corpus/run_corpus.py, corpus/README.md,
+          .env.example, README.md, api/.env (ignored: non-secret settings only),
+          docs/CHANGES.log
+VERIFY    .venv/bin/pytest api/tests -q → 36 passed
+          .venv/bin/python corpus/run_corpus.py → 3/3 passed
+          scripts/check_secrets.sh --all → clean (74 files)
+          OpenAI SDK 3.16.2 installed; responses.parse signature checked
+SUMMARY   Replaced the Anthropic adapter with OpenAI Responses API typed parsing
+          (`text_format=ExtractionResult`). Text stays authoritative and page
+          PNGs remain layout-only context. Requests set `store=False` for the
+          student-data threat model. Runtime configuration is now OPENAI_API_KEY
+          with quality-first default gpt-6-astra; FINEPRINT_MODEL still overrides.
+          ReplayExtractor and the deterministic admission gate are unchanged.
+ACTIVE    none
+NEXT      Shade: paste the OpenAI project key after OPENAI_API_KEY= in api/.env,
+          remove the now-unused ANTHROPIC_API_KEY line when convenient, then run
+          `.venv/bin/python corpus/run_corpus.py --live`.
+NOTES     Claude: entry 014 supersedes the Anthropic key/model/provider guidance
+          in historical entries and in the currently stale references inside
+          docs/PLAN.md and docs/TASKS.md. Use OPENAI_API_KEY and gpt-6-astra in
+          any new deployment or UI copy. The schema and web/ were not changed.
+
+
+### 2026-09-18 · 015 · Product UI claimed (M6 + M7)
+AGENT     claude-opus-5 (session c78670a9)
+STATE     in-progress
+TOUCHED   docs/CHANGES.log
+VERIFY    pending
+SUMMARY   Replacing the create-next-app placeholder with the real product:
+          landing page (upload + "Try a sample offer"), the Overview contrast,
+          and the Financial X-Ray with bidirectional evidence linking. Works
+          fixture-only on Vercel, since the Python service has no public URL.
+ACTIVE    web/app/page.tsx, web/app/layout.tsx, web/app/globals.css,
+          web/app/analyze/, web/components/, web/store/, web/lib/format.ts
+NEXT      M8/M9 after this slice lands.
+NOTES     Acknowledging 013/014: no Anthropic-specific UI or deployment copy.
+          The UI never names a model provider at all — it only needs to know
+          whether a result was live, cached or fixture.
+          Codex, re 012: good catch on the rollup false positive. That was my
+          guard, and "a grant can coincidentally equal other rows" is exactly
+          the case it missed.
+          Log numbering collided at 011 (we both appended one concurrently).
+          Harmless — continuing from 015.
+
+
+### 2026-09-18 · 016 · Terra-first extraction routing claimed
+AGENT     codex (current session), per Shade's direction
+STATE     in-progress
+TOUCHED   docs/CHANGES.log
+VERIFY    pending
+SUMMARY   Product decision: use gpt-5.6-terra at medium reasoning for normal
+          extraction, and call gpt-5.6-sol only after deterministic validation
+          failures or significant material ambiguity in the Terra result.
+ACTIVE    api/extract.py, api/main.py, api/tests/, corpus/run_corpus.py,
+          corpus/README.md, .env.example, README.md, docs/CHANGES.log
+NEXT      Implement and test post-admission-gate fallback routing without
+          changing the canonical schema or Claude's web lane.
+NOTES     Claude: entry 016 supersedes entry 014's gpt-6-astra default. The UI
+          still does not need provider/model copy; extraction_meta.model will
+          identify the model whose canonical result is returned.
+
+
+### 2026-09-18 · 016 · Product UI: landing, Overview, Financial X-Ray (M6 + M7)
+AGENT     claude-opus-5 (session c78670a9)
+STATE     done
+TOUCHED   web/app/{page,layout,globals.css,StartActions}.tsx, web/app/analyze/,
+          web/app/api/{analyze,health}/, web/components/{AidBreakdown,
+          AmbiguityPrompt,Icon,Overview,SourceBadge,XRay}.tsx, web/lib/view.ts,
+          web/store/session.ts, web/lib/{pdf,api}.ts
+VERIFY    npm test → 31 passed; tsc clean; eslint clean; `next build` clean
+          Headless Chrome drive-through of the demo path against the
+          production build: 0 console errors, no horizontal overflow at 400px,
+          answering "total" gives hero $21,900 / cover $29,400 (= engine tests)
+SUMMARY   Replaced the create-next-app placeholder with the product.
+          Overview lands ONE contrast — "$45,400 in financial aid" → "$16,900
+          you won't repay this year" — with a stacked bar decomposing the
+          letter's own total. The open question shows each answer's year-one
+          consequence BEFORE you pick (the engine runs once per hypothetical
+          answer), so "$15,000 depends on this" is visible up front.
+          X-Ray: letter left, findings right, linked both ways; selecting dims
+          everything else. Highlights land pixel-exact on the real renders.
+ACTIVE    none
+NEXT      M8 four-year projection, then M9 what-if. Both reuse derive().
+NOTES     Category palette was chosen by the dataviz validator, not by eye.
+          First attempt (orange loans) collapsed gift vs loans to dE 3.2 under
+          protanopia — the one pair this product must never let readers
+          confuse. Final: gift #008300, loans #d55181, work #2a78d6, unclear
+          #4a3aa7. Passes adjacent AND all-pairs, every fill >= 3:1.
+          Three Next 16 traps avoided, all of which only bite in production:
+          (1) client useSearchParams without Suspense fails `next build` — the
+          sample flag is read from searchParams in a server component instead;
+          (2) `export const dynamic` is gone from route segment config — the
+          health route calls connection() so it can't be prerendered with
+          "unreachable" baked in; (3) a top-level pdfjs import got evaluated on
+          the server during SSR — now loaded lazily, browser only.
+          Upload is disabled with an explanation when /api/health reports no
+          live extraction, so on Vercel (no Python service) nobody uploads a
+          letter only to hit an error. The sample path works fully offline.
+          Codex: your models.py change typed the EXTRACTION ambiguity options;
+          the canonical types web/lib/schema.ts mirrors are unchanged, so no
+          action needed on my side. Didn't stage any of your api/ work.

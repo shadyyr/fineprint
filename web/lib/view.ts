@@ -1,0 +1,286 @@
+/**
+ * View model: turns the canonical document and the engine's derived figures
+ * into the shapes the UI draws.
+ *
+ * No arithmetic about the student's money happens here beyond grouping and
+ * summing what the engine and the document already establish. The engine owns
+ * the financial model; this file owns presentation categories.
+ */
+
+import type { IconName } from "@/components/Icon";
+import {
+  blockingAmbiguity,
+  effectivePeriod,
+  resolveItem,
+  summableAid,
+  type Assumptions,
+  type Overrides,
+} from "@/lib/engine";
+import type {
+  AidItem,
+  AnyItem,
+  CanonicalDocument,
+  CostItem,
+  Period,
+} from "@/lib/schema";
+import { isAid } from "@/lib/schema";
+
+export type CategoryKey = "gift" | "later" | "unclear" | "loan" | "work" | "cost";
+
+export interface CategoryMeta {
+  label: string;
+  /** Plain-language meaning, shown next to the label. */
+  meaning: string;
+  icon: IconName;
+  /** CSS color for marks. Never used for text. */
+  color: string;
+  wash: string;
+}
+
+export const CATEGORY: Record<CategoryKey, CategoryMeta> = {
+  gift: {
+    label: "Gift aid",
+    meaning: "You don't repay it",
+    icon: "gift",
+    color: "var(--color-gift)",
+    wash: "var(--color-gift-wash)",
+  },
+  later: {
+    label: "Later years",
+    meaning: "Counted now, paid out in future years",
+    icon: "later",
+    color: "var(--color-later)",
+    wash: "rgb(138 142 152 / 0.12)",
+  },
+  unclear: {
+    label: "Needs your answer",
+    meaning: "The letter doesn't say enough",
+    icon: "unclear",
+    color: "var(--color-unclear)",
+    wash: "var(--color-unclear-wash)",
+  },
+  loan: {
+    label: "Loans",
+    meaning: "You repay it, with interest",
+    icon: "loan",
+    color: "var(--color-loan)",
+    wash: "var(--color-loan-wash)",
+  },
+  work: {
+    label: "Work-study",
+    meaning: "You earn it by working",
+    icon: "work",
+    color: "var(--color-work)",
+    wash: "var(--color-work-wash)",
+  },
+  cost: {
+    label: "Costs",
+    meaning: "What the school charges or estimates",
+    icon: "cost",
+    color: "var(--color-cost)",
+    wash: "var(--color-cost-wash)",
+  },
+};
+
+export const PERIOD_TEXT: Record<Period, string> = {
+  annual: "per year",
+  semester: "per semester",
+  term: "per term",
+  total: "in total",
+  unknown: "period not stated",
+};
+
+function effectiveType(item: AidItem, overrides: Overrides) {
+  return overrides.itemOverrides[item.id]?.aidType ?? item.aid_type;
+}
+
+/** Display category for an item under the current answers. */
+export function categoryOf(
+  item: AnyItem,
+  doc: CanonicalDocument,
+  overrides: Overrides,
+): CategoryKey {
+  if (!isAid(item)) return "cost";
+  if (blockingAmbiguity(item.id, overrides, doc.ambiguities)) return "unclear";
+  switch (effectiveType(item, overrides)) {
+    case "gift":
+      return "gift";
+    case "loan":
+      return "loan";
+    case "work_study":
+      return "work";
+    default:
+      return "unclear";
+  }
+}
+
+export interface Segment {
+  key: CategoryKey;
+  amount: number;
+  itemIds: string[];
+}
+
+export interface Breakdown {
+  /** The letter's own stated aid total, if it printed one. */
+  headline: number | null;
+  segments: Segment[];
+  /** Sum of the segments; equals the headline when the letter's total is consistent. */
+  total: number;
+}
+
+/**
+ * What the letter's aid figure is actually made of.
+ *
+ * Segments use the amounts the letter prints, so they add back up to its own
+ * total -- that is what makes the decomposition a fair X-ray of the headline
+ * rather than a different number. The one adjustment: a gift the user has
+ * confirmed is a multi-year total is split into this year's share and the
+ * part the headline counted early.
+ */
+export function aidBreakdown(
+  doc: CanonicalDocument,
+  overrides: Overrides,
+  assumptions: Assumptions,
+): Breakdown {
+  const sums: Record<CategoryKey, Segment> = {
+    gift: { key: "gift", amount: 0, itemIds: [] },
+    later: { key: "later", amount: 0, itemIds: [] },
+    unclear: { key: "unclear", amount: 0, itemIds: [] },
+    loan: { key: "loan", amount: 0, itemIds: [] },
+    work: { key: "work", amount: 0, itemIds: [] },
+    cost: { key: "cost", amount: 0, itemIds: [] },
+  };
+
+  for (const item of summableAid(doc)) {
+    const face = overrides.itemOverrides[item.id]?.amount ?? item.amount;
+    const category = categoryOf(item, doc, overrides);
+
+    if (category === "gift") {
+      const { period } = effectivePeriod(item.id, item.period, overrides, doc.ambiguities);
+      const resolved = resolveItem(item, doc, overrides, assumptions);
+      if (period === "total" && resolved.annual !== null) {
+        sums.gift.amount += resolved.annual;
+        sums.gift.itemIds.push(item.id);
+        const deferred = face - resolved.annual;
+        if (deferred > 0) {
+          sums.later.amount += deferred;
+          sums.later.itemIds.push(item.id);
+        }
+        continue;
+      }
+    }
+
+    sums[category].amount += face;
+    sums[category].itemIds.push(item.id);
+  }
+
+  // Validated adjacency order for the stacked bar.
+  const order: CategoryKey[] = ["gift", "later", "unclear", "loan", "work"];
+  const segments = order.map((k) => sums[k]).filter((s) => s.amount > 0);
+  const headline = doc.aid.find((a) => a.role === "rollup")?.amount ?? null;
+
+  return {
+    headline,
+    segments,
+    total: segments.reduce((acc, s) => acc + s.amount, 0),
+  };
+}
+
+export interface XRayRow {
+  id: string;
+  label: string;
+  amount: number;
+  category: CategoryKey;
+  isTotal: boolean;
+  periodText: string;
+  conditions: string[];
+  evidenceIds: string[];
+  ambiguityId?: string;
+}
+
+export interface XRayGroup {
+  key: string;
+  title: string;
+  meaning: string;
+  icon: IconName;
+  color: string;
+  rows: XRayRow[];
+  /** Totals are listed for reference only and never re-added. */
+  note?: string;
+}
+
+function toRow(item: AnyItem, doc: CanonicalDocument, overrides: Overrides): XRayRow {
+  const { period } = effectivePeriod(item.id, item.period, overrides, doc.ambiguities);
+  const amb = blockingAmbiguity(item.id, overrides, doc.ambiguities);
+  return {
+    id: item.id,
+    label: item.label,
+    amount: overrides.itemOverrides[item.id]?.amount ?? item.amount,
+    category: categoryOf(item, doc, overrides),
+    isTotal: item.role === "rollup",
+    periodText: PERIOD_TEXT[period],
+    conditions: isAid(item) ? item.conditions ?? [] : [],
+    evidenceIds: item.evidence_ids,
+    ambiguityId: amb?.id,
+  };
+}
+
+export function xrayGroups(doc: CanonicalDocument, overrides: Overrides): XRayGroup[] {
+  const aidRows = doc.aid.filter((a) => a.role === "item").map((a) => toRow(a, doc, overrides));
+  const costRows = doc.costs
+    .filter((c) => c.role === "item")
+    .map((c: CostItem) => toRow(c, doc, overrides));
+  const totals = [...doc.aid, ...doc.costs]
+    .filter((i) => i.role === "rollup")
+    .map((i) => toRow(i, doc, overrides));
+
+  const by = (key: CategoryKey) => aidRows.filter((r) => r.category === key);
+  const group = (key: CategoryKey, rows: XRayRow[]): XRayGroup => ({
+    key,
+    title: CATEGORY[key].label,
+    meaning: CATEGORY[key].meaning,
+    icon: CATEGORY[key].icon,
+    color: CATEGORY[key].color,
+    rows,
+  });
+
+  const groups: XRayGroup[] = [
+    group("unclear", by("unclear")),
+    group("gift", by("gift")),
+    group("loan", by("loan")),
+    group("work", by("work")),
+    group("cost", costRows),
+  ].filter((g) => g.rows.length > 0);
+
+  if (totals.length) {
+    groups.push({
+      key: "totals",
+      title: "The letter's own totals",
+      meaning: "Shown for reference, never added again",
+      icon: "total",
+      color: "var(--color-ink-3)",
+      rows: totals,
+      note: "Each of these equals the sum of rows above, so counting it would double the money.",
+    });
+  }
+  return groups;
+}
+
+/** Which category colors each piece of evidence, for document highlights. */
+export function evidenceCategories(
+  doc: CanonicalDocument,
+  overrides: Overrides,
+): Map<string, { category: CategoryKey; itemId: string; isTotal: boolean }> {
+  const out = new Map<string, { category: CategoryKey; itemId: string; isTotal: boolean }>();
+  for (const item of [...doc.aid, ...doc.costs]) {
+    const category = categoryOf(item, doc, overrides);
+    for (const ev of item.evidence_ids) {
+      // Specific items win over totals when both cite the same line.
+      const existing = out.get(ev);
+      if (!existing || (existing.isTotal && item.role !== "rollup")) {
+        out.set(ev, { category, itemId: item.id, isTotal: item.role === "rollup" });
+      }
+    }
+  }
+  return out;
+}

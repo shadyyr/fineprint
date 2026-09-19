@@ -11,15 +11,26 @@
  * against viewport width and height. Nothing here re-derives geometry.
  */
 
-import * as pdfjs from "pdfjs-dist";
 import type { PDFDocumentProxy, PDFPageProxy } from "pdfjs-dist";
 
-let configured = false;
+type PdfJs = typeof import("pdfjs-dist");
 
-function configure() {
-  if (configured) return;
-  pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
-  configured = true;
+let pdfjsPromise: Promise<PdfJs> | null = null;
+
+/**
+ * Load pdf.js on first use, in the browser only.
+ *
+ * A top-level import gets evaluated on the server during SSR, where pdf.js
+ * warns that it needs its legacy Node build and can reach for DOM APIs that do
+ * not exist. Every caller runs from an effect, so deferring the import keeps
+ * the library out of the server bundle entirely. Type imports above are erased.
+ */
+function getPdfJs(): Promise<PdfJs> {
+  pdfjsPromise ??= import("pdfjs-dist").then((pdfjs) => {
+    pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+    return pdfjs;
+  });
+  return pdfjsPromise;
 }
 
 export interface LoadedPdf {
@@ -37,7 +48,7 @@ export interface LoadedPdf {
  * both reopen documents as the user switches files.
  */
 export async function loadPdf(data: ArrayBuffer | Uint8Array): Promise<LoadedPdf> {
-  configure();
+  const pdfjs = await getPdfJs();
   // pdf.js transfers and neuters the buffer it is given, so hand it a copy.
   const bytes = data instanceof Uint8Array ? data.slice() : new Uint8Array(data.slice(0));
   const task = pdfjs.getDocument({ data: bytes });

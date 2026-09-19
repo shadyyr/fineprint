@@ -1,26 +1,73 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * FinePrint design tokens.
+ *
+ * Category colors were chosen by running the dataviz palette validator, not
+ * by eye. The order gift | unclear | loan | work-study passes every check on
+ * both the adjacent pairlist (the stacked bar) and all pairs (legend and
+ * X-Ray list, where any two categories sit side by side): worst colorblind
+ * separation dE 13.0 against a target of 8, every fill >= 3:1 on both
+ * surfaces. The first choice, with orange for loans, collapsed gift and loans
+ * to dE 3.2 under protanopia -- the one pair this product most needs readers
+ * to tell apart.
+ *
+ * Color is never the only channel: every category also carries an icon and a
+ * text label. Light mode only; the palette is validated for these surfaces.
+ */
+@theme {
+  --color-paper: #f7f5f0;
+  --color-card: #fdfcfa;
+  --color-well: #f1eee7;
+
+  --color-ink: #1b1f2a; /* 15.1:1 on paper */
+  --color-ink-2: #4a5163; /* 7.3:1 */
+  --color-ink-3: #62687a; /* 5.1:1 -- the lightest text allowed */
+
+  --color-rule: #e4dfd6;
+  --color-rule-2: #d3ccbf;
+
+  --color-gift: #008300;
+  --color-unclear: #4a3aa7;
+  --color-loan: #d55181;
+  --color-work: #2a78d6;
+  --color-cost: #475569;
+  --color-later: #8a8e98;
+
+  --color-gift-wash: rgb(0 131 0 / 0.1);
+  --color-unclear-wash: rgb(74 58 167 / 0.1);
+  --color-loan-wash: rgb(213 81 129 / 0.12);
+  --color-work-wash: rgb(42 120 214 / 0.1);
+  --color-cost-wash: rgb(71 85 105 / 0.08);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  /* The scaffold set Arial here, silently overriding the loaded Geist face. */
+  font-family: var(--font-sans);
+}
+
+/* Figures in aligned columns. Large standalone figures keep proportional digits. */
+.figures {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

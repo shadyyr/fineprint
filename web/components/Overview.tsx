@@ -1,0 +1,250 @@
+"use client";
+
+/**
+ * The Overview exists to land one contrast: what the letter calls "financial
+ * aid" versus the money the student will not have to repay.
+ *
+ * Exactly one hero figure (gift aid this year). The letter's own total sits
+ * beside it at a smaller size so the gap between the two is the first thing a
+ * reader sees. Everything else -- the breakdown, the open question, the year-one
+ * picture -- supports that contrast; nothing on this screen competes with it.
+ */
+
+import { AidBreakdown } from "@/components/AidBreakdown";
+import { AmbiguityPrompt, type OptionImpact } from "@/components/AmbiguityPrompt";
+import { Icon } from "@/components/Icon";
+import { formatUSD, type DerivedModel, type Exclusion, type Money } from "@/lib/engine";
+import type { Ambiguity } from "@/lib/schema";
+import type { Breakdown, CategoryKey } from "@/lib/view";
+
+export interface AmbiguityView {
+  ambiguity: Ambiguity;
+  answer: string | undefined;
+  impacts: OptionImpact[];
+  itemId: string | null;
+}
+
+function exclusionText(ex: Exclusion): string {
+  switch (ex.reason) {
+    case "period_unknown":
+    case "ambiguity_unresolved":
+      return `the ${ex.amount ? formatUSD(ex.amount) + " " : ""}${ex.label}, until you answer the question above`;
+    case "term_count_unknown":
+      return `${ex.label}, because the letter doesn't say how many terms there are`;
+    case "cost_missing":
+      return ex.label.toLowerCase();
+  }
+}
+
+/**
+ * One definition-list group. dt and dd are direct children of the wrapping div,
+ * which is itself a direct child of the dl -- the only nesting the HTML spec
+ * allows, and the one screen readers rely on to pair a term with its value.
+ */
+function FigureRow({
+  label,
+  description,
+  amount,
+  money,
+  emphasis = false,
+  icon,
+}: {
+  label: string;
+  description: React.ReactNode;
+  amount: string;
+  money?: Money;
+  emphasis?: boolean;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <div
+      className={`grid grid-cols-1 gap-x-6 gap-y-0.5 px-5 py-4 sm:grid-cols-[1fr_auto] ${
+        emphasis ? "bg-well" : ""
+      }`}
+    >
+      <dt className={`flex items-center gap-2 text-ink ${emphasis ? "font-semibold" : "font-medium"}`}>
+        {icon}
+        {label}
+      </dt>
+      <dd
+        className={`figures font-semibold text-ink sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:text-right ${
+          emphasis ? "text-2xl" : "text-xl"
+        }`}
+      >
+        {amount}
+      </dd>
+      <dd className="text-sm text-ink-2 sm:col-start-1 sm:row-start-2">
+        {description}
+        {money ? <Caveat money={money} /> : null}
+      </dd>
+    </div>
+  );
+}
+
+/** One plain-language sentence about what a figure leaves out. */
+function Caveat({ money }: { money: Money }) {
+  if (money.complete) return null;
+  const pending = money.excluded.filter((e) => e.reason !== "cost_missing");
+  const missing = money.excluded.filter((e) => e.reason === "cost_missing");
+
+  return (
+    <ul className="mt-2 space-y-1 text-sm text-ink-2">
+      {pending.length ? (
+        <li className="flex gap-2">
+          <Icon name="unclear" size={16} className="mt-0.5 shrink-0 text-unclear" />
+          <span>Leaves out {pending.map(exclusionText).join(" and ")}.</span>
+        </li>
+      ) : null}
+      {missing.length ? (
+        <li className="flex gap-2">
+          <Icon name="missing" size={16} className="mt-0.5 shrink-0 text-ink-3" />
+          <span>
+            Leaves out {missing.map(exclusionText).join(", ")} &mdash; the letter names{" "}
+            {missing.length === 1 ? "this cost" : "these costs"} but gives no amount, so
+            the real figure is higher.
+          </span>
+        </li>
+      ) : null}
+    </ul>
+  );
+}
+
+export function Overview({
+  model,
+  breakdown,
+  ambiguities,
+  onAnswer,
+  onClear,
+  onShowItem,
+  onSelectCategory,
+}: {
+  model: DerivedModel;
+  breakdown: Breakdown;
+  ambiguities: AmbiguityView[];
+  onAnswer: (ambiguityId: string, value: string) => void;
+  onClear: (ambiguityId: string) => void;
+  onShowItem: (itemId: string) => void;
+  onSelectCategory: (key: CategoryKey) => void;
+}) {
+  const { yearOne } = model;
+  const headline = yearOne.headlineAidTotal?.value ?? null;
+  const gift = yearOne.giftAid;
+  const pendingGift = gift.excluded
+    .filter((e) => e.reason === "period_unknown")
+    .reduce((acc, e) => acc + (e.amount ?? 0), 0);
+
+  return (
+    <section aria-labelledby="overview-heading" className="space-y-8">
+      <h2 id="overview-heading" className="sr-only">
+        What this offer means
+      </h2>
+
+      {/* The contrast. */}
+      <div className="grid items-end gap-6 sm:grid-cols-[auto_auto_1fr] sm:gap-8">
+        {headline !== null ? (
+          <>
+            <div>
+              <p className="text-sm font-medium text-ink-2">The letter says</p>
+              <p className="mt-1 text-4xl font-semibold tracking-tight text-ink-2">
+                {formatUSD(headline)}
+              </p>
+              <p className="mt-1 text-sm text-ink-2">in &ldquo;financial aid&rdquo;</p>
+            </div>
+            <Icon
+              name="arrow-right"
+              size={28}
+              className="hidden text-ink-3 sm:mb-8 sm:block"
+            />
+          </>
+        ) : null}
+
+        <div>
+          <p className="flex items-center gap-2 text-sm font-medium text-ink">
+            <span aria-hidden="true" className="size-3 rounded-[3px] bg-gift" />
+            Money you won&rsquo;t repay, this year
+          </p>
+          <p className="mt-1 text-6xl font-semibold tracking-tight text-ink">
+            {formatUSD(gift.value)}
+          </p>
+          <p className="mt-1 text-sm text-ink-2">
+            {pendingGift > 0 ? (
+              <>
+                confirmed so far &middot; {formatUSD(pendingGift)} more depends on one
+                answer below
+              </>
+            ) : (
+              <>grants and scholarships &middot; loans and work-study are not counted</>
+            )}
+          </p>
+        </div>
+      </div>
+
+      <AidBreakdown breakdown={breakdown} onSelectCategory={onSelectCategory} />
+
+      {ambiguities.map((view) => (
+        <AmbiguityPrompt
+          key={view.ambiguity.id}
+          ambiguity={view.ambiguity}
+          answer={view.answer}
+          impacts={view.impacts}
+          onAnswer={(value) => onAnswer(view.ambiguity.id, value)}
+          onClear={() => onClear(view.ambiguity.id)}
+          onShowEvidence={view.itemId ? () => onShowItem(view.itemId as string) : undefined}
+        />
+      ))}
+
+      {/* Year one, stated precisely. Each figure says what it is and what it leaves out. */}
+      <div className="rounded-lg border border-rule bg-card">
+        <h3 className="border-b border-rule px-5 py-3 text-sm font-semibold text-ink">
+          Your first year
+        </h3>
+        <dl className="divide-y divide-rule">
+          <FigureRow
+            label="Cost of attendance"
+            description="Tuition, housing, meals and other costs the letter lists for the year."
+            amount={formatUSD(yearOne.costOfAttendance.value)}
+            money={yearOne.costOfAttendance}
+          />
+          <FigureRow
+            label="Minus gift aid"
+            icon={<Icon name="gift" size={18} className="text-gift" />}
+            description="Only money you don't repay. Loans and work-study are not subtracted."
+            amount={`−${formatUSD(gift.value)}`}
+          />
+          <FigureRow
+            label="Estimated amount to cover"
+            description="What's left to pay from savings, earnings or loans."
+            amount={formatUSD(yearOne.amountToCover.value)}
+            money={yearOne.amountToCover}
+            emphasis
+          />
+        </dl>
+
+        {/* How it might be covered -- supplementary, so not part of the figure list. */}
+        <div className="grid gap-4 border-t border-rule px-5 py-4 sm:grid-cols-2">
+          <p className="flex gap-3 text-sm text-ink-2">
+            <Icon name="loan" size={20} className="mt-0.5 shrink-0 text-loan" />
+            <span>
+              <span className="block font-medium text-ink">
+                Loans offered: <span className="figures">{formatUSD(yearOne.loansOffered.value)}</span>
+              </span>
+              Could cover part of this, but you repay it with interest. You don&rsquo;t have
+              to accept it.
+            </span>
+          </p>
+          <p className="flex gap-3 text-sm text-ink-2">
+            <Icon name="work" size={20} className="mt-0.5 shrink-0 text-work" />
+            <span>
+              <span className="block font-medium text-ink">
+                Work-study offered:{" "}
+                <span className="figures">{formatUSD(yearOne.workStudyOffered.value)}</span>
+              </span>
+              Paid as wages for hours you work during the year &mdash; not taken off your bill
+              up front.
+            </span>
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}

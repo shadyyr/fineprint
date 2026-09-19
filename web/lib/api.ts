@@ -44,7 +44,7 @@ export async function postFile(path: string, file: File | Blob, filename: string
       body,
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-  } catch (cause) {
+  } catch {
     throw new ApiError(
       503,
       "FinePrint could not reach the extraction service. Is it running on port 8000?",
