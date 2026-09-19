@@ -114,7 +114,7 @@ export function effectivePeriod(
   return { period: statedPeriod, fromUser: false };
 }
 
-/** The ambiguity blocking this item's period, if one is still unanswered. */
+/** The ambiguity blocking this item (its period or its amount), if still unanswered. */
 export function blockingAmbiguity(
   itemId: string,
   overrides: Overrides,
@@ -122,8 +122,38 @@ export function blockingAmbiguity(
 ): Ambiguity | undefined {
   return ambiguities.find(
     (a) =>
-      a.target === `${itemId}.period` &&
+      (a.target === `${itemId}.period` || a.target === `${itemId}.amount`) &&
       a.blocks_headline &&
       !overrides.ambiguityAnswers[a.id],
   );
+}
+
+/**
+ * The amount to use for an item, or null while the letter leaves it open.
+ *
+ * An `amount_unclear` ambiguity (say, a letter listing both an in-state and an
+ * out-of-state rate without saying which applies) holds the item out until the
+ * student picks an option; each option's value is the amount as a decimal
+ * string. The stored `amount` is only a placeholder until then -- never
+ * counted, never shown as the answer.
+ */
+export function effectiveAmount(
+  itemId: string,
+  statedAmount: number,
+  overrides: Overrides,
+  ambiguities: Ambiguity[],
+): { amount: number | null; blocking?: Ambiguity } {
+  const direct = overrides.itemOverrides[itemId]?.amount;
+  if (typeof direct === "number") return { amount: direct };
+
+  const amb = ambiguities.find(
+    (a) => a.kind === "amount_unclear" && a.target === `${itemId}.amount`,
+  );
+  if (!amb) return { amount: statedAmount };
+
+  const chosen = Number(overrides.ambiguityAnswers[amb.id]);
+  if (overrides.ambiguityAnswers[amb.id] !== undefined && Number.isFinite(chosen)) {
+    return { amount: chosen };
+  }
+  return amb.blocks_headline ? { amount: null, blocking: amb } : { amount: statedAmount };
 }

@@ -19,6 +19,7 @@ export * from "./money";
 export * from "./periods";
 export {
   computeYearOne,
+  headlineRollup,
   resolveItem,
   rollupAid,
   summableAid,

@@ -306,3 +306,93 @@ describe("determinism", () => {
     expect(a).toEqual(b);
   });
 });
+
+// Codex's second demo sample: a Fall/Spring worksheet with one aid subtotal
+// per term. Neither term's subtotal is the letter's total for the year.
+describe("per-term letter (Summit sample)", () => {
+  const summit = parseCanonicalDocument(
+    JSON.parse(
+      readFileSync(join(__dirname, "../../../fixtures/samples/summit-per-term.json"), "utf8"),
+    ),
+  );
+  const model = derive(summit, emptyOverrides(), defaultAssumptions());
+
+  it("never quotes a total the pipeline derived as what the letter says", () => {
+    // The two per-term subtotals are merged into one yearly rollup marked
+    // "derived" -- FinePrint's sum, not words printed on the letter.
+    const rollups = summit.aid.filter((a) => a.role === "rollup");
+    expect(rollups.length).toBeGreaterThan(0);
+    expect(rollups.every((r) => r.provenance === "derived")).toBe(true);
+    expect(model.yearOne.headlineAidTotal).toBeNull();
+  });
+
+  // Regression for S1-FIX (CHANGES.log 052/055): per-term rows used to be
+  // annualized x2 each, reading 33,000.
+  it("sums both terms of gift aid into the year exactly once", () => {
+    // Pell 3,200 + 3,300 and STEM 4,900 + 5,100; the unanswered scholarship waits.
+    expect(model.yearOne.giftAid.value).toBe(16500);
+    expect(model.yearOne.giftAid.complete).toBe(false);
+  });
+});
+
+// Residency (TASKS R1/UI-R1): a letter that lists both an in-state and an
+// out-of-state rate without saying which applies. The pipeline emits one item
+// plus an amount_unclear ambiguity; the engine must neither count the
+// placeholder nor pick a rate.
+describe("amount the letter leaves open (in-state or out-of-state)", () => {
+  const tuition = doc.costs.find((c) => c.category === "tuition" && c.role === "item")!;
+  const residency = {
+    ...doc,
+    ambiguities: [
+      ...doc.ambiguities,
+      {
+        id: "amb_residency",
+        kind: "amount_unclear" as const,
+        target: `${tuition.id}.amount`,
+        severity: "material" as const,
+        question: "Which tuition rate applies to you?",
+        why: "The letter lists both rates.",
+        options: [
+          { value: String(tuition.amount), label: "In-state" },
+          { value: "52000", label: "Out-of-state" },
+        ],
+        blocks_headline: true,
+        evidence_ids: tuition.evidence_ids,
+      },
+    ],
+  };
+  // Cost of attendance doesn't depend on the scholarship question, so no answers.
+  const answered = emptyOverrides();
+  const base = derive(doc, answered, defaultAssumptions()).yearOne.costOfAttendance.value;
+  const withAnswer = (value?: string) =>
+    derive(
+      residency,
+      {
+        ...answered,
+        ambiguityAnswers: {
+          ...answered.ambiguityAnswers,
+          ...(value === undefined ? {} : { amb_residency: value }),
+        },
+      },
+      defaultAssumptions(),
+    ).yearOne;
+
+  it("holds the item out of every total until answered, and says why", () => {
+    const y = withAnswer();
+    expect(y.costOfAttendance.value).toBe(base - tuition.amount);
+    expect(y.costOfAttendance.complete).toBe(false);
+    const ex = y.costOfAttendance.excluded.find((e) => e.id === `excl_${tuition.id}`);
+    expect(ex?.reason).toBe("ambiguity_unresolved");
+    expect(ex?.amount).toBeNull();
+    expect(ex?.ambiguityId).toBe("amb_residency");
+  });
+
+  it("uses the chosen rate once answered", () => {
+    expect(withAnswer("52000").costOfAttendance.value).toBe(base - tuition.amount + 52000);
+    expect(withAnswer(String(tuition.amount)).costOfAttendance.value).toBe(base);
+  });
+
+  it("ignores an answer that isn't an amount rather than guessing", () => {
+    expect(withAnswer("out_of_state").costOfAttendance.value).toBe(base - tuition.amount);
+  });
+});

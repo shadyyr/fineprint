@@ -5,13 +5,17 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { Icon } from "@/components/Icon";
+import { DEFAULT_SAMPLE, sampleHref, useSamples } from "@/lib/samples";
 import { useSession } from "@/store/session";
 
 type Health = "checking" | "live" | "unavailable";
 
+const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+
 export function StartActions() {
   const router = useRouter();
   const inputId = useId();
+  const privacyId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [health, setHealth] = useState<Health>("checking");
   const [dragging, setDragging] = useState(false);
@@ -38,6 +42,12 @@ export function StartActions() {
       setError("FinePrint reads PDF files. If your offer is a web page, save it as a PDF first.");
       return;
     }
+    // The hosted site can't accept a request body much over 4.5 MB; aid
+    // letters are almost always far smaller.
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setError("That PDF is larger than 4 MB, more than this site can accept. Try a smaller export of the letter.");
+      return;
+    }
     setBusy(true);
     router.push("/analyze");
     const ok = await useSession.getState().analyzeFile(file);
@@ -48,6 +58,7 @@ export function StartActions() {
   };
 
   const uploadable = health === "live" && !busy;
+  const otherSamples = useSamples().filter((s) => s.slug !== DEFAULT_SAMPLE.slug);
 
   return (
     <div className="space-y-4">
@@ -96,11 +107,23 @@ export function StartActions() {
               type="file"
               accept="application/pdf"
               disabled={!uploadable}
+              aria-describedby={health === "live" ? privacyId : undefined}
               className="sr-only"
               onChange={(e) => void submit(e.target.files?.[0])}
             />
           </label>
         </div>
+        {health === "live" ? (
+          // Shown before anyone chooses a file (docs/DEPLOY_API.md): an aid
+          // letter carries personal details, and it leaves this browser.
+          <p id={privacyId} className="mt-4 border-t border-rule pt-3 text-xs leading-relaxed text-ink-2">
+            <span className="font-semibold text-ink">Where your letter goes:</span> to
+            FinePrint&rsquo;s server and to OpenAI, which reads it. FinePrint doesn&rsquo;t
+            save the letter or what&rsquo;s in it. OpenAI doesn&rsquo;t train on it but may keep
+            it for up to 30 days for abuse checks. If you can, cover your name and student ID
+            first.
+          </p>
+        ) : null}
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -113,6 +136,24 @@ export function StartActions() {
         </Link>
         <p className="text-sm text-ink-2">A made-up letter &mdash; no real student&rsquo;s data.</p>
       </div>
+      {otherSamples.length ? (
+        <p className="text-sm text-ink-2">
+          Or a differently laid-out letter:{" "}
+          {otherSamples.map((s, i) => (
+            <span key={s.slug}>
+              {i > 0 ? " · " : null}
+              <Link
+                href={sampleHref(s.slug)}
+                prefetch={false}
+                className="rounded font-medium text-ink underline decoration-rule-2 underline-offset-4 outline-offset-2 hover:decoration-ink focus-visible:outline-2 focus-visible:outline-ink"
+              >
+                {s.title}
+              </Link>{" "}
+              <span className="text-ink-3">({s.layout.toLowerCase()})</span>
+            </span>
+          ))}
+        </p>
+      ) : null}
 
       {error ? (
         <p role="alert" className="text-sm font-medium text-ink">

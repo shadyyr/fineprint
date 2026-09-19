@@ -9,6 +9,18 @@
 
 import { ApiError, postFile } from "@/lib/api";
 
+// A live read can take most of a minute (and the client waits up to 90 s), so
+// give the function room beyond Vercel's default.
+export const maxDuration = 120;
+
+/** The student's address as Vercel reports it; the leftmost forwarded hop. */
+function clientIp(request: Request): string | null {
+  const real = request.headers.get("x-real-ip");
+  if (real) return real.trim();
+  const forwarded = request.headers.get("x-forwarded-for");
+  return forwarded ? forwarded.split(",")[0].trim() || null : null;
+}
+
 export async function POST(request: Request) {
   const form = await request.formData();
   const file = form.get("file");
@@ -18,10 +30,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    return Response.json(await postFile("/analyze", file, file.name));
+    return Response.json(await postFile("/analyze", file, file.name, clientIp(request)));
   } catch (error) {
     if (error instanceof ApiError) {
-      return Response.json({ detail: error.detail }, { status: error.status });
+      const headers = error.retryAfter ? { "Retry-After": error.retryAfter } : undefined;
+      return Response.json({ detail: error.detail }, { status: error.status, headers });
     }
     throw error;
   }

@@ -11,21 +11,35 @@ import { SourceBadge } from "@/components/SourceBadge";
 import { XRay, type PanelGroup } from "@/components/XRay";
 import { defaultAssumptions, derive, formatUSD, type Assumptions } from "@/lib/engine";
 import { scrollBehavior } from "@/lib/motion";
+import { DEFAULT_SAMPLE, sampleHref, useSamples } from "@/lib/samples";
 import type { CanonicalDocument } from "@/lib/schema";
 import { aidBreakdown, scenarioLevers, xrayGroups, type CategoryKey } from "@/lib/view";
 import { useSession } from "@/store/session";
 
-export function AnalyzeView({ autoloadSample }: { autoloadSample: boolean }) {
-  const { status, error, failed, doc, pdf, overrides, assumptions, selectedItemId } = useSession();
+/** `sample`: null when the URL names no sample, "" for the first, else a slug. */
+export function AnalyzeView({ sample }: { sample: string | null }) {
+  const { status, error, failed, sampleSlug, doc, pdf, overrides, assumptions, selectedItemId } =
+    useSession();
   const { loadSample, answer, clearAnswer, select, reset, setAssumptions } = useSession.getState();
 
+  // Load the requested sample unless it is already loaded (or already failed:
+  // the error page offers the retry, so no loop).
   useEffect(() => {
-    if (autoloadSample && !useSession.getState().doc) void loadSample();
-  }, [autoloadSample, loadSample]);
+    if (sample === null) return;
+    if (useSession.getState().sampleSlug !== (sample || DEFAULT_SAMPLE.slug)) {
+      void loadSample(sample || undefined);
+    }
+  }, [sample, loadSample]);
 
   if (status === "loading") return <Reading />;
   if (status === "error") {
-    return <Failure message={error} sample={failed === "sample"} onSample={() => void loadSample()} />;
+    return (
+      <Failure
+        message={error}
+        sample={failed === "sample"}
+        onSample={() => void loadSample(failed === "sample" ? (sampleSlug ?? undefined) : undefined)}
+      />
+    );
   }
   if (!doc || !pdf) return <Empty onSample={() => void loadSample()} />;
 
@@ -41,6 +55,7 @@ export function AnalyzeView({ autoloadSample }: { autoloadSample: boolean }) {
       onSelect={select}
       onReset={reset}
       onAssumptions={setAssumptions}
+      sampleSlug={sampleSlug}
     />
   );
 }
@@ -56,6 +71,7 @@ function Analysis({
   onSelect,
   onReset,
   onAssumptions,
+  sampleSlug,
 }: {
   doc: CanonicalDocument;
   pdf: ArrayBuffer | string;
@@ -67,7 +83,12 @@ function Analysis({
   onSelect: (id: string | null) => void;
   onReset: () => void;
   onAssumptions: (patch: Partial<Assumptions>) => void;
+  /** The loaded demo sample, or null for an upload. */
+  sampleSlug: string | null;
 }) {
+  const samples = useSamples();
+  const otherSamples = sampleSlug ? samples.filter((s) => s.slug !== sampleSlug) : [];
+
   // The engine is pure, so recomputing on every answer is cheap and exact.
   const model = useMemo(() => derive(doc, overrides, assumptions), [doc, overrides, assumptions]);
   const breakdown = useMemo(
@@ -110,9 +131,20 @@ function Analysis({
   const pending = doc.ambiguities.find(
     (a) => a.blocks_headline && !overrides.ambiguityAnswers[a.id],
   );
-  const pendingItem = pending
-    ? doc.aid.find((a) => `${a.id}.period` === pending.target) ?? null
-    : null;
+  // What each open question holds out -- an award's period, or a cost whose
+  // amount the letter leaves open (in-state or out-of-state, say). Every one is
+  // named, not just the first.
+  const pendingLabels = doc.ambiguities
+    .filter((a) => a.blocks_headline && !overrides.ambiguityAnswers[a.id])
+    .map((a) => {
+      const item = [...doc.aid, ...doc.costs].find(
+        (i) => `${i.id}.period` === a.target || `${i.id}.amount` === a.target,
+      );
+      if (!item) return null;
+      // An open amount is the question itself, so don't print the placeholder.
+      return a.target.endsWith(".amount") ? item.label : `${formatUSD(item.amount)} ${item.label}`;
+    })
+    .filter((label): label is string => label !== null);
 
   const groups: PanelGroup[] = useMemo(() => {
     const base: PanelGroup[] = xrayGroups(doc, overrides);
@@ -131,6 +163,7 @@ function Analysis({
           amount: null,
           category: null,
           isTotal: false,
+          derived: false,
           periodText: "not stated",
           conditions: [],
           evidenceIds: mc.evidence_ids,
@@ -186,21 +219,42 @@ function Analysis({
       </header>
 
       <main className="mx-auto w-full max-w-7xl flex-1 space-y-16 px-4 py-10 sm:px-6">
-        <Overview
-          model={model}
-          breakdown={breakdown}
-          ambiguities={ambiguities}
-          onAnswer={onAnswer}
-          onClear={onClear}
-          onShowItem={showItem}
-          onSelectCategory={selectCategory}
-          listsCosts={listsCosts}
-          unverifiedCount={doc.unverified_claims.length}
-          loans={levers.loans}
-          workStudy={levers.workStudy}
-          assumptions={assumptions}
-          onAssumptions={onAssumptions}
-        />
+        <div className="space-y-6">
+          {otherSamples.length ? (
+            <nav aria-label="Other sample letters" className="text-sm text-ink-2">
+              A made-up sample letter. Another layout:{" "}
+              {otherSamples.map((s, i) => (
+                <span key={s.slug}>
+                  {i > 0 ? " · " : null}
+                  <Link
+                    href={sampleHref(s.slug)}
+                    prefetch={false}
+                    className="rounded font-medium text-ink underline decoration-rule-2 underline-offset-4 outline-offset-2 hover:decoration-ink focus-visible:outline-2 focus-visible:outline-ink"
+                  >
+                    {s.title}
+                  </Link>{" "}
+                  <span className="text-ink-3">({s.layout.toLowerCase()})</span>
+                </span>
+              ))}
+            </nav>
+          ) : null}
+
+          <Overview
+            model={model}
+            breakdown={breakdown}
+            ambiguities={ambiguities}
+            onAnswer={onAnswer}
+            onClear={onClear}
+            onShowItem={showItem}
+            onSelectCategory={selectCategory}
+            listsCosts={listsCosts}
+            unverifiedCount={doc.unverified_claims.length}
+            loans={levers.loans}
+            workStudy={levers.workStudy}
+            assumptions={assumptions}
+            onAssumptions={onAssumptions}
+          />
+        </div>
 
         <XRay doc={doc} pdf={pdf} groups={groups} selectedId={selectedId} onSelect={onSelect} />
 
@@ -212,7 +266,8 @@ function Analysis({
           loans={levers.loans}
           workStudy={levers.workStudy}
           residential={levers.residential}
-          pendingLabel={pendingItem ? `${formatUSD(pendingItem.amount)} ${pendingItem.label}` : null}
+          pendingLabel={pendingLabels.length ? pendingLabels.join(" and the ") : null}
+          pendingCount={pendingLabels.length}
           onChange={onAssumptions}
           onReset={() => onAssumptions(defaultAssumptions())}
           listsCosts={listsCosts}

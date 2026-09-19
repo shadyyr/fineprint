@@ -10,7 +10,9 @@
 import type { IconName } from "@/components/Icon";
 import {
   blockingAmbiguity,
+  effectiveAmount,
   effectivePeriod,
+  headlineRollup,
   resolveItem,
   summableAid,
   type Assumptions,
@@ -152,7 +154,10 @@ export function aidBreakdown(
   };
 
   for (const item of summableAid(doc)) {
-    const face = overrides.itemOverrides[item.id]?.amount ?? item.amount;
+    const faceOrNull = effectiveAmount(item.id, item.amount, overrides, doc.ambiguities).amount;
+    // An amount the letter leaves open is not part of any segment yet.
+    if (faceOrNull === null) continue;
+    const face = faceOrNull;
     const category = categoryOf(item, doc, overrides);
 
     if (category === "gift") {
@@ -177,7 +182,7 @@ export function aidBreakdown(
   // Validated adjacency order for the stacked bar.
   const order: CategoryKey[] = ["gift", "later", "unclear", "loan", "work"];
   const segments = order.map((k) => sums[k]).filter((s) => s.amount > 0);
-  const headline = doc.aid.find((a) => a.role === "rollup")?.amount ?? null;
+  const headline = headlineRollup(doc)?.amount ?? null;
 
   return {
     headline,
@@ -189,9 +194,12 @@ export function aidBreakdown(
 export interface XRayRow {
   id: string;
   label: string;
-  amount: number;
+  /** Null while the letter leaves the amount open (e.g. in-state or out-of-state). */
+  amount: number | null;
   category: CategoryKey;
   isTotal: boolean;
+  /** FinePrint added this up from several of the letter's lines (e.g. Fall + Spring). */
+  derived: boolean;
   periodText: string;
   conditions: string[];
   evidenceIds: string[];
@@ -212,13 +220,15 @@ export interface XRayGroup {
 function toRow(item: AnyItem, doc: CanonicalDocument, overrides: Overrides): XRayRow {
   const { period } = effectivePeriod(item.id, item.period, overrides, doc.ambiguities);
   const amb = blockingAmbiguity(item.id, overrides, doc.ambiguities);
+  const { amount } = effectiveAmount(item.id, item.amount, overrides, doc.ambiguities);
   return {
     id: item.id,
     label: item.label,
-    amount: overrides.itemOverrides[item.id]?.amount ?? item.amount,
+    amount,
     category: categoryOf(item, doc, overrides),
     isTotal: item.role === "rollup",
-    periodText: PERIOD_TEXT[period],
+    derived: item.provenance === "derived",
+    periodText: amount === null ? "amount depends on your answer" : PERIOD_TEXT[period],
     conditions: isAid(item) ? item.conditions ?? [] : [],
     evidenceIds: item.evidence_ids,
     ambiguityId: amb?.id,

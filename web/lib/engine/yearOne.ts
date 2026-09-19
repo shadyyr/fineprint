@@ -8,7 +8,7 @@
 
 import type { AidItem, CanonicalDocument, CostItem } from "../schema";
 import { money, subtractMoney, sumMoney } from "./money";
-import { annualize, blockingAmbiguity, effectivePeriod } from "./periods";
+import { annualize, blockingAmbiguity, effectiveAmount, effectivePeriod } from "./periods";
 import type {
   Assumptions,
   Exclusion,
@@ -46,6 +46,20 @@ export function rollupAid(doc: CanonicalDocument): AidItem | undefined {
   return doc.aid.find((a) => a.role === "rollup");
 }
 
+/**
+ * The letter's own "total aid" figure, quoted as the headline -- only when the
+ * letter states exactly one, and states it for the year. A per-term letter's
+ * "Term Aid Package -- Fall" is one semester, not the letter's total; adding
+ * the terms up would be FinePrint's arithmetic presented as the letter's words.
+ * No single stated annual total means no headline quote.
+ */
+export function headlineRollup(doc: CanonicalDocument): AidItem | undefined {
+  // Only a figure printed on the letter can be quoted as "the letter says";
+  // a total the pipeline derived (say, Fall + Spring) is not the letter's words.
+  const rollups = doc.aid.filter((a) => a.role === "rollup" && a.provenance === "source");
+  return rollups.length === 1 && rollups[0].period === "annual" ? rollups[0] : undefined;
+}
+
 /** Resolve one item to an annual amount under the current overrides. */
 export function resolveItem(
   item: CostItem | AidItem,
@@ -53,7 +67,24 @@ export function resolveItem(
   overrides: Overrides,
   assumptions: Assumptions,
 ): ResolvedItem {
-  const amount = overrides.itemOverrides[item.id]?.amount ?? item.amount;
+  const settled = effectiveAmount(item.id, item.amount, overrides, doc.ambiguities);
+  if (settled.amount === null) {
+    return {
+      id: item.id,
+      label: item.label,
+      annual: null,
+      derived: false,
+      exclusion: {
+        id: `excl_${item.id}`,
+        label: item.label,
+        amount: null,
+        reason: "ambiguity_unresolved",
+        detail: "The letter lists more than one amount and doesn't say which applies.",
+        ambiguityId: settled.blocking?.id,
+      },
+    };
+  }
+  const amount = settled.amount;
   const { period } = effectivePeriod(
     item.id,
     item.period,
@@ -237,7 +268,7 @@ export function computeYearOne(
     : loansAccepted;
   const outOfPocket = subtractMoney(amountToCover, offsets);
 
-  const rollup = rollupAid(doc);
+  const rollup = headlineRollup(doc);
   const headlineAidTotal = rollup ? money(rollup.amount) : null;
 
   return {

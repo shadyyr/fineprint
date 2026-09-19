@@ -82,6 +82,7 @@ export function FourYear({
   workStudy,
   residential,
   pendingLabel,
+  pendingCount,
   onChange,
   onReset,
   onShowQuestion,
@@ -97,6 +98,8 @@ export function FourYear({
   residential: number;
   /** Set while an open question keeps an award out of these totals. */
   pendingLabel: string | null;
+  /** How many open questions pendingLabel names. */
+  pendingCount: number;
   onChange: (patch: Partial<Assumptions>) => void;
   onReset: () => void;
   onShowQuestion: () => void;
@@ -151,7 +154,7 @@ export function FourYear({
               <Icon name="unclear" size={20} className="shrink-0 text-unclear" />
               <p className="min-w-0 flex-1 text-sm text-ink">
                 These totals leave out the <strong className="font-semibold">{pendingLabel}</strong>{" "}
-                until you answer whether it&rsquo;s per year or in total.
+                until you answer {pendingCount > 1 ? "the questions" : "the question"} above.
               </p>
               <button
                 type="button"

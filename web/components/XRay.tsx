@@ -368,7 +368,15 @@ function Panel({
                     <span className="min-w-0 flex-1">
                       <span className="block font-medium text-ink">{row.label}</span>
                       <span className="block text-sm text-ink-2">
-                        {row.isTotal ? "Stated total · " : ""}
+                        {/* A derived figure is FinePrint's sum of the letter's lines,
+                            never presented as a number the letter printed. */}
+                        {row.isTotal
+                          ? row.derived
+                            ? "Letter's term totals, added · "
+                            : "Stated total · "
+                          : row.derived
+                            ? "Terms added together · "
+                            : ""}
                         {row.periodText}
                       </span>
                     </span>

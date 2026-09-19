@@ -21,6 +21,8 @@ export class ApiError extends Error {
   constructor(
     readonly status: number,
     readonly detail: string,
+    /** Seconds, from the service's Retry-After on a 429. */
+    readonly retryAfter: string | null = null,
   ) {
     super(detail);
     this.name = "ApiError";
@@ -33,15 +35,31 @@ export class ApiError extends Error {
  * Network failure is surfaced as a 503 (a timeout as a 504) rather than thrown
  * raw, so the student sees a sentence instead of a fetch error.
  */
-export async function postFile(path: string, file: File | Blob, filename: string) {
+export async function postFile(
+  path: string,
+  file: File | Blob,
+  filename: string,
+  clientIp: string | null = null,
+) {
   const body = new FormData();
   body.append("file", file, filename);
+
+  // The service rate-limits per student. It only ever sees this server's
+  // address, so pass the student's along -- with a shared secret, because the
+  // service's URL is public and a bare forwarded-for header could be forged.
+  const headers: Record<string, string> = {};
+  const secret = process.env.FINEPRINT_PROXY_SECRET;
+  if (secret && clientIp) {
+    headers["X-FinePrint-Client-IP"] = clientIp;
+    headers["X-FinePrint-Proxy-Secret"] = secret;
+  }
 
   let response: Response;
   try {
     response = await fetch(`${API_BASE}${path}`, {
       method: "POST",
       body,
+      headers,
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
   } catch (cause) {
@@ -61,7 +79,7 @@ export async function postFile(path: string, file: File | Blob, filename: string
 
   if (!response.ok) {
     const detail = await readDetail(response);
-    throw new ApiError(response.status, detail);
+    throw new ApiError(response.status, detail, response.headers.get("Retry-After"));
   }
 
   return response.json();
