@@ -26,9 +26,10 @@
 
 Also added (not in the original plan): a three-layer secret/PII guard —
 hardened `.gitignore`, a pre-commit scanner (`scripts/check_secrets.sh`)
-blocking key-shaped strings, `.env` files, oversized files and PDFs outside
-`fixtures/`|`corpus/letters/`, and self-healing hook installation via
-`npm install`. The scanner currently reports a clean tracked tree.
+blocking key-shaped strings, `.env` files, oversized files, and PDFs outside
+the exact synthetic fixture, corpus, and generated public-sample paths, plus
+self-healing hook installation via `npm install`. The scanner currently reports
+a clean tracked tree.
 
 ## Context
 
@@ -189,7 +190,7 @@ That comparison is the visual center of the screen and the demo's money shot. Su
 
 ## Fallback honesty
 
-A cached/fixture result **always carries a persistent, visible badge** identifying it as such, and the UI never presents it as a successful live extraction (§20.2). The badge is not subtle, not a tooltip, and not dismissible. `SourceBadge.tsx` renders one of: `live extraction`, `cached sample`, `fixture (offline)`. If asked during judging, the honest answer is already on screen.
+A cached/fixture result **always carries a persistent, visible badge** identifying it as such, and the UI never presents it as a successful live extraction (§20.2). The badge is not subtle, not a tooltip, and not dismissible. `SourceBadge.tsx` renders one of: `Read live`, `Cached analysis`, or `Precomputed sample`. If asked during judging, the honest answer is already on screen.
 
 ---
 
@@ -223,7 +224,7 @@ Sleep is in the schedule. A broken demo from an exhausted solo dev scores worse 
 3. Sankey flow → keep the stacked bar
 4. Corpus letters 4+ → hold the floor at three substantially different layouts
 
-**Never cut:** live extraction, verified evidence linking, deterministic engine correctness, uncertainty handling, or submission materials. Falling back to the fixture during judging is an emergency measure, disclosed on screen — not a planned scope reduction.
+**Never cut:** live extraction, verified evidence linking, deterministic engine correctness, uncertainty handling, or submission materials. The visibly labelled cached sample is the emergency demo path if live extraction is unavailable; a failed personal upload is never silently replaced with sample results.
 
 ### Outside the hackathon feature freeze
 OCR / scanned-document / image-only input. Supporting it would require a new

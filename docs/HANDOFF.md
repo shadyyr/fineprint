@@ -1,8 +1,9 @@
 # FinePrint engineering handoff
 
-Updated 2026-09-19 during the final stabilization pass. The current committed
-HEAD is `3ce8732c9d3f5e9e7c62fcf357661eab0d781a83`; final stabilization changes are
-still uncommitted unless a later `CHANGES.log` entry says otherwise.
+Updated 2026-09-20 during the submission-readiness audit. The current product
+HEAD is `805915ed9342c44174017e13ec46d6ce05364d2c` and matches `origin/main`.
+All product stabilization work through that commit is committed and pushed;
+this audit changes current-state documentation only.
 
 Deadline: Sunday 2026-09-20, 11:59 PM PT. Engineering is feature-frozen. Only
 correctness, reliability, accessibility, deployment, severe visual, or
@@ -76,17 +77,24 @@ and public mode fails closed without quota storage. Direct unauthenticated
 analysis returns 403. `/debug/ingest` is hidden in public mode. Terra is the
 normal model; Sol runs only after typed-output failure, zero verified facts, or
 an evidence rejection—not for a legitimate ambiguity. OpenAI SDK retries are
-disabled, each call has a 40-second timeout, and logs contain usage counts only.
+disabled. A model call may use up to 100 seconds; the pipeline has a 150-second
+total budget and only starts Sol when at least 30 seconds remain. The web proxy
+waits up to 165 seconds. Logs contain usage counts only.
 
 The cached sample path is independent of the API and remains the guaranteed
 demo route. A failed personal upload is never replaced with sample results.
+
+On 2026-09-20, GitHub reported successful Vercel checks for both the web and API
+projects at the current HEAD. The public web URL returned HTTP 200, and API
+`/health` reported live extraction, public mode, proxy identity, and quota
+storage all enabled.
 
 ## Verified state
 
 Final stabilization checks:
 
-- API: `84 passed` (`pytest api/tests -q`; six dependency deprecation warnings).
-- Web: `50 passed` across two Vitest files.
+- API: `87 passed` (`pytest api/tests -q`; dependency deprecation warnings only).
+- Web: `53 passed` across two Vitest files.
 - Corpus: `5/5 passed`, zero invariant violations.
 - TypeScript: clean.
 - ESLint: clean.
@@ -104,13 +112,17 @@ Final stabilization checks:
 
 ## Remaining human boundary
 
-`H2` remains waiting because `uploads/` is absent. If Shade adds a private real
-letter there, run it locally, report only generic failure categories, and turn
-every bug into a synthetic regression. Never commit or quote the private file,
-its text, or its model response.
+`H2` was not performed: no private real student letter was placed in `uploads/`
+or run through the debugging loop. It is explicitly optional and non-blocking
+for submission because the repository already has the five-layout synthetic
+corpus, two public demo layouts, a publicly posted institutional sample test,
+production live extraction, and the full verification matrix. If Shade later
+chooses to add a private letter, keep it in gitignored `uploads/`, report only
+generic failure categories, and turn every bug into a synthetic regression.
+Never commit or quote the private file, its text, or its model response.
 
-The current uncommitted stabilization changes must be reviewed, committed, and
-pushed before production can receive them. Do not deploy from an older commit.
+The current product HEAD is deployed successfully. Do not redeploy from an
+older commit.
 
 ## Known limits
 

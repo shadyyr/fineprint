@@ -99,5 +99,6 @@ page after touching anything in the ingest path, including with a rotated PDF.
 
 Aid letters contain personal information. Never commit a real one — put it in
 `uploads/` (gitignored). A pre-commit hook blocks keys, `.env` files, and PDFs
-outside `fixtures/`|`corpus/letters/`. Setup and rationale in the
+outside the exact approved synthetic fixture, corpus, and generated public-
+sample paths. Setup and rationale in the
 [README](README.md).

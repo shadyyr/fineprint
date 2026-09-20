@@ -4,33 +4,37 @@ Shade approved a small public deployment for the demo video on 2026-09-19.
 The API is a second Vercel project from this repository with Root Directory
 `api/`; it is not a Render service.
 
-**Current production state (2026-09-19):** the API is deployed at
+**Current production state (verified 2026-09-20):** the API is deployed at
 `https://api-six-pi-52.vercel.app`, public mode is enabled, Upstash-backed
 quotas are configured, and the web project at
 `https://fineprint-aid.vercel.app` is connected through its server-side proxy.
-Direct analysis calls without the shared proxy secret are rejected. The steps
-below remain the rebuild, verification, and rollback runbook.
+Direct analysis calls without the shared proxy secret are rejected. Both
+Vercel checks succeeded for product HEAD
+`805915ed9342c44174017e13ec46d6ce05364d2c`; the web returned HTTP 200 and API
+`/health` reported live extraction and quota storage enabled. The steps below
+remain the rebuild, verification, and rollback runbook.
 
 Shade performs every account, billing, key, and secret step. Never paste an
 OpenAI key, Redis token, or FinePrint secret into chat, Git, a command output,
 or a screenshot. Codex never needs to see any of their values.
 
-The sample-only site at <https://fineprint-aid.vercel.app> remains usable during
-every step. Do not connect the web project to the API until the disabled and
-enabled checks below pass and the disclosure/headers are live on the web site.
+The cached sample path at <https://fineprint-aid.vercel.app> remains usable
+during every step. Do not connect a new web deployment to the API until the
+disabled and enabled checks below pass and the disclosure/headers are live.
 
 ## What the service enforces
 
 [`api/vercel.json`](../api/vercel.json) configures Vercel's recognized
-`main.py:app` FastAPI entrypoint for a 120-second maximum duration and excludes
+`main.py:app` FastAPI entrypoint for a 180-second maximum duration and excludes
 tests and fixture directories from the function bundle. A clean local staging
 install measured 144,121,838 file bytes (157,536 KiB on disk), below Vercel's
 500 MB standard uncompressed Python limit. The first Vercel build is the final
 size check because Linux wheels can differ from the local macOS wheels.
 
-The service starts with `FINEPRINT_PUBLIC_API_ENABLED=false`. In public mode,
-`POST /analyze` returns 503 before reading a file or calling OpenAI until that
-switch is enabled. `POST /debug/ingest` always returns 404 in public mode.
+The service defaults `FINEPRINT_PUBLIC_API_ENABLED` to `false`; production sets
+it to `true`. When the switch is false, `POST /analyze` returns 503 before
+reading a file or calling OpenAI. `POST /debug/ingest` always returns 404 in
+public mode.
 
 Once enabled, `/analyze` requires both headers sent by the web project:
 
@@ -64,11 +68,14 @@ the primary result fails the typed output contract, verifies no financial facts,
 or has a claim rejected by the evidence gate. A genuine ambiguity is kept for
 the student to answer and does not trigger Sol. One analysis can therefore make
 two provider calls, but the SDK performs no additional automatic retries. Each
-call has a 40-second timeout so a primary plus fallback can fit inside the web
-route's 90-second budget. The app cap limits analyses, not tokens or dollars;
-the OpenAI project hard spend limit remains the billing backstop. Hard-limit
-enforcement can lag slightly. Vercel logs record token counts, fallback status,
-and elapsed milliseconds only—not letter or model content.
+call may use up to 100 seconds. The pipeline has a 150-second total budget and
+starts Sol only when at least 30 seconds remain; otherwise it returns a usable
+primary result instead of turning it into a timeout error. The web proxy waits
+165 seconds, inside the web route's 200-second function duration. The app cap
+limits analyses, not tokens or dollars; the OpenAI project hard spend limit
+remains the billing backstop. Hard-limit enforcement can lag slightly. Vercel
+logs record token counts, fallback status, and elapsed milliseconds only—not
+letter or model content.
 
 Aid letters can contain names, IDs, addresses, and financial details. FinePrint
 keeps the upload in request/process memory and sends extracted text and page
@@ -142,7 +149,7 @@ give them a `NEXT_PUBLIC_` prefix.
    | `FINEPRINT_DAILY_ANALYSIS_CAP` | `25` |
 
 6. Deploy. In the build output, confirm Vercel detected FastAPI, built one Python
-   function from `main.py`, applied `maxDuration: 120`, and did not report a
+   function from `main.py`, applied `maxDuration: 180`, and did not report a
    bundle-size error. Copy the `https://…vercel.app` API URL; the URL is not a
    secret.
 
@@ -206,7 +213,7 @@ curl --fail-with-body --silent --show-error \
 Validate the saved result locally and record `extraction_meta.model` plus the
 curl duration. A normal run should report Terra. Do not force a paid Sol
 fallback merely to create a timing number. The result must finish within the
-web route's 90-second wait.
+web proxy's 165-second wait.
 
 4. Confirm a direct call without the secret returns 403. Then use a tiny invalid
    synthetic payload to reach the per-client cap without additional OpenAI
@@ -239,7 +246,7 @@ In the existing web project's Production environment, add:
 
 Neither variable is public and neither uses a `NEXT_PUBLIC_` prefix. Redeploy
 the web project, upload only `fixtures/sample_offer.pdf`, and confirm a successful
-analysis. Record end-to-end duration; it must remain within 90 seconds.
+analysis. Record end-to-end duration; it must remain within 165 seconds.
 
 ## Changing limits without code
 

@@ -189,7 +189,7 @@ usage than Claude right now, so Codex carries every task that isn't `web/`.
       into Vercel). `render.yaml` / Render are dropped.
       **Codex prepares `api/` for Vercel:**
       - FastAPI zero-config entrypoint (`app` in a supported entrypoint file),
-        `api/vercel.json` with `maxDuration: 120` for it and `excludeFiles`
+        `api/vercel.json` with `maxDuration: 180` for it and `excludeFiles`
         for tests/fixtures; confirm the bundle (PyMuPDF etc.) fits Vercel's
         Python size limit — build it and report the size.
       - **Quota store → Upstash Redis** (Vercel Marketplace, free tier). The
@@ -210,7 +210,7 @@ usage than Claude right now, so Codex carries every task that isn't `web/`.
         forwarded client IP.
       - Every non-2xx body is `{"detail": "<one student-facing sentence>"}`;
         429 carries `Retry-After` (seconds).
-      - The web waits up to 90 s; report measured live-read times on Vercel.
+      - The web waits up to 165 s; report measured live-read times on Vercel.
       - Verify the disclosure's OpenAI claim in `web/app/StartActions.tsx`
         ("doesn't train on it but may keep it for up to 30 days for abuse
         checks") against OpenAI's current API data policy; tell Claude if off.
@@ -232,12 +232,16 @@ usage than Claude right now, so Codex carries every task that isn't `web/`.
       letter reproducing the STAC pattern (committed, with replay response) +
       the STAC PDF from its public URL (temporary, not committed). Corpus stays
       green; Meridian and Summit fixtures unchanged (announce if not).
-- [ ] **H2 · Shade's real-letter debugging loop.** When Shade puts a real
-      letter in `uploads/` (gitignored), run it through the local live
+- [ ] **H2 · Optional, non-blocking private real-letter debugging loop.** No
+      private real student letter has been tested. If Shade chooses to put one
+      in `uploads/` (gitignored), run it through the local live
       pipeline and report verified / flagged / broken in the log **without any
       personal data** (no names, IDs, addresses; describe rows generically).
       Fix pipeline bugs in `api/`, and add a synthetic reproduction to the
       corpus for each. Never commit the letter, its text or its extraction.
+      This optional loop does not block submission: the synthetic corpus,
+      public demo layouts, public institutional sample, production extraction,
+      and verification matrix already cover the required release evidence.
 - [x] **R1 · Residency / alternative rates (pipeline half).** Most award letters
       already show the student's own rate. But a letter that lists both an
       in-state and an out-of-state rate (or any mutually exclusive rate
@@ -288,9 +292,9 @@ are in `api/`; no schema or web change.
 - [x] **C3 · No silent paid retries.** Construct the OpenAI client with
       `max_retries=0` (or 1 if you judge a single retry on connection errors
       worth it — say which and why), so one upload can't be billed several
-      times by the SDK's automatic retries. Keep the 90 s web budget in mind:
-      the per-call timeout must still fit inside it. Test that the setting is
-      applied.
+      times by the SDK's automatic retries. Keep the 165 s web budget in mind:
+      the pipeline's total timeout must still fit inside it. Test that the
+      setting is applied.
 
 Acceptance: `.venv/bin/pytest api/tests -q` and the corpus green; the cost
 note in docs/DEPLOY_API.md updated to "Terra only, unless the output fails
@@ -298,10 +302,11 @@ validation, has no verified facts, or has a rejected claim".
 
 Completed in the final stabilization pass: ambiguities remain Terra results;
 usage logging is content-free and tolerates absent metadata; SDK retries are
-`0`; each provider call times out at 40 seconds so an explicit primary plus
-fallback fits inside the 90-second proxy window. The next production upload
-after deployment will provide the first measured usage/cost sample in Vercel
-logs; no paid call was made merely to populate that number.
+`0`; a call may use up to 100 seconds, while the pipeline has a 150-second total
+budget and starts a fallback only when at least 30 seconds remain, fitting
+inside the 165-second proxy wait. Later synthetic stress-letter live runs
+measured about $0.06 each (CHANGES.log 087); no paid call was made merely to
+populate a cost number.
 
 ### Claude — product
 
@@ -335,7 +340,8 @@ logs; no paid call was made merely to populate that number.
       (OpenAI key pasted by Shade), Upstash Redis from the Marketplace, then
       `FINEPRINT_API_URL` + `FINEPRINT_PROXY_SECRET` on the web project.
       Codex walks through it; only Shade touches keys and billing.
-- [ ] Real letters for H2: put them in `uploads/` (gitignored), never elsewhere.
+- **Optional H2 input (non-blocking):** if desired, put a private real letter
+  in `uploads/` (gitignored), never elsewhere.
 
 ## Cross-lane hazards
 
