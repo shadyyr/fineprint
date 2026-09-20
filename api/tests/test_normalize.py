@@ -168,6 +168,10 @@ def test_repeated_summary_facts_are_coalesced_without_losing_evidence():
         "Scholarship Gamma $100",
         "Total Federal Loans Offered $50",
         "Total Loans Offered $50",
+        "Total Grants $75",
+        "Grants $75",
+        "Conflicting Period Award $25",
+        "Conflicting Period Award $25",
     ]
     lines = [
         LayoutLine(
@@ -185,12 +189,14 @@ def test_repeated_summary_facts_are_coalesced_without_losing_evidence():
         char_count=sum(map(len, texts)),
     )
 
-    def claim(index, *, label, amount, category, role=False, aid_type=None):
+    def claim(
+        index, *, label, amount, category, role=False, aid_type=None, period="annual"
+    ):
         return ExtractionItem(
             kind="aid",
             label=label,
             amount=amount,
-            period="annual",
+            period=period,
             citations=[
                 ExtractionCitation(line_id=f"p1_l{index}", quote=texts[index - 1])
             ],
@@ -207,15 +213,85 @@ def test_repeated_summary_facts_are_coalesced_without_losing_evidence():
         items=[
             claim(1, label="Scholarship Alpha", amount=100, category="scholarship"),
             claim(2, label="Scholarship Beta", amount=200, category="scholarship"),
-            claim(3, label="Total Scholarships", amount=300, category="scholarship", role=True),
+            claim(
+                3,
+                label="Total Scholarships",
+                amount=300,
+                category="scholarship",
+                role=True,
+            ),
             # Summary tables often classify the same category total generically.
-            claim(4, label="Scholarships (Financial Aid Summary)", amount=300, category="subtotal", role=True),
-            claim(5, label="Direct Subsidized Loan", amount=50, category="subsidized_loan"),
-            claim(6, label="Federal Direct Subsidized Loans (Financial Aid Summary)", amount=50, category="subsidized_loan", role=True),
+            claim(
+                4,
+                label="Scholarships (Financial Aid Summary)",
+                amount=300,
+                category="subtotal",
+                role=True,
+                period="total",
+            ),
+            claim(
+                5,
+                label="Direct Subsidized Loan",
+                amount=50,
+                category="subsidized_loan",
+            ),
+            claim(
+                6,
+                label="Federal Direct Subsidized Loans (Financial Aid Summary)",
+                amount=50,
+                category="subsidized_loan",
+                role=True,
+                period="total",
+            ),
             # Same amount and category as Alpha, but a different award.
             claim(7, label="Scholarship Gamma", amount=100, category="scholarship"),
-            claim(8, label="Total Federal Loans Offered", amount=50, category="subtotal", role=True, aid_type="loan"),
-            claim(9, label="Total Loans Offered", amount=50, category="subtotal", role=True, aid_type="loan"),
+            claim(
+                8,
+                label="Total Federal Loans Offered",
+                amount=50,
+                category="subtotal",
+                role=True,
+                aid_type="loan",
+            ),
+            claim(
+                9,
+                label="Total Loans Offered",
+                amount=50,
+                category="subtotal",
+                role=True,
+                aid_type="loan",
+                period="total",
+            ),
+            claim(
+                10,
+                label="Total Grants",
+                amount=75,
+                category="grant",
+                role=True,
+            ),
+            claim(
+                11,
+                label="Grants",
+                amount=75,
+                category="subtotal",
+                role=True,
+                period="total",
+            ),
+            # Conflicting ordinary facts remain distinct even when their
+            # labels and amounts happen to match.
+            claim(
+                12,
+                label="Conflicting Period Award",
+                amount=25,
+                category="scholarship",
+            ),
+            claim(
+                13,
+                label="Conflicting Period Award",
+                amount=25,
+                category="scholarship",
+                period="total",
+            ),
         ],
     )
 
@@ -227,6 +303,7 @@ def test_repeated_summary_facts_are_coalesced_without_losing_evidence():
     assert len(scholarship_total) == 1
     assert len(scholarship_total[0].evidence_ids) == 2
     assert scholarship_total[0].components is not None
+    assert scholarship_total[0].period == "annual"
 
     subsidized = [
         aid for aid in document.aid if aid.category == "subsidized_loan"
@@ -234,6 +311,7 @@ def test_repeated_summary_facts_are_coalesced_without_losing_evidence():
     assert len(subsidized) == 1
     assert subsidized[0].role == "item"
     assert len(subsidized[0].evidence_ids) == 2
+    assert subsidized[0].period == "annual"
 
     loan_totals = [
         aid
@@ -242,6 +320,22 @@ def test_repeated_summary_facts_are_coalesced_without_losing_evidence():
     ]
     assert len(loan_totals) == 1
     assert len(loan_totals[0].evidence_ids) == 2
+    assert loan_totals[0].period == "annual"
+
+    grant_totals = [
+        aid
+        for aid in document.aid
+        if aid.role == "rollup" and aid.amount == 75
+    ]
+    assert len(grant_totals) == 1
+    assert len(grant_totals[0].evidence_ids) == 2
+    assert grant_totals[0].period == "annual"
+
+    conflicting_periods = [
+        aid for aid in document.aid if aid.label == "Conflicting Period Award"
+    ]
+    assert len(conflicting_periods) == 2
+    assert {aid.period for aid in conflicting_periods} == {"annual", "total"}
 
     # Same-dollar awards with different names remain independently summable.
     assert {aid.label for aid in document.aid if aid.amount == 100} == {

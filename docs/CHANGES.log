@@ -2063,3 +2063,43 @@ NEXT      Shade: review, then ask Codex to commit/push. After both Vercel
           normalized canonical result.
 NOTES     The supplied PDF and its provider response remain uncommitted. No
           paid provider call was made during this fix.
+
+
+### 2026-09-19 · 076 · Claimed: category-total dedupe follow-up
+AGENT     codex (current session, per Shade)
+STATE     in-progress
+TOUCHED   docs/CHANGES.log; read-only inspection of the latest live result;
+          api/tests only after the remaining mismatch is reproduced
+VERIFY    pending deployed-version check and exact Grants/Total Grants fields
+SUMMARY   The first repeat gate did not coalesce the live letter's Grants and
+          Total Grants category rows. Identify the semantic-field mismatch and
+          strengthen the deterministic comparison without merging distinct
+          awards that merely share an amount.
+ACTIVE    repeated rollup semantics and deployment verification
+NEXT      Codex: inspect current UI/deployment, reproduce synthetically, fix
+          the narrow mismatch, and rerun API/web/corpus safeguards.
+
+
+### 2026-09-19 · 077 · Annual category-summary repeats coalesced
+AGENT     codex (current session, per Shade)
+STATE     done — uncommitted; no push or deployment requested
+TOUCHED   api/{extract.py,normalize.py,tests/test_extract.py,
+          tests/test_normalize.py}; docs/CHANGES.log
+VERIFY    focused extraction/normalization 28/28; full API 86/86; corpus 5/5
+          with zero invariant violations; diff check and secret scan (130
+          files) clean
+SUMMARY   The live Grants/Total Grants pair differed only because the summary
+          occurrence used period=total while the detailed category subtotal
+          used period=annual. The extraction contract now reserves `total` for
+          expressly multi-year amounts, treats a Total column in a one-year
+          table as annual, and directs repeated summaries to one fact with all
+          citations. The deterministic repeat gate also reconciles this exact
+          annual/total mismatch only when one occurrence is a rollup, keeps the
+          annual interpretation, and preserves both evidence references.
+ACTIVE    none
+NEXT      Shade: review, then ask Codex to commit/push. A fresh upload after
+          both Vercel projects redeploy is required to see the corrected result.
+NOTES     Regression coverage includes the exact Total Grants/Grants case and
+          proves ordinary same-label item claims with conflicting periods stay
+          separate. The supplied PDF and provider output remain uncommitted;
+          no paid provider call was made.

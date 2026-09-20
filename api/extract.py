@@ -81,7 +81,12 @@ private loans. Loans are never gift aid.
 amount with no stated period, set period to "unknown" -- even when the amount \
 looks like a typical annual figure, even when other rows on the page are annual, \
 and even when renewal language appears elsewhere. Guessing here is the single \
-worst error you can make. Raise an ambiguity instead.
+worst error you can make. Raise an ambiguity instead. The enum value "total" has \
+one narrow meaning: the document expressly says the amount covers the whole \
+multi-year program or award. NEVER use period "total" merely because a table \
+column or row is labelled "Total". In a table scoped to one academic year, its \
+Fall + Spring or category Total is annual. `is_stated_total` describes arithmetic \
+aggregation and is completely separate from period.
 
 6. is_stated_total: set true for rows that total other rows ("Total Cost of \
 Attendance", "Total Financial Aid Package", subtotals). Report them, flagged, so \
@@ -110,13 +115,19 @@ item for EACH amount and include the term in the label. Use period "semester" or
 "term" only when the document's headings establish it. A separate award outside \
 that table does not inherit the table's period.
 
+10. When a later summary repeats the same award or category subtotal with the \
+same amount, emit that financial fact ONCE and cite every occurrence. Do not \
+create a second item solely because the same money is printed again in a summary. \
+A summary row keeps the period established by the detailed table; its heading or \
+"Total" label does not change an annual amount into a multi-year total.
+
 AMBIGUITIES AND GAPS.
 
-10. Raise an ambiguity whenever the document leaves something materially unclear, \
+11. Raise an ambiguity whenever the document leaves something materially unclear, \
 especially an amount whose period is not stated. Give at least two concrete \
 options a student could choose between.
 
-11. missing_costs: list cost categories the letter names but does not price, and \
+12. missing_costs: list cost categories the letter names but does not price, and \
 standard categories absent entirely (transportation, personal expenses, health \
 insurance). Never invent an amount for them.
 

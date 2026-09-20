@@ -20,6 +20,7 @@ from extract import (  # noqa: E402
     FALLBACK_MODEL,
     OPENAI_MAX_RETRIES,
     OPENAI_TIMEOUT_SECONDS,
+    SYSTEM,
     ExtractionFailed,
     ExtractionRefused,
     ExtractionValidationFailed,
@@ -73,6 +74,11 @@ def test_user_content_uses_responses_api_image_shape():
     }
     assert content[2]["type"] == "input_text"
     assert content[-1]["type"] == "input_text"
+
+
+def test_prompt_distinguishes_table_totals_from_multi_year_periods():
+    assert 'NEVER use period "total" merely because a table' in SYSTEM
+    assert "emit that financial fact ONCE and cite every occurrence" in SYSTEM
 
 
 def test_openai_extractor_requests_typed_nonstored_output_without_usage(caplog):

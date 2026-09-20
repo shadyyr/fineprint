@@ -181,7 +181,11 @@ def _labels_repeat_same_fact(left: str, right: str) -> bool:
 def _same_repeat_semantics(left: ItemT, right: ItemT) -> bool:
     if type(left) is not type(right):
         return False
-    if abs(left.amount - right.amount) >= _CENTS or left.period != right.period:
+    period_compatible = left.period == right.period or (
+        {left.period, right.period} == {"annual", "total"}
+        and (left.role == "rollup" or right.role == "rollup")
+    )
+    if abs(left.amount - right.amount) >= _CENTS or not period_compatible:
         return False
     if isinstance(left, CostItem) and isinstance(right, CostItem):
         category_compatible = left.category == right.category or (
@@ -216,6 +220,13 @@ def _merge_repeat(survivor: ItemT, repeated: ItemT) -> None:
         dict.fromkeys((*survivor.evidence_ids, *repeated.evidence_ids))
     )
     survivor.confidence = max(survivor.confidence, repeated.confidence)
+    # A model can mistake a table's "Total" column for the canonical
+    # multi-year period. If an otherwise exact repeated fact is annual in one
+    # occurrence and a rollup-shaped repeat says total, retain the explicit
+    # annual interpretation. Ordinary item-vs-item period conflicts never
+    # reach this merge.
+    if {survivor.period, repeated.period} == {"annual", "total"}:
+        survivor.period = "annual"
     if survivor.role == "rollup":
         survivor.components = list(
             dict.fromkeys((*(survivor.components or []), *(repeated.components or [])))
