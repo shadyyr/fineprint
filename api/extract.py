@@ -39,9 +39,12 @@ DEFAULT_REASONING_EFFORT = os.environ.get(
 
 MAX_TOKENS = 16000
 OPENAI_MAX_RETRIES = 0
-# A primary call plus one validation fallback must fit inside the web proxy's
-# 90-second budget, with time left for ingest, verification, and transport.
-OPENAI_TIMEOUT_SECONDS = 40.0
+# One call, generously. A dense but ordinary two-page letter (118 lines, 24
+# items) measured 53s and 70s on two runs at medium effort -- reasoning length
+# varies per run -- so the old 40s rejected letters the pipeline reads
+# perfectly well. The pipeline, not this constant, bounds the total: it gives a
+# fallback only the budget that remains (see pipeline.TOTAL_BUDGET_SECONDS).
+OPENAI_TIMEOUT_SECONDS = 100.0
 
 logger = logging.getLogger("fineprint.extract")
 
@@ -208,6 +211,7 @@ class OpenAIExtractor:
         api_key: str | None = None,
         client: Any | None = None,
         is_fallback: bool = False,
+        timeout: float | None = None,
     ):
         self.model = model
         self.reasoning_effort = reasoning_effort
@@ -215,7 +219,7 @@ class OpenAIExtractor:
         self._client = client if client is not None else OpenAI(
             api_key=api_key,
             max_retries=OPENAI_MAX_RETRIES,
-            timeout=OPENAI_TIMEOUT_SECONDS,
+            timeout=OPENAI_TIMEOUT_SECONDS if timeout is None else timeout,
         )
 
     def extract(self, result: IngestResult) -> ExtractionResult:

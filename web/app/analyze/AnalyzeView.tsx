@@ -386,7 +386,9 @@ function Reading() {
         {/* A description of the process, not fake per-step progress: the
             server does not report which stage it is on, so ticking steps off
             on a timer would be pretending. */}
-        <p className="mt-4 text-ink-2">While it works, FinePrint is:</p>
+        <p className="mt-4 text-ink-2">
+          A long or dense letter can take a minute or two. While it works, FinePrint is:
+        </p>
         <ul className="mt-2 space-y-1.5 text-ink-2">
           <li>finding every cost and every award in the text,</li>
           <li>sorting them into grants, loans and work-study,</li>

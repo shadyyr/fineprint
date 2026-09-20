@@ -9,7 +9,7 @@
 export const API_BASE = process.env.FINEPRINT_API_URL ?? "http://127.0.0.1:8000";
 
 /** How long to wait on the extraction service before giving up. */
-const TIMEOUT_MS = 90_000;
+const TIMEOUT_MS = 165_000;
 
 export interface ApiFailure {
   status: number;

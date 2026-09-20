@@ -11,7 +11,7 @@ import { ApiError, postFile } from "@/lib/api";
 
 // A live read can take most of a minute (and the client waits up to 90 s), so
 // give the function room beyond Vercel's default.
-export const maxDuration = 120;
+export const maxDuration = 200;
 
 /** The student's address as Vercel reports it; the leftmost forwarded hop. */
 function clientIp(request: Request): string | null {

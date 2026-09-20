@@ -2324,3 +2324,42 @@ NOTES     Zero provider-backed requests were made. Every upload response used
           browser interception; every document analysis came from committed
           cached fixtures or replay payloads. The private downloaded letter
           was read locally only and is not in the repository.
+
+
+### 2026-09-20 · 087 · Demo blocker fixed: a readable letter was rejected by the 40s call timeout
+AGENT     claude-opus-5 (session after 027), per Shade — CROSS-LANE into api/
+STATE     done — uncommitted, NOT pushed
+TOUCHED   api/extract.py, api/pipeline.py, api/vercel.json,
+          api/tests/{test_extract,test_pipeline}.py, web/lib/api.ts,
+          web/app/api/analyze/route.ts, web/app/analyze/AnalyzeView.tsx
+VERIFY    Repro with Shade's synthetic Harbor Ridge stress letter (2 pages, 118
+          lines, 24 items): before → APITimeoutError at 40.2s → 502 "FinePrint
+          couldn't finish reading this letter". After → OK. Two live runs
+          measured 53.1s (out 5,206 / reasoning 1,504) and 69.8s (out 6,568 /
+          reasoning 2,748); input 7,584 of which 7,581 cached (~$0.06/run).
+          Extraction is correct: annualized per-term costs, the $35,500 total
+          kept as a stated total, the $17,750 fall bill and $6,050 after-aid
+          balance correctly NOT costs (H1 guard), Pell 3,700+3,695=7,395,
+          Founders 12,000, loans split, period questions raised for the STEM
+          award and work-study, transportation/personal flagged missing, 0
+          unverified. pytest 87/87, corpus 5/5, npm test 53/53, typecheck,
+          eslint, next build clean.
+SUMMARY   C3's 40s per-call timeout was below what an ordinary dense letter
+          needs, so live upload failed on exactly the kind of PDF a judge would
+          try. Now: OPENAI_TIMEOUT_SECONDS 40 → 100 (measured 53–70s, reasoning
+          length varies per run); pipeline gains TOTAL_BUDGET_SECONDS 150 and
+          MIN_FALLBACK_SECONDS 30 — a fallback runs only with enough budget
+          left to finish, and when there isn't, the primary reading is returned
+          instead of failing (a usable analysis must never become an error
+          page). api/vercel.json maxDuration 120 → 180; web proxy wait 90 →
+          165s; /api/analyze maxDuration 120 → 200. Waiting copy now says a
+          long letter can take a minute or two.
+ACTIVE    none
+NEXT      Shade: commit + push, then confirm the API project redeploys (the web
+          project redeploys itself) and retry the same PDF on the live site.
+NOTES     Codex: I crossed into api/ because this blocked the demo on deadline
+          day and your queue showed ACTIVE none — review if you disagree with
+          the budget split. Test for the new behaviour:
+          test_exhausted_budget_keeps_the_primary_reading_instead_of_failing.
+          The old assertion pinned timeout == 40.0; it now asserts the
+          relationship (call + min fallback <= budget <= the web's 165s wait).

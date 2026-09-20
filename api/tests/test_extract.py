@@ -14,6 +14,7 @@ API = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(API))
 
 import extract as extract_module  # noqa: E402
+from pipeline import MIN_FALLBACK_SECONDS, TOTAL_BUDGET_SECONDS  # noqa: E402
 from extract import (  # noqa: E402
     DEFAULT_MODEL,
     DEFAULT_REASONING_EFFORT,
@@ -150,7 +151,13 @@ def test_openai_client_disables_hidden_retries_and_fits_proxy_budget(monkeypatch
     OpenAIExtractor(api_key="not-a-real-key")
 
     assert captured["max_retries"] == OPENAI_MAX_RETRIES == 0
-    assert captured["timeout"] == OPENAI_TIMEOUT_SECONDS == 40.0
+    assert captured["timeout"] == OPENAI_TIMEOUT_SECONDS
+    # One call must have room for a letter that genuinely takes a while (a
+    # dense two-page offer measured 53s), and a call plus the smallest useful
+    # fallback must still fit the pipeline budget, which itself fits the web
+    # proxy's 165s wait.
+    assert OPENAI_TIMEOUT_SECONDS >= 60.0
+    assert OPENAI_TIMEOUT_SECONDS + MIN_FALLBACK_SECONDS <= TOTAL_BUDGET_SECONDS <= 165.0
 
 
 def test_openai_refusal_is_reported_clearly():

@@ -18,8 +18,10 @@ from models import (  # noqa: E402
     ExtractionItem,
     ExtractionResult,
 )
+import pipeline as pipeline_module  # noqa: E402
 from pipeline import (  # noqa: E402
     STRUCTURED_VALIDATION_FAILURE,
+    TOTAL_BUDGET_SECONDS,
     UNVERIFIED_CLAIMS,
     analyze_document,
 )
@@ -166,3 +168,24 @@ def test_refusal_does_not_call_sol(ingested):
         route(primary, fallback, ingested)
 
     assert fallback.calls == 0
+
+
+def test_exhausted_budget_keeps_the_primary_reading_instead_of_failing(ingested, monkeypatch):
+    """A slow letter must not become an error page.
+
+    When the primary reading exists but so little of the budget is left that a
+    fallback could not finish, FinePrint returns what it has. The alternative --
+    starting a retry that will time out -- turns a usable analysis into
+    "couldn't finish reading this letter" (the 40s timeout that rejected a
+    perfectly readable two-page offer, CHANGES.log 087).
+    """
+    clock = iter([0.0, TOTAL_BUDGET_SECONDS + 1.0])
+    monkeypatch.setattr(pipeline_module.time, "monotonic", lambda: next(clock))
+    primary = StubExtractor(claims(amount=999))
+
+    result = analyze_document(ingested, source_file_name="offer.pdf", primary_extractor=primary)
+
+    assert primary.calls == 1
+    assert result.model == pipeline_module.DEFAULT_MODEL
+    assert UNVERIFIED_CLAIMS in result.fallback_reasons
+    assert result.document.unverified_claims
