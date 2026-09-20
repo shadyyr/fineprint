@@ -2103,3 +2103,43 @@ NOTES     Regression coverage includes the exact Total Grants/Grants case and
           proves ordinary same-label item claims with conflicting periods stay
           separate. The supplied PDF and provider output remain uncommitted;
           no paid provider call was made.
+
+
+### 2026-09-19 · 078 · Claimed: remaining summary-total type mismatch
+AGENT     codex (current session, per Shade)
+STATE     in-progress
+TOUCHED   docs/CHANGES.log; api tests and normalization after exact regression
+VERIFY    pending exact reproduction of the still-visible Grants pair
+SUMMARY   The fresh screenshot shows that annual/total period reconciliation
+          alone is insufficient: Total Grants and Grants (Financial Aid
+          Summary) still survive as separate verified rollups with the same
+          amount. Trace the remaining semantic mismatch and strengthen only
+          the repeat comparison, without weakening evidence verification or
+          merging ordinary conflicting facts.
+ACTIVE    repeated summary rollup semantics
+NEXT      Codex: reproduce the real payload shape, add the narrow fix, and run
+          focused plus full API/corpus safeguards.
+
+
+### 2026-09-19 · 079 · Unknown summary types defer to exact typed rollups
+AGENT     codex (current session, per Shade)
+STATE     done — uncommitted; no push or deployment requested
+TOUCHED   api/{extract.py,normalize.py,tests/test_extract.py,
+          tests/test_normalize.py}; docs/CHANGES.log
+VERIFY    reproduced failure before implementation; focused extraction and
+          normalization 28/28; full API 86/86; corpus 5/5 with zero invariant
+          violations; diff check and secret scan (130 files) clean
+SUMMARY   The remaining repeats were blocked by aid_type, not period: category
+          summary rows can arrive as unknown while the exact detailed total is
+          correctly typed gift or loan. Prompt rules now require named category
+          subtotals and repeated summaries to retain their known type. The
+          deterministic gate treats unknown as compatible only for an otherwise
+          exact repeated rollup, and promotes the survivor to the known type.
+ACTIVE    none
+NEXT      Shade: review, then ask Codex to commit/push. Re-upload after the API
+          redeploys; existing browser analysis remains the old API response.
+NOTES     Coverage reproduces repeated Scholarships, Grants, subsidized loans,
+          and loan totals with unknown summary types. It also proves two
+          ordinary same-label facts with conflicting types do not merge. The
+          supplied PDF and provider output remain uncommitted; no paid provider
+          call was made.

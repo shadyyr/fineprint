@@ -201,6 +201,10 @@ def _same_repeat_semantics(left: ItemT, right: ItemT) -> bool:
             (left.role == "rollup" or right.role == "rollup")
             and "subtotal" in {left.category, right.category}
         )
+        aid_type_compatible = left.aid_type == right.aid_type or (
+            (left.role == "rollup" or right.role == "rollup")
+            and "unknown" in {left.aid_type, right.aid_type}
+        )
         renewable_compatible = (
             left.renewable is None
             or right.renewable is None
@@ -208,7 +212,7 @@ def _same_repeat_semantics(left: ItemT, right: ItemT) -> bool:
         )
         return (
             category_compatible
-            and left.aid_type == right.aid_type
+            and aid_type_compatible
             and renewable_compatible
         )
     return False
@@ -232,6 +236,8 @@ def _merge_repeat(survivor: ItemT, repeated: ItemT) -> None:
             dict.fromkeys((*(survivor.components or []), *(repeated.components or [])))
         ) or None
     if isinstance(survivor, AidItem) and isinstance(repeated, AidItem):
+        if survivor.aid_type == "unknown" and repeated.aid_type != "unknown":
+            survivor.aid_type = repeated.aid_type
         if survivor.renewable is None:
             survivor.renewable = repeated.renewable
         survivor.conditions = list(

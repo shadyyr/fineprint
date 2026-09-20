@@ -172,6 +172,8 @@ def test_repeated_summary_facts_are_coalesced_without_losing_evidence():
         "Grants $75",
         "Conflicting Period Award $25",
         "Conflicting Period Award $25",
+        "Conflicting Aid Type $30",
+        "Conflicting Aid Type $30",
     ]
     lines = [
         LayoutLine(
@@ -227,6 +229,7 @@ def test_repeated_summary_facts_are_coalesced_without_losing_evidence():
                 amount=300,
                 category="subtotal",
                 role=True,
+                aid_type="unknown",
                 period="total",
             ),
             claim(
@@ -241,6 +244,7 @@ def test_repeated_summary_facts_are_coalesced_without_losing_evidence():
                 amount=50,
                 category="subsidized_loan",
                 role=True,
+                aid_type="unknown",
                 period="total",
             ),
             # Same amount and category as Alpha, but a different award.
@@ -259,7 +263,7 @@ def test_repeated_summary_facts_are_coalesced_without_losing_evidence():
                 amount=50,
                 category="subtotal",
                 role=True,
-                aid_type="loan",
+                aid_type="unknown",
                 period="total",
             ),
             claim(
@@ -275,6 +279,7 @@ def test_repeated_summary_facts_are_coalesced_without_losing_evidence():
                 amount=75,
                 category="subtotal",
                 role=True,
+                aid_type="unknown",
                 period="total",
             ),
             # Conflicting ordinary facts remain distinct even when their
@@ -291,6 +296,19 @@ def test_repeated_summary_facts_are_coalesced_without_losing_evidence():
                 amount=25,
                 category="scholarship",
                 period="total",
+            ),
+            claim(
+                14,
+                label="Conflicting Aid Type",
+                amount=30,
+                category="scholarship",
+            ),
+            claim(
+                15,
+                label="Conflicting Aid Type",
+                amount=30,
+                category="scholarship",
+                aid_type="unknown",
             ),
         ],
     )
@@ -336,6 +354,12 @@ def test_repeated_summary_facts_are_coalesced_without_losing_evidence():
     ]
     assert len(conflicting_periods) == 2
     assert {aid.period for aid in conflicting_periods} == {"annual", "total"}
+
+    conflicting_types = [
+        aid for aid in document.aid if aid.label == "Conflicting Aid Type"
+    ]
+    assert len(conflicting_types) == 2
+    assert {aid.aid_type for aid in conflicting_types} == {"gift", "unknown"}
 
     # Same-dollar awards with different names remain independently summable.
     assert {aid.label for aid in document.aid if aid.amount == 100} == {

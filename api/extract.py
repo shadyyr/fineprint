@@ -75,7 +75,10 @@ CLASSIFICATION RULES.
    - "loan": any borrowed money, including subsidized, unsubsidized, PLUS and \
 private loans. Loans are never gift aid.
    - "work_study": wages earned by working. Not a grant, not guaranteed money.
-   - "unknown": use this rather than guessing.
+   - "unknown": use this rather than guessing. A subtotal retains the type of \
+the category it names: grant and scholarship subtotals are "gift", loan \
+subtotals are "loan", and work-study subtotals are "work_study". A summary \
+heading does not make an otherwise named category unknown.
 
 5. period: state a period ONLY if the document establishes it. If a row gives an \
 amount with no stated period, set period to "unknown" -- even when the amount \
@@ -119,7 +122,9 @@ that table does not inherit the table's period.
 same amount, emit that financial fact ONCE and cite every occurrence. Do not \
 create a second item solely because the same money is printed again in a summary. \
 A summary row keeps the period established by the detailed table; its heading or \
-"Total" label does not change an annual amount into a multi-year total.
+"Total" label does not change an annual amount into a multi-year total. It also \
+keeps the detailed row's aid_category and aid_type; do not downgrade a named \
+grant, scholarship, loan, or work-study summary to "unknown".
 
 AMBIGUITIES AND GAPS.
 
