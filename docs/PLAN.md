@@ -123,7 +123,7 @@ fineprint/
 │  │     └─ *.test.ts                 # vitest
 │  ├─ components/
 │  │  ├─ PdfCanvas.tsx  EvidenceOverlay.tsx  XRayPanel.tsx
-│  │  ├─ Overview.tsx  FourYearChart.tsx  WhatIfPanel.tsx
+│  │  ├─ Overview.tsx  FourYear.tsx  WhatIf.tsx
 │  │  └─ AmbiguityPrompt.tsx  MetricTooltip.tsx  SourceBadge.tsx
 │  └─ store/session.ts                # zustand: facts | overrides | assumptions
 ├─ api/                        # FastAPI
@@ -271,6 +271,6 @@ Supports the second track rather than justifying it (see Context), and §19 requ
 
 **Corpus (M5, then re-run after any extraction change):** `python corpus/run_corpus.py` against the pass bar above.
 
-**End-to-end (the demo path, §20.8):** upload `sample_offer.pdf` → processing stages → Overview contrast → click a loan row → correct text highlights in the PDF → resolve the `$20,000` ambiguity → four-year view → toggle scholarship renewal off → totals visibly update. Run this exact path repeatedly before submitting, and once **with FastAPI stopped** to confirm the fallback badge is unmistakable.
+**End-to-end (the demo path, §20.8):** choose the cached `sample_offer.pdf` → Overview contrast → click a loan row → correct text highlights in the PDF → resolve the `$20,000` ambiguity → four-year view → toggle scholarship renewal off → totals visibly update. Run this exact path repeatedly before submitting. Separately, stop or intercept the live API and upload a personal letter: the app must show an actionable error while leaving the cached sample available, never silently substitute sample results for that upload.
 
 **Scope check against §24 before submitting:** no chatbot homepage, no loans described as free aid, no work-study counted as guaranteed grant money, no fabricated rates or renewal predictions, no hidden ambiguity.

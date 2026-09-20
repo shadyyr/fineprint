@@ -144,8 +144,14 @@ export function FourYear({
           <span>
             <span className="font-semibold text-ink">Nothing to project yet.</span> A four-year
             picture starts from what college costs, and this letter doesn&rsquo;t say. FinePrint
-            won&rsquo;t guess &mdash; enter your school&rsquo;s yearly cost in &ldquo;Your first
-            year&rdquo; above to see it.
+            won&rsquo;t guess &mdash; enter your school&rsquo;s yearly cost in{" "}
+            <a
+              href="#year-one"
+              className="rounded font-medium text-ink underline decoration-rule-2 underline-offset-4 outline-offset-2 hover:decoration-ink focus-visible:outline-2 focus-visible:outline-ink"
+            >
+              2. What you&rsquo;d pay this year
+            </a>{" "}
+            to see it.
           </span>
         </p>
       ) : (
@@ -330,7 +336,7 @@ function Figure({
         {sign === "minus" && money.value > 0 ? "−" : ""}
         {formatUSD(money.value)}
         {!money.complete ? (
-          <span className="ml-1 align-top text-sm font-normal text-ink-3" title="Leaves something out — see the note above">
+          <span className="ml-1 align-top text-sm font-normal text-ink-3" title="Leaves something out — see the missing-cost note">
             *
           </span>
         ) : null}

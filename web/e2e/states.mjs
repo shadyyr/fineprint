@@ -56,6 +56,9 @@ const describe = (p) => p.evaluate(() => ({
   buttons: [...document.querySelectorAll("main button, main a")].map((e) => e.innerText.trim()).filter(Boolean).slice(0, 8),
   focus: document.activeElement?.tagName + " " + (document.activeElement?.innerText ?? "").slice(0, 30),
   header: !!document.querySelector("header"),
+  brokenAnchors: [...document.querySelectorAll('a[href^="#"]')]
+    .map((anchor) => anchor.getAttribute("href"))
+    .filter((href) => href && !document.querySelector(href)),
 }));
 async function upload(name, analyzeResponse, file = PDF) {
   const p = await page({ ...live, "/api/analyze": analyzeResponse });
@@ -68,7 +71,8 @@ async function upload(name, analyzeResponse, file = PDF) {
 }
 const results = [];
 results.push(await upload("scanned-422", json(422, { detail: "This looks like a scanned document. FinePrint needs a text-based PDF so it can trace every figure back to the words on the page. Try the sample offer, or export the letter as a text PDF." })));
-results.push(await upload("unreachable-503", json(503, { detail: "FinePrint could not reach the extraction service. Is it running on port 8000?" })));
+results.push(await upload("unreachable-503", json(503, { detail: "FinePrint's letter reader isn't responding right now. Try again in a minute, or explore the sample offer." })));
+results.push(await upload("rate-limited-429", { ...json(429, { detail: "Too many live-reading attempts from this connection; please wait before trying again." }), headers: { "Retry-After": "240" } }));
 results.push(await upload("too-big-413", json(413, { detail: "That file is larger than 15 MB. Please upload a smaller PDF." })));
 results.push(await upload("crash-500-html", { status: 500, contentType: "text/html", body: "<html>Internal Server Error</html>" }));
 results.push(await upload("network-drop", "abort"));
@@ -99,4 +103,27 @@ for (const [name, doc] of Object.entries(edge)) {
   await p.screenshot({ path: OUT + "edge-" + name + ".png", fullPage: true }); results.push(r); await p.close();
 }
 for (const r of results) console.log(JSON.stringify(r));
+const failed = results.filter((result) => !result.h1 || result.brokenAnchors.length > 0);
+if (failed.length > 0) {
+  console.error("State audit failed:", failed.map(({ name, h1, brokenAnchors }) => ({ name, h1, brokenAnchors })));
+  process.exitCode = 1;
+}
+const unsafeCopy = results.filter((result) => {
+  const copy = `${result.text ?? ""} ${result.alert.join(" ")}`;
+  return copy.includes("Failed to fetch") || copy.includes('{"detail"') || copy.includes("port 8000");
+});
+if (unsafeCopy.length > 0) {
+  console.error("State audit failed: technical error copy reached the page:", unsafeCopy.map(({ name }) => name));
+  process.exitCode = 1;
+}
+const noCosts = results.find((result) => result.name === "no-costs");
+if (!noCosts || noCosts.text.includes("Cost of attendance $0")) {
+  console.error("State audit failed: a missing cost was displayed as $0.");
+  process.exitCode = 1;
+}
+const rateLimited = results.find((result) => result.name === "rate-limited-429");
+if (!rateLimited?.alert.some((message) => message.includes("about 4 minutes"))) {
+  console.error("State audit failed: the rate-limit state did not translate Retry-After into a useful wait time.");
+  process.exitCode = 1;
+}
 await b.close();

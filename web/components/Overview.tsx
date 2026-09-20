@@ -283,7 +283,7 @@ export function Overview({
 
       {/* Year one, stated precisely. Each figure says what it is and what it leaves out. */}
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight text-ink">
+        <h2 id="year-one" className="scroll-mt-6 text-2xl font-semibold tracking-tight text-ink">
           2. What you&rsquo;d pay this year
         </h2>
         <p className="mt-1 max-w-2xl text-ink-2">
@@ -372,9 +372,11 @@ export function Overview({
               <p className="font-semibold text-ink">We need one more piece of information.</p>
               <p className="mt-1">
                 This letter lists your aid, but not what college costs &mdash; so FinePrint
-                can&rsquo;t work out what&rsquo;s left to cover, and won&rsquo;t guess. Your
-                school&rsquo;s yearly cost of attendance is on its financial-aid website or
-                portal; it normally already includes books, transportation and personal costs.
+                can&rsquo;t work out what&rsquo;s left to cover, and won&rsquo;t guess. Because there is
+                no starting cost figure, enter the complete yearly cost here instead of adding
+                only a few missing categories. Your school&rsquo;s yearly cost of attendance is
+                on its financial-aid website or portal; it normally already includes books,
+                transportation and personal costs.
               </p>
               <div className="mt-3">
                 <DollarEntry

@@ -19,7 +19,14 @@
  *  - Selection is announced in a live region.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 import { Icon } from "@/components/Icon";
 import { PdfCanvas, type PageSize } from "@/components/PdfCanvas";
@@ -29,7 +36,8 @@ import { bboxToStyle } from "@/lib/pdf";
 import type { CanonicalDocument, Evidence } from "@/lib/schema";
 import { CATEGORY, type CategoryKey, type XRayGroup, type XRayRow } from "@/lib/view";
 
-export interface PanelGroup extends Omit<XRayGroup, "rows"> {
+export interface PanelGroup extends Omit<XRayGroup, "rows" | "note"> {
+  note?: ReactNode;
   rows: (Omit<XRayRow, "amount" | "category"> & {
     amount: number | null;
     category: CategoryKey | null;

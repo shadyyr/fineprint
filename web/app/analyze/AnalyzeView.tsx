@@ -160,13 +160,40 @@ function Analysis({
     const base: PanelGroup[] = xrayGroups(doc, overrides);
 
     if (doc.missing_costs.length) {
+      const wholeCostEntry =
+        model.yearOne.costBasis === "unknown" || model.yearOne.costBasis === "user_total";
       base.push({
         key: "missing",
         title: "Not in the letter",
         meaning: "Costs it names but never prices",
         icon: "missing",
         color: "var(--color-rule-2)",
-        note: "FinePrint leaves these out rather than guessing unless you add your own estimate in Your first year.",
+        note: wholeCostEntry ? (
+          <>
+            FinePrint doesn&rsquo;t guess these individual costs.{" "}
+            {model.yearOne.costBasis === "user_total"
+              ? "It is using the full yearly cost of attendance you entered in "
+              : "Enter your school’s full yearly cost of attendance in "}
+            <a
+              href="#year-one"
+              className="rounded font-medium text-ink underline decoration-rule-2 underline-offset-4 outline-offset-2 hover:decoration-ink focus-visible:outline-2 focus-visible:outline-ink"
+            >
+              2. What you&rsquo;d pay this year
+            </a>
+            .
+          </>
+        ) : (
+          <>
+            FinePrint leaves these out rather than guessing. Add your own yearly estimates in{" "}
+            <a
+              href="#year-one"
+              className="rounded font-medium text-ink underline decoration-rule-2 underline-offset-4 outline-offset-2 hover:decoration-ink focus-visible:outline-2 focus-visible:outline-ink"
+            >
+              2. What you&rsquo;d pay this year
+            </a>
+            .
+          </>
+        ),
         rows: doc.missing_costs.map((mc) => ({
           id: mc.id,
           label: mc.label,
@@ -186,7 +213,7 @@ function Analysis({
       });
     }
     return base;
-  }, [doc, overrides]);
+  }, [doc, overrides, model.yearOne.costBasis]);
 
   const showItem = (itemId: string) => {
     onSelect(itemId);

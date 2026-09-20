@@ -1,4 +1,4 @@
-// "How will you cover it?" in Your first year. COST != FINANCING: accepting
+// "How will you cover it?" in Stage 2. COST != FINANCING: accepting
 // loans or counting work-study must change only "Still to cover from other
 // sources", never "Estimated amount to cover" or the gift-aid hero; the
 // Overview and What-If toggles must share one state.

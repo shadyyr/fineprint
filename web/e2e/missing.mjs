@@ -26,6 +26,16 @@ const card = (p) => p.evaluate(() => {
   return { coa: fig("Cost of attendance"), cover: fig("Estimated amount to cover"), still, text: t, focus: document.activeElement?.textContent?.trim().slice(0, 40),
     live: [...c.querySelectorAll("[aria-live]")].map((e) => e.textContent.trim()).join(" | ") };
 });
+const missingNote = (p) => p.evaluate(() => {
+  const heading = document.getElementById("group-missing");
+  const group = heading?.closest("section");
+  const link = group?.querySelector('a[href="#year-one"]');
+  return {
+    text: group?.textContent.replace(/\s+/g, " ").trim() ?? "",
+    href: link?.getAttribute("href") ?? null,
+    target: document.getElementById("year-one")?.textContent.trim() ?? null,
+  };
+});
 const click = (p, re) => p.evaluate((src) => { const r = new RegExp(src); const el = [...document.querySelectorAll("button")].find((x) => r.test(x.textContent.replace(/\s+/g, " "))); if (!el) throw new Error("no button " + src); el.click(); }, re.source);
 async function enter(p, addRe, amount) { await click(p, addRe); await wait(150); await p.evaluate(() => document.activeElement.select()); await p.keyboard.press("Backspace"); await p.keyboard.type(amount); await p.keyboard.press("Enter"); await wait(); }
 
@@ -35,6 +45,8 @@ await p.$eval('input[value="annual"]', (e) => e.click()); await wait();
 const requests = []; p.on("request", (r) => requests.push(r.url()));
 let c = await card(p);
 check("1 missing stays missing", c.coa === "$51,300" && c.cover === "$14,400" && c.text.includes("Your offer doesn’t include every cost") && c.text.includes("Amount not listed"), JSON.stringify(c));
+let note = await missingNote(p);
+check("1 X-Ray points to itemized estimates", note.text.includes("Add your own yearly estimates in 2. What you’d pay this year") && note.href === "#year-one" && note.target === "2. What you’d pay this year", JSON.stringify(note));
 await enter(p, /^Add estimate: Transportation/, "1500");
 c = await card(p);
 check("2 add estimate", c.coa === "$52,800" && c.cover === "$15,900" && /Transportation\s*\$1,500\s*Your estimate/.test(c.text) && c.text.includes("Includes $1,500 you estimated"), JSON.stringify(c));
@@ -75,10 +87,19 @@ const noCosts = { ...SAMPLE, costs: [] };
 p = await open(noCosts);
 await p.$eval('input[value="annual"]', (e) => e.click()); await wait();
 c = await card(p);
-check("8 no costs → asks, never $0", c.text.includes("We need one more piece of information") && c.coa === undefined && !c.text.includes("Cost of attendance $0"), c.text.slice(0, 200));
+check("8 no costs → asks, never $0", c.text.includes("We need one more piece of information") && c.text.includes("enter the complete yearly cost here instead of adding only a few missing categories") && c.coa === undefined && !c.text.includes("Cost of attendance $0"), c.text.slice(0, 300));
+note = await missingNote(p);
+check("8 X-Ray points to the whole-cost input", note.text.includes("Enter your school’s full yearly cost of attendance in 2. What you’d pay this year") && note.href === "#year-one" && note.target === "2. What you’d pay this year", JSON.stringify(note));
+const projectionLink = await p.evaluate(() => {
+  const link = document.querySelector('#four-years a[href="#year-one"]');
+  return { text: link?.textContent.trim() ?? null, href: link?.getAttribute("href") ?? null };
+});
+check("8 four-year empty state points to the cost input", projectionLink.text === "2. What you’d pay this year" && projectionLink.href === "#year-one", JSON.stringify(projectionLink));
 await enter(p, /^Enter your school's yearly cost/, "34800");
 c = await card(p);
 check("8 user total used, labelled 'Provided by you'", c.coa === "$34,800" && c.text.includes("Provided by you") && !c.text.includes("doesn’t include every cost"), JSON.stringify(c).slice(0, 300));
+note = await missingNote(p);
+check("8 X-Ray acknowledges the entered whole cost", note.text.includes("using the full yearly cost of attendance you entered in 2. What you’d pay this year"), JSON.stringify(note));
 const four3 = await p.evaluate(() => document.querySelector("#four-years").innerText.replace(/\s+/g, " "));
 check("8 four-year from the user's total", four3.includes("From the yearly cost you entered") && four3.includes("$139,200"), four3.slice(0, 200));
 await click(p, /^Remove Your school's yearly cost/); await wait();

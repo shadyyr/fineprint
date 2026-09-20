@@ -2229,3 +2229,98 @@ SUMMARY   Replaced the last "aid you keep" (stage-2 line) with "aid you don't
 ACTIVE    none
 NEXT      Shade: commit when ready. FEATURE FREEZE resumes — correctness,
           reliability, accessibility, deployment and demo blockers only.
+
+
+### 2026-09-19 · 083 · Claimed: repair missing-cost input cross-reference
+AGENT     codex (current session, per Shade)
+STATE     in-progress
+TOUCHED   docs/CHANGES.log; web analysis copy/navigation after reproduction
+VERIFY    pending conditional-state and browser checks
+SUMMARY   “Not in the letter” still directs students to “Your first year” after
+          the four-stage redesign, and it implies individual missing-cost
+          inputs even when an aid-only letter correctly asks for one full
+          yearly cost of attendance. Point each state to the visible stage-2
+          control it actually provides.
+ACTIVE    web missing-cost cross-reference
+NEXT      Codex: add a direct stage-2 link, cover itemized and whole-cost paths,
+          and rerun web safeguards.
+
+
+### 2026-09-19 · 084 · Missing-cost guidance links to the actual input
+AGENT     codex (current session, per Shade)
+STATE     done — uncommitted; no push or deployment requested
+TOUCHED   web/app/analyze/AnalyzeView.tsx;
+          web/components/{Overview,XRay}.tsx; web/e2e/missing.mjs;
+          docs/CHANGES.log
+VERIFY    web Vitest 53/53; typecheck, ESLint, production webpack build, E2E
+          syntax check, diff check, and secret scan (130 files) clean; local
+          browser verified both itemized-cost and aid-only/whole-cost states
+SUMMARY   Replaced the stale “Your first year” reference with a keyboard-
+          reachable link to the visible “2. What you’d pay this year” heading.
+          Letters with cost lines point to the existing per-category yearly
+          estimate controls. Aid-only letters no longer imply those controls
+          exist: they point to the full yearly cost-of-attendance input, and
+          after entry say that FinePrint is using that total. Stage 2 explains
+          that without any starting cost figure, a complete yearly total is
+          safer than adding only a few non-exhaustive missing categories.
+ACTIVE    none
+NEXT      Shade: review, then ask Codex to commit/push if approved.
+NOTES     No financial-engine or schema behavior changed. The whole-cost path
+          remains the intentional safeguard against constructing a partial
+          cost of attendance from an incomplete aid-only letter.
+
+
+### 2026-09-19 · 085 · Claimed: offline conditional-state consistency audit
+AGENT     codex (current session, per Shade)
+STATE     in-progress
+TOUCHED   docs/CHANGES.log; implementation/tests only for reproduced defects
+VERIFY    pending static, unit, corpus, browser, accessibility, and responsive
+          audits using committed samples and intercepted synthetic states only
+SUMMARY   Audit the frozen product for the same class of defect as the missing-
+          cost mismatch: visible copy or navigation promising controls/results
+          that do not exist in the current document state. Cover all cost
+          bases, ambiguity states, sample layouts, failure states, financing,
+          four-year controls, X-Ray evidence, keyboard use, and mobile/desktop.
+ACTIVE    offline product-state stabilization; no provider-backed endpoints
+NEXT      Codex: establish a green baseline, inventory stale references and
+          conditional branches, reproduce issues, fix narrowly, rerun matrix.
+NOTES     Hard boundary from Shade: do not call OpenAI or `/analyze`; no paid
+          extraction. Use cached fixtures, corpus replays, and request
+          interception only.
+
+
+### 2026-09-19 · 086 · Offline conditional-state audit complete
+AGENT     codex (current session, per Shade)
+STATE     done — uncommitted; no push or deployment requested
+TOUCHED   docs/{CHANGES.log,PLAN.md};
+          web/app/analyze/AnalyzeView.tsx;
+          web/components/{Overview,XRay,FourYear}.tsx;
+          web/e2e/README.md; web/e2e/{financing,missing,states}.mjs
+VERIFY    API pytest 86/86; corpus replays 5/5 with no invariant violations;
+          web Vitest 53/53; typecheck and ESLint clean; production webpack
+          build clean. Browser: audit at 1280/1366/1100/900; financing 8/8
+          desktop + phone; missing-cost paths 24/24 desktop + phone; four-year
+          7/7; 18 intercepted failure/edge states; residency; keyboard; tab
+          walk at 390/360/900/1280 plus answered 390; real-window PDF render;
+          alternate Summit sample at 1280 + 390. Secret scan 130 files and
+          diff check clean. Default Turbopack build alone hit the runner's OS
+          restriction on binding its internal temporary port; the same final
+          source compiled and prerendered successfully with Next's webpack
+          builder.
+SUMMARY   Fixed the stale/misleading missing-cost path across X-Ray, Stage 2,
+          and the four-year empty state. Itemized-cost letters link to their
+          estimate controls; aid-only letters link to one complete yearly COA
+          input and explain why partial categories are unsafe; entered totals
+          remain explicitly student-provided. Replaced a position-dependent
+          tooltip. Strengthened the offline state suite with realistic 503 and
+          429 responses, Retry-After copy, broken-anchor detection, technical-
+          error-copy rejection, and a missing-cost-not-$0 assertion. Updated
+          stale component names and the no-silent-sample-fallback rule in the
+          current plan. No engine, schema, extraction, or API behavior changed.
+ACTIVE    none
+NEXT      Shade: review the uncommitted stabilization diff; commit/push only
+          when ready. Feature freeze remains appropriate.
+NOTES     Zero provider-backed requests were made. Every upload response used
+          browser interception; every document analysis came from committed
+          cached fixtures or replay payloads. The private downloaded letter
+          was read locally only and is not in the repository.
