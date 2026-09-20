@@ -300,26 +300,37 @@ function Analysis({
         />
 
         {doc.unverified_claims.length ? (
-          <section aria-labelledby="unverified-heading" className="rounded-lg border border-rule bg-card p-5">
-            <h2 id="unverified-heading" className="flex items-center gap-2 font-semibold text-ink">
-              <Icon name="unverified" size={20} className="text-ink-2" />
-              Things we couldn&rsquo;t confirm
-            </h2>
-            <p className="mt-1 text-sm text-ink-2">
-              The reader reported these, but FinePrint couldn&rsquo;t find them in the
-              letter&rsquo;s text, so none of them are counted anywhere above.
-            </p>
-            <ul className="mt-3 divide-y divide-rule text-sm">
-              {doc.unverified_claims.map((claim) => (
-                <li key={claim.id} className="flex flex-wrap justify-between gap-2 py-2">
-                  <span className="font-medium text-ink">{claim.claimed_label}</span>
-                  <span className="text-ink-2">
-                    {claim.claimed_amount !== null ? `${formatUSD(claim.claimed_amount)} · ` : ""}
-                    {claim.detail}
+          <section
+            aria-labelledby="unverified-heading"
+            className="overflow-hidden rounded-lg border border-rule bg-card"
+          >
+            {/* Nothing here is counted anywhere, so it starts closed -- still
+                one click away, and the count is visible without opening it. */}
+            <details>
+              <summary className="flex cursor-pointer items-center gap-2 px-5 py-4 outline-offset-[-2px] hover:bg-well focus-visible:outline-2 focus-visible:outline-ink">
+                <Icon name="unverified" size={20} className="shrink-0 text-ink-2" />
+                <span className="min-w-0">
+                  <h2 id="unverified-heading" className="font-semibold text-ink">
+                    Things we couldn&rsquo;t confirm ({doc.unverified_claims.length})
+                  </h2>
+                  <span className="block text-sm text-ink-2">
+                    Reported by the reader but not found in the letter&rsquo;s text, so counted
+                    nowhere.
                   </span>
-                </li>
-              ))}
-            </ul>
+                </span>
+              </summary>
+              <ul className="divide-y divide-rule border-t border-rule px-5 text-sm">
+                {doc.unverified_claims.map((claim) => (
+                  <li key={claim.id} className="flex flex-wrap justify-between gap-2 py-2">
+                    <span className="font-medium text-ink">{claim.claimed_label}</span>
+                    <span className="text-ink-2">
+                      {claim.claimed_amount !== null ? `${formatUSD(claim.claimed_amount)} · ` : ""}
+                      {claim.detail}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </details>
           </section>
         ) : null}
       </main>

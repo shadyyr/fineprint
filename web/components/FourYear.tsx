@@ -130,7 +130,7 @@ export function FourYear({
     <section aria-labelledby="four-year-heading" id="four-years" className="scroll-mt-6">
       <div className="mb-5 max-w-2xl">
         <h2 id="four-year-heading" className="text-2xl font-semibold tracking-tight text-ink">
-          Four years, and what if
+          4. Four years, and what if
         </h2>
         <p className="mt-1 text-ink-2">
           What this offer adds up to over a four-year degree. Built from the letter, plus

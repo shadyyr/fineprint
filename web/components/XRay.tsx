@@ -166,7 +166,7 @@ export function XRay({
     <section aria-labelledby="xray-heading" id="xray" className="scroll-mt-6 print:break-before-page">
       <div className="mb-5 max-w-2xl">
         <h2 id="xray-heading" className="text-2xl font-semibold tracking-tight text-ink">
-          Financial X-Ray
+          3. Financial X-Ray
         </h2>
         <p className="mt-1 text-ink-2">
           Every figure, traced to the exact words it came from. Select a line to see it in
@@ -325,9 +325,16 @@ function Panel({
 
   return (
     <div className="space-y-5">
-      {groups.map((group) => (
-        <section key={group.key} aria-labelledby={`group-${group.key}`}>
-          <header className="mb-2 flex items-start gap-2.5">
+      {groups.map((group) => {
+        // The letter's own totals and the costs it never prices explain the
+        // figures above rather than carrying the story, so they start closed.
+        // Native <details> keeps keyboard and screen-reader behaviour for free.
+        const collapsed = group.key.startsWith("totals") || group.key === "missing";
+        // ...but never hide a figure the student typed in: if they have filled
+        // any of these in, the group opens.
+        const openAnyway = group.rows.some((r) => r.amount !== null && r.category === null);
+        const heading = (
+          <>
             <span
               aria-hidden="true"
               className="mt-1.5 size-3 shrink-0 rounded-[3px]"
@@ -337,103 +344,131 @@ function Panel({
               <h3 id={`group-${group.key}`} className="flex items-center gap-1.5 font-semibold text-ink">
                 <Icon name={group.icon} size={18} className="text-ink-2" />
                 {group.title}
+                {collapsed ? (
+                  <span className="font-normal text-ink-2">&nbsp;({group.rows.length})</span>
+                ) : null}
               </h3>
               <p className="text-sm text-ink-2">{group.meaning}</p>
             </div>
-          </header>
-
-          <ul className="overflow-hidden rounded-lg border border-rule bg-card">
-            {group.rows.map((row) => {
-              const isSelected = row.id === selectedId;
-              const citations = row.evidenceIds
-                .map((id) => evidenceById.get(id))
-                .filter((e): e is Evidence => Boolean(e));
-              return (
-                <li
-                  key={row.id}
-                  id={`row-${row.id}`}
-                  className={`scroll-mt-[48vh] border-t border-rule first:border-t-0 lg:scroll-mt-24 ${
-                    isSelected ? "bg-well" : ""
-                  }`}
-                  style={isSelected ? { boxShadow: `inset 3px 0 0 ${group.color}` } : undefined}
-                >
-                  <button
-                    type="button"
-                    aria-pressed={isSelected}
-                    disabled={!citations.length}
-                    onClick={() => onSelect(isSelected ? null : row.id)}
-                    className="flex w-full scroll-mt-[48vh] items-start gap-3 px-4 py-3 text-left outline-offset-[-2px] hover:bg-well lg:scroll-mt-24 focus-visible:outline-2 focus-visible:outline-ink disabled:cursor-default enabled:cursor-pointer"
+          </>
+        );
+        const note = group.note ? <p className="mt-1.5 text-sm text-ink-2">{group.note}</p> : null;
+        const rows = (
+            <ul className={collapsed ? "" : "overflow-hidden rounded-lg border border-rule bg-card"}>
+              {group.rows.map((row) => {
+                const isSelected = row.id === selectedId;
+                const citations = row.evidenceIds
+                  .map((id) => evidenceById.get(id))
+                  .filter((e): e is Evidence => Boolean(e));
+                return (
+                  <li
+                    key={row.id}
+                    id={`row-${row.id}`}
+                    className={`scroll-mt-[48vh] border-t border-rule first:border-t-0 lg:scroll-mt-24 ${
+                      isSelected ? "bg-well" : ""
+                    }`}
+                    style={isSelected ? { boxShadow: `inset 3px 0 0 ${group.color}` } : undefined}
                   >
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-medium text-ink">{row.label}</span>
-                      <span className="block text-sm text-ink-2">
-                        {/* A derived figure is FinePrint's sum of the letter's lines,
-                            never presented as a number the letter printed. */}
-                        {row.isTotal
-                          ? row.derived
-                            ? "Letter's term totals, added · "
-                            : "Stated total · "
-                          : row.derived
-                            ? "Terms added together · "
-                            : ""}
-                        {row.periodText}
+                    <button
+                      type="button"
+                      aria-pressed={isSelected}
+                      disabled={!citations.length}
+                      onClick={() => onSelect(isSelected ? null : row.id)}
+                      className="flex w-full scroll-mt-[48vh] items-start gap-3 px-4 py-3 text-left outline-offset-[-2px] hover:bg-well lg:scroll-mt-24 focus-visible:outline-2 focus-visible:outline-ink disabled:cursor-default enabled:cursor-pointer"
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-medium text-ink">{row.label}</span>
+                        <span className="block text-sm text-ink-2">
+                          {/* A derived figure is FinePrint's sum of the letter's lines,
+                              never presented as a number the letter printed. */}
+                          {row.isTotal
+                            ? row.derived
+                              ? "Letter's term totals, added · "
+                              : "Stated total · "
+                            : row.derived
+                              ? "Terms added together · "
+                              : ""}
+                          {row.periodText}
+                        </span>
                       </span>
-                    </span>
-                    {row.amount !== null ? (
-                      <span className="figures shrink-0 font-semibold text-ink">
-                        {formatUSD(row.amount)}
-                      </span>
-                    ) : (
-                      <span className="shrink-0 text-sm text-ink-2">no amount</span>
-                    )}
-                  </button>
+                      {row.amount !== null ? (
+                        <span className="figures shrink-0 font-semibold text-ink">
+                          {formatUSD(row.amount)}
+                        </span>
+                      ) : (
+                        <span className="shrink-0 text-sm text-ink-2">no amount</span>
+                      )}
+                    </button>
 
-                  {isSelected && (row.conditions.length || citations.length > 1) ? (
-                    <div className="space-y-3 px-4 pb-4">
-                      {row.conditions.length ? (
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-wide text-ink-2">
-                            Conditions
-                          </p>
-                          <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-ink">
-                            {row.conditions.map((c) => (
-                              <li key={c}>{c}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-                      {citations.length > 1 ? (
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-wide text-ink-2">
-                            Where the letter says it
-                          </p>
-                          <ul className="mt-1.5 flex flex-col gap-1.5">
-                            {citations.map((ev) => (
-                              <li key={ev.id}>
-                                <button
-                                  type="button"
-                                  onClick={() => onJump(ev.id)}
-                                  className="flex w-full items-baseline gap-2 rounded border border-rule bg-card px-2.5 py-1.5 text-left text-sm hover:border-ink-3 focus-visible:outline-2 focus-visible:outline-ink"
-                                >
-                                  <span className="shrink-0 font-medium text-ink">p.{ev.page}</span>
-                                  <span className="min-w-0 truncate text-ink-2">
-                                    &ldquo;{truncate(ev.quote)}&rdquo;
-                                  </span>
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
-          {group.note ? <p className="mt-1.5 text-sm text-ink-2">{group.note}</p> : null}
-        </section>
-      ))}
+                    {isSelected && (row.conditions.length || citations.length > 1) ? (
+                      <div className="space-y-3 px-4 pb-4">
+                        {row.conditions.length ? (
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-ink-2">
+                              Conditions
+                            </p>
+                            <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-ink">
+                              {row.conditions.map((c) => (
+                                <li key={c}>{c}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
+                        {citations.length > 1 ? (
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-ink-2">
+                              Where the letter says it
+                            </p>
+                            <ul className="mt-1.5 flex flex-col gap-1.5">
+                              {citations.map((ev) => (
+                                <li key={ev.id}>
+                                  <button
+                                    type="button"
+                                    onClick={() => onJump(ev.id)}
+                                    className="flex w-full items-baseline gap-2 rounded border border-rule bg-card px-2.5 py-1.5 text-left text-sm hover:border-ink-3 focus-visible:outline-2 focus-visible:outline-ink"
+                                  >
+                                    <span className="shrink-0 font-medium text-ink">p.{ev.page}</span>
+                                    <span className="min-w-0 truncate text-ink-2">
+                                      &ldquo;{truncate(ev.quote)}&rdquo;
+                                    </span>
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+        );
+
+        return (
+          <section key={group.key} aria-labelledby={`group-${group.key}`}>
+            {collapsed ? (
+              <details open={openAnyway} className="overflow-hidden rounded-lg border border-rule bg-card">
+                {/* Same scroll margin as the rows: on phones the letter pane is
+                    stuck to the top, and a focused summary must clear it. */}
+                <summary className="flex scroll-mt-[48vh] cursor-pointer items-start gap-2.5 px-4 py-3 outline-offset-[-2px] hover:bg-well lg:scroll-mt-24 focus-visible:outline-2 focus-visible:outline-ink">
+                  {heading}
+                </summary>
+                <div className="border-t border-rule px-4 pb-3">
+                  {rows}
+                  {note}
+                </div>
+              </details>
+            ) : (
+              <>
+                <header className="mb-2 flex items-start gap-2.5">{heading}</header>
+                {rows}
+                {note}
+              </>
+            )}
+          </section>
+        );
+      })}
     </div>
   );
 }

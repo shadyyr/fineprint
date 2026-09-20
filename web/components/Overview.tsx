@@ -164,6 +164,11 @@ export function Overview({
 }) {
   const { yearOne } = model;
   const estimated = yearOne.userEstimates.value;
+  // Any unanswered question that blocks headline figures -- a period, or which
+  // of two rates applies -- means the amount below is not the final one.
+  const openQuestions = ambiguities.filter(
+    (v) => v.ambiguity.blocks_headline && v.answer === undefined,
+  ).length;
   const headline = yearOne.headlineAidTotal?.value ?? null;
   const gift = yearOne.giftAid;
   const pendingGift = gift.excluded
@@ -172,8 +177,47 @@ export function Overview({
 
   return (
     <section aria-labelledby="overview-heading" className="space-y-8">
-      <h2 id="overview-heading" className="sr-only">
-        What this offer means
+      {/* The whole analysis in one sentence, before any table: what the letter
+          calls aid, how much of it is not repaid, and what that leaves. Every
+          figure comes from the engine, and an unresolved question always takes
+          precedence over stating a final amount. */}
+      <p className="max-w-3xl text-lg leading-relaxed text-ink-2">
+        {headline !== null ? (
+          <>
+            This letter calls{" "}
+            <strong className="font-semibold text-ink">{formatUSD(headline)}</strong> financial
+            aid.{" "}
+          </>
+        ) : null}
+        Only <strong className="font-semibold text-ink">{formatUSD(gift.value)}</strong> is aid
+        you don&rsquo;t repay
+        {!listsCosts ? (
+          <> &mdash; and this letter doesn&rsquo;t say what college costs, so what&rsquo;s left
+            to cover is still unknown.</>
+        ) : openQuestions > 0 ? (
+          // An open question outranks the figure: stating one here would imply
+          // a total FinePrint cannot know yet.
+          <>
+            {" "}
+            &mdash; and what&rsquo;s left to cover depends on the question
+            {openQuestions > 1 ? "s" : ""} below.
+          </>
+        ) : (
+          <>
+            {" "}
+            &mdash; leaving about{" "}
+            <strong className="font-semibold text-ink">
+              {formatUSD(Math.max(0, yearOne.amountToCover.value))}
+            </strong>{" "}
+            to cover this year.
+          </>
+        )}
+      </p>
+
+      {/* The sentence above already explains this stage, so the heading carries
+          no second line of its own. */}
+      <h2 id="overview-heading" className="text-2xl font-semibold tracking-tight text-ink">
+        1. What the letter says, and what&rsquo;s actually yours
       </h2>
 
       {/* The contrast. */}
@@ -238,6 +282,16 @@ export function Overview({
       ))}
 
       {/* Year one, stated precisely. Each figure says what it is and what it leaves out. */}
+      <div>
+        <h2 className="text-2xl font-semibold tracking-tight text-ink">
+          2. What you&rsquo;d pay this year
+        </h2>
+        <p className="mt-1 max-w-2xl text-ink-2">
+          Costs minus the aid you don&rsquo;t repay &mdash; then how loans, work-study and your
+          own money could cover what&rsquo;s left.
+        </p>
+      </div>
+
       <div className="rounded-lg border border-rule bg-card">
         <h3 className="border-b border-rule px-5 py-3 text-sm font-semibold text-ink">
           Your first year

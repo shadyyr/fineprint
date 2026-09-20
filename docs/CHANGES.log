@@ -2143,3 +2143,89 @@ NOTES     Coverage reproduces repeated Scholarships, Grants, subsidized loans,
           ordinary same-label facts with conflicting types do not merge. The
           supplied PDF and provider output remain uncommitted; no paid provider
           call was made.
+
+
+### 2026-09-19 · 080 · Claimed: stage the analysis page as a story (Shade-approved freeze exception #2)
+AGENT     claude-opus-5 (session after 027), per Shade
+STATE     in-progress
+TOUCHED   docs/CHANGES.log
+VERIFY    n/a — claim. Tree clean at bb25c94, main == origin/main.
+SUMMARY   Feedback from someone Shade showed the site: information overload.
+          Diagnosis: on a ~4,000px page only TWO visible section headings exist
+          (X-Ray, Four years) — Overview's is sr-only — so every block lands at
+          equal weight. Fix is sequencing + progressive disclosure (master
+          context 6.9), never removing evidence. Four stages get short visible
+          headings; one plain-language answer sentence goes above the hero;
+          reference-only blocks (the letter's own totals, Not in the letter,
+          Things we couldn't confirm) collapse by default. No engine, schema,
+          api or landing-page change; no nav chrome; X-Ray keeps its name and
+          stays open.
+ACTIVE    web/components/{Overview,XRay,FourYear}.tsx,
+          web/app/analyze/AnalyzeView.tsx, web/e2e/* (selector updates)
+NEXT      Claude: implement, then rerun unit + all browser checks at 1280/390.
+NOTES     Codex: building on your XRay.tsx work (keyboard-reachable highlights,
+          mobile focus) — not reverting it. Shout in the log if you need those
+          files; otherwise please stay out of the four above until my done entry.
+
+
+### 2026-09-19 · 081 · Done: the analysis reads as four stages, with an answer sentence
+AGENT     claude-opus-5 (session after 027), per Shade
+STATE     done — uncommitted
+TOUCHED   web/components/{Overview,XRay,FourYear}.tsx,
+          web/app/analyze/AnalyzeView.tsx, web/e2e/missing.mjs (read collapsed
+          rows with textContent)
+VERIFY    npm test 53/53; typecheck, eslint, next build clean. Browser at 1280
+          and 390: financing 8/8 both, missing 20/20 both, fouryear 7/7 to the
+          dollar, audit 0 requests + hero/cover unchanged, residency, keyboard,
+          states, picker/Summit — all pass. tabwalk 57 stops, 0 problems at
+          390/360/900/1280 (was 60 stops). Page: 4 visible stage headings (was
+          2); desktop 4,566px / 5.1 screens, phone 7,256px / 8.6.
+SUMMARY   Feedback was "information overload". Cause was signposting, not
+          volume, so nothing was removed. (1) One plain-language sentence above
+          everything, from engine figures: "This letter calls $45,400 financial
+          aid. Only $36,900 is aid you don't repay — leaving about $14,400 to
+          cover this year." An unanswered headline-blocking question (a period
+          OR a rate) takes precedence and replaces the amount with "and what's
+          left to cover depends on the question(s) below" — without it the
+          residency case printed "about $0". No costs priced → says the letter
+          doesn't say. Shade's wording, "aid you don't repay", is used
+          throughout (no "money you keep"). (2) The four stages now have visible
+          headings — 1. What the letter says, and what's actually yours;
+          2. What you'd pay this year; 3. Financial X-Ray; 4. Four years, and
+          what if — no new cards, no nav chrome, existing ids kept.
+          (3) Reference-only blocks collapse by default with native <details>:
+          the letter's category subtotals, its combined totals, "Not in the
+          letter", and "Things we couldn't confirm"; each shows its count, and
+          "Not in the letter" opens automatically once the student has entered
+          an estimate so their own figures are never hidden. Evidence rows,
+          the letter pane and every financial figure stay visible.
+ACTIVE    none
+NEXT      Shade: review the two screenshots, then commit when ready.
+NOTES     Codex: `collapsed` matches group keys starting with "totals", so your
+          split into category/combined subtotals is covered — if you add
+          another reference group, name its key accordingly or it will render
+          open. Summary elements carry the same scroll-mt as the rows, because
+          on phones the sticky letter pane otherwise covers a focused summary.
+
+
+### 2026-09-19 · 082 · Copy adjustment verified; back to feature freeze
+AGENT     claude-opus-5 (session after 027), per Shade
+STATE     done — uncommitted (with 081)
+TOUCHED   web/components/Overview.tsx
+VERIFY    Sentence in four states (1280): unanswered → "…$16,900 is aid you
+          don't repay — and what's left to cover depends on the question
+          below."; answered per year → "…$36,900… — leaving about $14,400 to
+          cover this year."; a second open (residency) question → "…the
+          questions below."; letter with no costs → "…this letter doesn't say
+          what college costs…". Full sweep: npm test 53/53, typecheck, eslint,
+          next build; financing 8/8 and missing 20/20 at 1280 and 390;
+          fouryear 7/7; audit 0 requests, hero/cover unchanged; residency;
+          tabwalk 57 stops / 0 problems at 4 widths; keyboard; states; picker;
+          secret scan clean.
+SUMMARY   Replaced the last "aid you keep" (stage-2 line) with "aid you don't
+          repay". Made the open-question rule cover cost questions too, and it
+          now suppresses the amount entirely rather than printing a floored $0.
+          Values stay engine-derived.
+ACTIVE    none
+NEXT      Shade: commit when ready. FEATURE FREEZE resumes — correctness,
+          reliability, accessibility, deployment and demo blockers only.

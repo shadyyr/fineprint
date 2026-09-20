@@ -41,7 +41,8 @@ check("2 add estimate", c.coa === "$52,800" && c.cover === "$15,900" && /Transpo
 check("2 focus lands on Edit", /^Edit/.test(c.focus ?? ""), c.focus);
 check("2 announced", c.live.includes("$52,800"), c.live);
 check("7 never 'From your offer'", !/from your offer/i.test(c.text), "");
-const xrow = await p.evaluate(() => document.getElementById("row-missing_transportation")?.innerText.replace(/\s+/g, " "));
+// The row may sit inside a collapsed group, so read textContent, not innerText.
+const xrow = await p.evaluate(() => document.getElementById("row-missing_transportation")?.textContent.replace(/\s+/g, " "));
 check("2 X-Ray row labelled as the student's", /your estimate · not in the letter/.test(xrow ?? "") && /\$1,500/.test(xrow ?? ""), xrow);
 await enter(p, /^Edit Transportation/, "2000");
 c = await card(p);
